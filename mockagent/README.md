@@ -39,12 +39,17 @@ mockagent/                                # 独立项目根 / standalone project
 │   ├── expanded_dataset.json             # 16 模板 6060 组
 │   ├── demo_dataset.json                 # 种子数据集
 │   └── trace_examples.json               # 调用链示例
-├── workflows/                            # 内置 PSOP 工作流（live_assurance_demo.json）
+├── scenarios/                              # 场景目录：一个场景一个目录（故事线 + PSOP + 智能体清单）
+│   └── live-assurance-demo/
+│       ├── scenario.json                   # 故事线描述（背景/角色/阶段/预期结果）
+│       ├── workflow.json                   # 本场景的 PSOP 工作流文件
+│       └── agents.json                     # 场景需要的智能体清单（引用 agents/<id>/，含角色）
 ├── requirements.txt                      # Python 依赖（a2a-sdk / a2a-t-sdk / workflow-exec-engine ...）
 ├── pyproject.toml / .env.example
 ├── mockagent_engine/                       # 引擎包 / engine package（服务运行时，Agent 定义在 agents/）
 │   ├── main.py                           # 调测台后端入口（REST + JWT）
 │   ├── agent_registry.py                 # agents/ 目录扫描与聚合
+│   ├── scenario_registry.py              # scenarios/ 场景加载（故事线 + 工作流 + 智能体清单）
 │   ├── standalone_agent.py               # 独立打桩实例入口（python -m mockagent_engine.standalone_agent --agent <id>）
 │   ├── protocol_flow.py                  # A2A-T 协议流（意图/授权/协商/任务）
 │   ├── dataset_retrieval.py              # 数据集检索（模板过滤 + 评分 + 标识回填）
@@ -58,6 +63,8 @@ mockagent/                                # 独立项目根 / standalone project
 
 > 命名说明 / Naming：`mockagent/` 是项目根，`mockagent_engine/` 是引擎代码包（Python 导入名不含连字符），`agents/` 是 Agent 定义目录——三者职责互不重叠。
 > `mockagent/` is the project root, `mockagent_engine/` is the engine package (Python imports cannot contain hyphens), and `agents/` holds the agent definitions.
+
+**场景目录 / Scenario directories**：每个场景一个目录（`scenarios/<id>/`），打包三类配置，缺一不可——`scenario.json` 故事线描述（背景/角色/阶段/预期结果，中英名称）、`workflow.json` 本场景的 PSOP 工作流、`agents.json` 场景需要的智能体清单（引用 `agents/<id>/` 定义并声明角色 workflow-host/participant，引用不存在的 Agent 会被拒绝）。工作流按 id 两级查找：全局 `workflows/` → 场景目录；场景接口：`GET /api/v1/scenarios`（列表）、`GET /api/v1/scenarios/{id}`（详情含故事线与智能体）。
 
 **Agent 目录内容 / What's inside an agent directory**：`agent.json` 声明该 Agent 的名称、端口、提示词变体（stubVariants）、数据集模板范围（datasetTemplates）、LLM 与工作流配置；共享基线在 `agents/_defaults.json`。
 **Agent 代码 / Agent code**：`agent.py` 定义继承引擎基类 `mockagent_engine.agent.base.StubAgentBase` 的子类，承载差异化能力（如域内意图→模板推断）。引擎在桩选择链路调用钩子 `transform_request` / `transform_reply` / `build_runtime` / `capabilities`，默认实现恒等透传；目录不含 `agent.py` 的纯配置 Agent 行为与旧版一致。
@@ -80,7 +87,7 @@ npm install && npm run dev
 
 - 实例管理：`POST /api/v1/mock-instances/{id}/start`（后端以 `python -m mockagent_engine.standalone_agent --agent <id>` 拉起，定义读取 `agents/<id>/agent.json`，端口 9005-9010）。
 - Instance management: `POST /api/v1/mock-instances/{id}/start` spawns each agent on ports 9005-9010 (definitions read from `agents/<id>/agent.json`).
-- 工作流模式：给实例配置 `"workflow": {"enabled": true, "workflowId": "live-assurance-demo"}` 后，向该实例发送意图请求即可触发端到端编排（详见 `workflows/`）。
+- 工作流模式：给实例配置 `"workflow": {"enabled": true, "workflowId": "live-assurance-demo"}` 后，向该实例发送意图请求即可触发端到端编排（工作流文件见 `scenarios/live-assurance-demo/workflow.json`）。
 - Workflow mode: enable `"workflow": {"enabled": true, "workflowId": "live-assurance-demo"}` on an instance, then send an intent request to trigger end-to-end orchestration.
 - LLM 模式：配置 OpenAI 兼容 `baseUrl`/`model`，密钥经环境变量 `MOCK_AGENT_LLM_API_KEY` 注入。
 - LLM mode: configure an OpenAI-compatible `baseUrl`/`model`; the key is read from env `MOCK_AGENT_LLM_API_KEY`.

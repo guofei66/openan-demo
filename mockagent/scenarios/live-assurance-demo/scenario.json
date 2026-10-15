@@ -1,0 +1,55 @@
+{
+  "id": "live-assurance-demo",
+  "name": "大型赛事直播业务保障演示",
+  "nameEn": "Major-event Live-stream Service Assurance Demo",
+  "version": "1",
+  "description": "某大型体育赛事直播期间，承载直播业务的专线出现质量劣化，观众反馈画面卡顿。业务保障智能体受理投诉后解析保障意图，并行调度无线域与直播域打桩智能体执行小区保障与直播质量诊断，最终聚合诊断结果形成保障结论。",
+  "descriptionEn": "During a major sports event live-stream, the dedicated line carrying the broadcast degrades and viewers report buffering. The service-assurance agent parses the intent and orchestrates the wireless-domain and live-stream stub agents for cell assurance and stream quality diagnosis, then aggregates results into an assurance conclusion.",
+  "storyline": {
+    "background": "赛事保障期间，直播专线承载码率升档，无线小区负荷升高，部分用户出现直播卡顿投诉。",
+    "trigger": "投诉工单：观众反馈直播画面卡顿，疑似承载专线或无线小区异常。",
+    "actors": [
+      { "agentId": "service-assurance-stub", "role": "workflow-host", "description": "业务保障宿主：解析意图、编排保障工作流、聚合结论" },
+      { "agentId": "wireless-domain-stub", "role": "participant", "description": "无线域：执行无线小区故障诊断与保障动作" },
+      { "agentId": "livestream-stub", "role": "participant", "description": "直播域：执行直播业务质量诊断" }
+    ],
+    "phases": [
+      {
+        "order": 1,
+        "title": "意图解析",
+        "stepRef": "意图解析",
+        "type": "self-loop",
+        "description": "保障宿主本地解析投诉工单，识别保障对象（赛事直播业务）与保障动作（端到端质量保障）。"
+      },
+      {
+        "order": 2,
+        "title": "无线小区保障",
+        "stepRef": "无线小区保障",
+        "type": "agent-task",
+        "agentId": "wireless-domain-stub",
+        "description": "经 A2A-T 协议向无线域智能体下发无线小区诊断任务（Task-T 无线小区诊断模板），返回小区级诊断与保障结果。"
+      },
+      {
+        "order": 3,
+        "title": "直播质量诊断",
+        "stepRef": "直播质量诊断",
+        "type": "agent-task",
+        "agentId": "livestream-stub",
+        "description": "向直播智能体下发直播质量诊断任务（Task-T 直播质量模板），返回卡顿归因与质量指标。"
+      },
+      {
+        "order": 4,
+        "title": "结果聚合与保障结论",
+        "stepRef": "结果聚合",
+        "type": "self-loop",
+        "description": "汇聚无线域与直播域诊断结果，输出端到端保障结论与后续抢通建议。"
+      }
+    ],
+    "expectedOutcome": "输出保障结论：卡顿根因（无线小区高负荷 + 直播链路质量劣化）、已执行的保障动作、是否需要人工介入抢通。"
+  },
+  "entry": {
+    "workflowId": "live-assurance-demo",
+    "hostAgentId": "service-assurance-stub",
+    "sampleIntent": "保障某大型赛事的直播业务，观众反馈直播画面卡顿"
+  }
+}

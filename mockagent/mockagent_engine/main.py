@@ -19,6 +19,7 @@ from .routers.history_router import router as history_router
 from .routers.mock_instances_router import router as mock_instances_router
 from .routers.oda_router import router as oda_router
 from .routers.registry_router import router as registry_router
+from .routers.scenarios_router import router as scenarios_router
 from .routers.seeds_router import router as seeds_router
 from .routers.settings_router import router as settings_router
 from .routers.users_router import router as users_router
@@ -113,6 +114,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(oda_router)
     app.include_router(debug_proxy_router)
     app.include_router(agents_router)
+    app.include_router(scenarios_router)
 
     @app.get("/api/v1/health")
     async def health():

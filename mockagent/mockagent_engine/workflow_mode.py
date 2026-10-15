@@ -48,27 +48,43 @@ _WF_CACHE: dict[str, dict] = {}
 
 
 def _workflows_dir() -> Path:
-    """项目根 workflows/ 目录（内置 PSOP 工作流）。"""
+    """项目根 workflows/ 目录（全局内置 PSOP 工作流，可缺省）。"""
     return Path(__file__).resolve().parents[1] / "workflows"
 
 
+def _iter_scenario_workflows():
+    """扫描 scenarios/<id>/workflow.json（场景自带工作流）。"""
+    from . import scenario_registry
+
+    for d in scenario_registry.list_scenario_dirs():
+        try:
+            yield json.loads((d / scenario_registry.SCENARIO_WORKFLOW_FILENAME).read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            logger.warning("invalid scenario workflow in %s: %s", d, error)
+
+
 def load_builtin(workflow_id: str) -> dict | None:
-    """加载内置工作流定义（workflows/<id>.json）。"""
+    """加载内置工作流：先查全局 workflows/<id>.json，再查场景目录 scenarios/*/workflow.json。"""
     if workflow_id in _WF_CACHE:
         return _WF_CACHE[workflow_id]
     filename = f"{workflow_id.replace('-', '_')}.json"
+    data = None
     try:
-        raw = (_workflows_dir() / filename).read_text(encoding="utf-8")
-        data = json.loads(raw)
+        data = json.loads((_workflows_dir() / filename).read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        logger.warning("workflow definition not found: %s", filename)
+        for candidate in _iter_scenario_workflows():
+            if candidate.get("id") == workflow_id:
+                data = candidate
+                break
+    if not data:
+        logger.warning("workflow definition not found: %s", workflow_id)
         return None
     _WF_CACHE[workflow_id] = data
     return data
 
 
 def list_builtin() -> list[dict]:
-    """列出内置工作流（id/name/description）。"""
+    """列出内置工作流（全局 workflows/ 与场景目录合并；场景工作流标注 scenarioId）。"""
     result = []
     root = _workflows_dir()
     for item in sorted(root.glob("*.json")) if root.is_dir() else []:
@@ -77,6 +93,23 @@ def list_builtin() -> list[dict]:
             result.append({"id": data.get("id") or item.stem, "name": data.get("name", ""), "description": data.get("description", "")})
         except ValueError:
             continue
+    seen = {r["id"] for r in result}
+    from . import scenario_registry
+
+    for d in scenario_registry.list_scenario_dirs():
+        try:
+            data = json.loads((d / scenario_registry.SCENARIO_WORKFLOW_FILENAME).read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        wf_id = data.get("id") or d.name
+        if wf_id in seen:
+            continue
+        result.append({
+            "id": wf_id,
+            "name": data.get("name", ""),
+            "description": data.get("description", ""),
+            "scenarioId": d.name,
+        })
     return result
 
 

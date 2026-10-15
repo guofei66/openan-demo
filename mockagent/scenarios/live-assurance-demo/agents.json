@@ -1,0 +1,26 @@
+{
+  "scenarioId": "live-assurance-demo",
+  "description": "本场景需要的智能体清单：引用 agents/<id>/ 的定义，可按场景附加覆盖配置。",
+  "descriptionEn": "Agents required by this scenario: references to agents/<id>/ definitions with optional scenario-level overrides.",
+  "agents": [
+    {
+      "id": "service-assurance-stub",
+      "role": "workflow-host",
+      "required": true,
+      "description": "业务保障宿主，执行本场景 PSOP 工作流"
+    },
+    {
+      "id": "wireless-domain-stub",
+      "role": "participant",
+      "required": true,
+      "description": "无线域打桩：无线小区保障步骤的执行方"
+    },
+    {
+      "id": "livestream-stub",
+      "role": "participant",
+      "required": true,
+      "description": "直播打桩：直播质量诊断步骤的执行方"
+    }
+  ],
+  "overrides": {}
+}
