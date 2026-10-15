@@ -17,6 +17,7 @@ from .. import dataset_retrieval, llm_client, workflow_mode
 from ..models import Agent
 from ..protocol_flow import FlowRequest, FlowResult, run_flow
 from ..stub_service import pick_variant
+from .base import StubAgentBase
 from .flow_env import ext_uri_for
 
 STATE_JSON = {
@@ -61,6 +62,8 @@ class MockAgentExecutor(AgentExecutor):
         self._flow_env = flow_env
         self._runtime = runtime
         self._log_sink = log_sink
+        # Agent 子类实例（agents/<id>/agent.py 承载差异化能力）；缺省为基类（恒等钩子）
+        self._agent = self._runtime.get("agent") or StubAgentBase()
 
     async def cancel(self, context: RequestContext, event_queue: EventQueue) -> None:
         return None
@@ -141,13 +144,14 @@ class MockAgentExecutor(AgentExecutor):
         return {"artifactPrompt": artifact_text, "artifactName": "workflow-execution-report"}
 
     def _select_stub(self, template_uri, prompt_text, info: dict):
-        """桩数据选择优先级：工作流编排模式 → LLM 生成模式 → 数据集匹配（标识回填）→ 变体池。"""
+        """桩数据选择优先级：Agent 差异化钩子 → 工作流编排模式 → LLM 生成模式 → 数据集匹配（标识回填）→ 变体池。"""
+        template_uri, prompt_text = self._agent.transform_request(template_uri, prompt_text)
         workflow_result = self._workflow_reply(template_uri, prompt_text, info)
         if workflow_result is not None:
-            return workflow_result
+            return self._agent.transform_reply(template_uri, prompt_text, workflow_result) or workflow_result
         llm_result = self._llm_reply(template_uri, prompt_text, info)
         if llm_result is not None:
-            return llm_result
+            return self._agent.transform_reply(template_uri, prompt_text, llm_result) or llm_result
         scope = self._runtime.get("dataset_templates")
         if template_uri and prompt_text and self._runtime["settings"].dataset_search:
             if scope is not None and template_uri not in scope:
@@ -161,7 +165,8 @@ class MockAgentExecutor(AgentExecutor):
                 if match:
                     adapted = dataset_retrieval.adapt(match["responseText"], prompt_text)
                     info["datasetMatch"] = match["meta"]
-                    return {"artifactPrompt": adapted, "artifactName": match["artifactName"]}
+                    reply = {"artifactPrompt": adapted, "artifactName": match["artifactName"]}
+                    return self._agent.transform_reply(template_uri, prompt_text, reply) or reply
                 info["datasetMatch"] = None
         else:
             info["datasetMatch"] = None
@@ -171,7 +176,8 @@ class MockAgentExecutor(AgentExecutor):
         with Session(engine) as session:
             with self._flow_env.cursor_lock:
                 variant = pick_variant(session, self._runtime["agent_id"], template_uri, self._flow_env.cursor)
-            return copy.deepcopy(variant.variant_json) if variant else None
+            result = copy.deepcopy(variant.variant_json) if variant else None
+            return self._agent.transform_reply(template_uri, prompt_text, result) or result
 
     def _agent_available(self) -> bool:
         engine = self._runtime.get("engine")

@@ -59,3 +59,45 @@ def resolve_agent_dir(agent: str) -> Path:
     if (directory / AGENT_FILENAME).is_file():
         return directory
     raise FileNotFoundError(f"未找到 Agent 目录：{agent}（agents/{agent}/{AGENT_FILENAME} 不存在）")
+
+
+AGENT_CODE_FILENAME = "agent.py"
+_CLASS_CACHE: dict[tuple, type] = {}
+
+
+def load_agent_class(agent_dir: Path):
+    """加载 Agent 目录中的子类（agent.py 里继承 StubAgentBase 的类）。
+
+    - 目录不含 agent.py → 返回 StubAgentBase（纯配置 Agent，行为与旧版一致）
+    - 子类经 importlib 按文件路径加载（缓存键 = 路径 + mtime）
+    """
+    import importlib.util
+
+    from .agent.base import StubAgentBase
+
+    agent_dir = Path(agent_dir)
+    py = agent_dir / AGENT_CODE_FILENAME
+    if not py.is_file():
+        return StubAgentBase
+    cache_key = (str(py.resolve()), py.stat().st_mtime)
+    cached = _CLASS_CACHE.get(cache_key)
+    if cached is not None:
+        return cached
+    spec = importlib.util.spec_from_file_location(f"mockagent_agents_{agent_dir.name}", py)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    found = None
+    for obj in vars(module).values():
+        if isinstance(obj, type) and issubclass(obj, StubAgentBase) and obj is not StubAgentBase:
+            found = obj
+            break
+    if found is None:
+        raise TypeError(f"{py} 中未找到 StubAgentBase 子类")
+    _CLASS_CACHE[cache_key] = found
+    return found
+
+
+def load_agent_instance(agent_dir: Path):
+    """加载并实例化 Agent 子类（注入该目录的 agent.json 与共享基线）。"""
+    cls = load_agent_class(agent_dir)
+    return cls(load_agent(agent_dir), load_defaults())

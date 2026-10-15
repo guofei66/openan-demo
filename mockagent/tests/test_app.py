@@ -36,6 +36,15 @@ def test_mock_instances_list_from_agents_dir(client, auth_headers):
         assert inst["workflow"]["enabled"] == (inst["id"] == "service-assurance-stub")
 
 
+def test_mock_instances_expose_agent_type(client, auth_headers):
+    """agents/<id>/agent.py 子类的 agent_type 必须出现在实例视图。"""
+    data = client.get("/api/v1/mock-instances", headers=auth_headers).json()
+    types = {i["id"]: i["agentType"] for i in data["instances"]}
+    assert types["service-assurance-stub"] == "workflow-host"
+    assert types["wireless-domain-stub"] == "wireless-domain"
+    assert types["livestream-stub"] == "live-stream"
+
+
 def test_agent_associations_returns_list(client, auth_headers):
     data = client.get("/api/v1/console/datasets/agent-associations", headers=auth_headers).json()
     assoc = data["associations"]

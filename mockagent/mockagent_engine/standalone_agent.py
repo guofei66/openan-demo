@@ -30,7 +30,7 @@ from sqlalchemy.orm import Session
 from .agent.a2a_app import build_a2a_app
 from .agent.executor import MockAgentExecutor
 from .agent.flow_env import FALLBACK_ENV, FlowEnvironment
-from .agent_registry import load_agent, load_defaults, resolve_agent_dir
+from .agent_registry import load_agent, load_agent_instance, load_defaults, resolve_agent_dir
 from .config import load_settings
 from .db import init_db, make_engine
 from .llm_client import from_define
@@ -141,7 +141,7 @@ def ensure_stub_variants(session: Session, agent_id: int, stub_variants: list | 
     return created
 
 
-def build_runner_app(instance: dict, define: dict, settings) -> FastAPI:
+def build_runner_app(instance: dict, define: dict, settings, agent=None) -> FastAPI:
     work_dir = Path(instance["workDir"])
     work_dir.mkdir(parents=True, exist_ok=True)
     llm_env = write_llm_env(instance, define, work_dir)
@@ -175,7 +175,10 @@ def build_runner_app(instance: dict, define: dict, settings) -> FastAPI:
         "llm_config": from_define(merged_llm(instance, define)),
         "workflow_config": workflow_cfg,
         "workflow_cards": workflow_cards,
+        "agent": agent,
     }
+    if agent is not None:
+        runtime = agent.build_runtime(runtime)
     executor = MockAgentExecutor(flow_env, runtime, log_sink=lambda entry: _log_sink(engine, entry))
 
     name = instance.get("agentName") or instance["name"]
@@ -213,19 +216,21 @@ def main() -> None:
         raise SystemExit(str(exc))
     instance = load_agent(agent_dir)
     define = {"defaults": load_defaults(), "instances": [instance]}
+    # Agent 子类：agents/<id>/agent.py 承载差异化能力（无 agent.py 时为基类）
+    agent = load_agent_instance(agent_dir)
 
     settings = load_settings()
     host = args.host or instance.get("host") or define.get("defaults", {}).get("host", "0.0.0.0")
     port = args.port or int(instance.get("port", 9300))
     instance = {**instance, "host": host, "port": port}
 
-    app = build_runner_app(instance, define, settings)
+    app = build_runner_app(instance, define, settings, agent=agent)
     work_dir = Path(instance["workDir"])
     (work_dir / "instance.pid").write_text(str(os.getpid()), encoding="utf-8")
     name = instance.get("agentName") or instance["name"]
     print(
         f"[mockagent] 实例 {instance['id']} ({name}) 启动：http://{host}:{port} "
-        f"workDir={work_dir} agent.json={agent_dir}",
+        f"workDir={work_dir} agent={agent_dir.name}.{type(agent).__name__}",
         flush=True,
     )
     try:

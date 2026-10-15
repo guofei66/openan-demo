@@ -102,6 +102,10 @@ def _instance_view(request: Request, define: dict, instance: dict) -> dict:
             except (OSError, ValueError):
                 pid = None
     llm = {**(define.get("defaults", {}).get("llm") or {}), **(instance.get("llm") or {})}
+    try:
+        agent_type = agent_registry.load_agent_class(agent_registry.agents_dir() / instance["id"]).agent_type
+    except Exception:
+        agent_type = "generic"
     return {
         "id": instance["id"],
         "name": instance.get("agentName") or instance.get("name"),
@@ -113,6 +117,7 @@ def _instance_view(request: Request, define: dict, instance: dict) -> dict:
         "layer": instance.get("layer", "service"),
         "networkDomain": instance.get("networkDomain"),
         "autoStart": bool(instance.get("autoStart")),
+        "agentType": agent_type,
         "llm": {
             "enabled": bool(llm.get("enabled")),
             "provider": llm.get("provider"),
