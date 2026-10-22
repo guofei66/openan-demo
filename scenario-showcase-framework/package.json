@@ -1,0 +1,24 @@
+{
+  "name": "openan-plugin-scenario-showcase-framework",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "OpenAN Portal 场景 Case 通用演示界面插件 — 左侧历史记录 / 智能体团队 / 交互流程 + 自定义显示区 + 对话流（cases/*.json 配置驱动）",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "build:plugin": "vite build --config vite.bundle.config.js"
+  },
+  "dependencies": {
+    "lucide-react": "^0.577.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.19",
+    "vite": "^5.4.11"
+  }
+}
