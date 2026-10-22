@@ -7,15 +7,51 @@
 /* ============ 通用面板元素 ============ */
 .p-abs { position: absolute; }
 
+/* ============ V6.0 流式布局：面板流式骨架（fp-*） ============
+   glass-panel 由绝对定位全铺改为纵向流式：fp-head（标题条流式行）+ fp-body（内容区）。
+   外壳尺寸/挂载锚点（SubStepPanels box + satCssStyle）不变；面板内部元素纵向/横向排布，
+   内容增删自动流动（后端化动态文案承载点）。分步渐入（ir-reveal/ir-on）与气泡造型（TBubble）不受影响 */
+.fp-col { display: flex; flex-direction: column; }
+.fp-head {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.6875rem 1rem 0.5rem;
+  flex: none;
+}
+.fp-head .p-title-bar { position: static; flex: none; }
+.fp-head .p-title-text { position: static; }
+.fp-body { flex: 1 1 auto; min-height: 0; position: relative; }
+
+/* 流式行/列工具（面板内部排布） */
+.fp-row { display: flex; flex-direction: row; align-items: center; }
+.fp-col--c { display: flex; flex-direction: column; justify-content: center; }
+
+/* 单选组流式形态（radio-group/radio-option 原为绝对定位——V6.1 修复：基选择器
+   .radio-option{position:absolute} 定义在其后同优先级覆盖了 --flow 的 static，
+   选项全部落位 (0,0) 重合；改后代选择器提优先级，选项纵向堆叠）；
+   V6.1（用户规格）：组底透明——选中高亮仅在所选选项（--glass），不再整组铺底 */
+.radio-group--flow {
+  position: static;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  box-sizing: border-box;
+}
+.radio-group--flow .radio-option { position: static; }
+
 .glass-panel {
   position: relative;
-  border-radius: 8px;
+  /* V6.19（用户规格）：全部弹窗面板统一——圆角 0.5rem + blur 27px +
+     90deg 蓝晕渐变（0,103,209,0.1 → 94% 透明）叠实底深蓝 rgba(0,9,82,1)；
+     阴影层移除 */
+  border-radius: 0.5rem;
   background:
-    linear-gradient(180deg, rgba(103, 103, 103, 0.05) 0%, rgba(245, 245, 245, 0) 55%),
-    rgba(0, 0, 0, 0.4);
-  -webkit-backdrop-filter: blur(27px);
-  backdrop-filter: blur(27px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    linear-gradient(90deg, rgba(0, 103, 209, 0.1) 0%, rgba(245, 245, 245, 0) 94%),
+    rgba(0, 9, 82, 1);
+  -webkit-backdrop-filter: blur(1.6875rem);
+  backdrop-filter: blur(1.6875rem);
   /* V3.12：文字可选中——覆盖层 .st-zoomwrap/.st-zoomz 为 pointer-events:none（不拦截下层画布
      交互），在面板根恢复鼠标事件 + user-select 继承到全部文字（同协商面板 .st-neglayer 模式） */
   pointer-events: auto;
@@ -23,13 +59,13 @@
   -webkit-user-select: text;
 }
 
-.p-title-bar { position: absolute; width: 2px; height: 16px; border-radius: 2px; background: #dfdfdf; }
+.p-title-bar { position: absolute; width: 0.125rem; height: 1.0rem; border-radius: 0.125rem; background: #dfdfdf; }
 .p-title-text {
   position: absolute;
-  height: 22px;
-  line-height: 22px;
+  height: 1.375rem;
+  line-height: 1.375rem;
   font-family: var(--font-yh);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #eee;
   white-space: nowrap;
@@ -40,73 +76,62 @@
   -webkit-background-clip: text;
   background-clip: text;
 }
-.p-subtitle { position: absolute; font-size: 12px; line-height: 20px; color: #fff; white-space: nowrap; }
+.p-subtitle { position: absolute; font-size: 0.75rem; line-height: 1.25rem; color: #fff; white-space: nowrap; }
 
 .p-card {
   position: absolute;
   background: rgba(174, 174, 174, 0.2);
-  border-radius: 4px;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.0625rem 0.375rem rgba(0, 0, 0, 0.08);
 }
 
 .p-tag-text {
   position: absolute;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #fff;
-  line-height: 20px;
+  line-height: 1.25rem;
   white-space: nowrap;
 }
 
-.radio-group { position: absolute; background: rgba(102, 140, 247, 0.15); border-radius: 6px; }
+.radio-group { position: absolute; background: rgba(102, 140, 247, 0.15); border-radius: 0.375rem; }
 .radio-option {
   position: absolute;
   display: flex;
   align-items: center;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
   color: #c9c9c9;
   white-space: nowrap;
-  /* V3.22：选中态过渡（plain→glass 边框/文字色渐变）+ 层叠上下文承托 ::after 垫层 */
-  z-index: 0;
-  transition: border-color 0.3s ease, color 0.3s ease;
 }
-.radio-option--plain { border: 1px solid rgba(243, 243, 243, 0.15); }
-/* V3.22：玻璃高亮渐变移至 ::after 垫层（z-index:-1 垫于文字下、组底色上），
-   透明度过渡实现选中渐显；末态与原 --glass 版式一致 */
-.radio-option::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 4px;
+.radio-option--plain { border: 0.0625rem solid rgba(243, 243, 243, 0.15); }
+/* V6.17（用户规格）：选中高亮动效删除——渐变底直接入 --glass（react-panels 口径，
+    无过渡/::after 垫层渐显） */
+.radio-option--glass {
+  border: 0.0625rem solid #5cacff;
+  color: #fff;
   background:
     radial-gradient(130% 160% at 28% 12%, rgba(145, 199, 255, 0.27) 0%, rgba(92, 172, 255, 0) 58%),
     linear-gradient(180deg, rgba(92, 172, 255, 0.24) 0%, rgba(92, 172, 255, 0) 92%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  pointer-events: none;
-  z-index: -1;
 }
-.radio-option--glass { border: 1px solid #5cacff; color: #fff; }
-.radio-option--glass::after { opacity: 1; }
 
 .p-node-btn {
   position: absolute;
   display: flex;
   align-items: center;
-  padding: 0 8px;
-  height: 24px;
-  border-radius: 4px;
+  padding: 0 0.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
   background: rgba(102, 140, 247, 0.15);
-  border: 1px solid #2070f3;
+  border: 0.0625rem solid #2070f3;
   color: #fff;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
   white-space: nowrap;
 }
 
-.p-body-text { position: absolute; font-size: 12px; line-height: 20px; color: #fff; white-space: nowrap; }
-.p-mini-label { position: absolute; font-size: 10px; line-height: 10px; white-space: nowrap; }
+.p-body-text { position: absolute; font-size: 0.75rem; line-height: 1.25rem; color: #fff; white-space: nowrap; }
+.p-mini-label { position: absolute; font-size: 0.625rem; line-height: 0.625rem; white-space: nowrap; }
 
 /* 编排引擎 */
 .glow-arrow-img {
@@ -116,49 +141,50 @@
   0%, 100% { opacity: 0.7; }
   50% { opacity: 1; }
 }
-.p-engine-name { position: absolute; width: 40px; text-align: center; font-size: 10px; line-height: 18px; color: #fff; }
+.p-engine-name { position: absolute; width: 2.5rem; text-align: center; font-size: 0.625rem; line-height: 1.125rem; color: #fff; }
 
 /* ============ 意图识别面板专属 ============ */
 .p-pill {
   position: absolute;
-  height: 24px;
+  height: 1.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 999px;
-  border: 1.5px solid transparent;
+  border-radius: 62.4375rem;
+  border: 0.09375rem solid transparent;
   background:
     linear-gradient(#283728, #283728) padding-box,
     linear-gradient(180deg, rgba(56, 253, 107, 0.2), #54f79c 50%, rgba(110, 247, 167, 0.2)) border-box;
-  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0.375rem 0.375rem rgba(0, 0, 0, 0.35);
   color: #fff;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
   white-space: nowrap;
 }
-.p-pill-caption { position: absolute; font-size: 10px; line-height: 14px; color: #c9c9c9; }
+.p-pill-caption { position: absolute; font-size: 0.625rem; line-height: 0.875rem; color: #c9c9c9; }
 
-.p-io-title { position: absolute; font-size: 12px; line-height: 20px; font-weight: 700; color: #fff; white-space: nowrap; }
-.p-io-list { position: absolute; margin: 0; padding: 0; list-style: none; font-size: 10px; line-height: 14px; color: #fff; }
-.p-io-list li { position: relative; padding-left: 10px; }
+.p-io-title { position: absolute; font-size: 0.75rem; line-height: 1.25rem; font-weight: 700; color: #fff; white-space: nowrap; }
+/* V6.2（用户规格）：投诉识别弹窗文字 0.75rem（io 列表/子项 0.625→0.75rem） */
+.p-io-list { position: absolute; margin: 0; padding: 0; list-style: none; font-size: 0.75rem; line-height: 1.0625rem; color: #fff; }
+.p-io-list li { position: relative; padding-left: 0.625rem; }
 .p-io-list li::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 4px;
-  width: 5px;
-  height: 5px;
+  top: 0.25rem;
+  width: 0.3125rem;
+  height: 0.3125rem;
   border-radius: 50%;
   background: #fff;
 }
-.p-io-sub { position: absolute; padding-left: 10px; font-size: 10px; line-height: 14px; color: #fff; white-space: nowrap; }
+.p-io-sub { position: absolute; padding-left: 0.625rem; font-size: 0.75rem; line-height: 1.0625rem; color: #fff; white-space: nowrap; }
 .p-io-sub::before {
   content: "";
   position: absolute;
   left: 0;
-  top: 4px;
-  width: 5px;
-  height: 5px;
+  top: 0.25rem;
+  width: 0.3125rem;
+  height: 0.3125rem;
   border-radius: 50%;
   background: #fff;
 }
@@ -166,17 +192,17 @@
 /* 发光球体（LLM React Agent） */
 .orb-label {
   position: absolute;
-  width: 80px;
+  width: 5.0rem;
   text-align: center;
   font-family: var(--font-yh);
-  font-size: 10px;
+  font-size: 0.75rem;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
 }
 
 /* ============ 调度处置面板（V3.1-调度处置-标注 · 容器 1111303 360×208） ============ */
-.tdialog { border-radius: 4px; }
+/* V6.19：原 .tdialog{border-radius:0.25rem} 已删——弹窗面板统一 .glass-panel 0.5rem */
 
 .disp-conn {
   position: absolute;
@@ -184,62 +210,66 @@
 }
 .disp-msg {
   position: absolute;
-  left: 16px;
-  top: 46px;
-  width: 168px;
-  height: 96px;
-  padding: 16px;
+  left: 1.0rem;
+  top: 2.875rem;
+  width: 10.5rem;
+  /* V5.43（用户规格）：文字距气泡边沿 1rem（上下左右）；高度随文字折行自适应
+     （原固定 6rem，文字 6 行溢出气泡底）；文字从 padding 起排（原 justify-center 非边距驱动） */
+  height: auto;
+  padding: 1.0rem;
   box-sizing: border-box;
   background: #595959;
-  border-radius: 0 8px 8px 8px;
+  border-radius: 0 0.5rem 0.5rem 0.5rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  font-size: 12px;
-  line-height: 16px;
+  justify-content: flex-start;
+  font-size: 0.75rem;
+  line-height: 1.0rem;
   color: #fff;
   text-align: left;
 }
 .disp-phone {
   position: absolute;
-  left: 199px;
-  top: 28px;
-  width: 73px;
-  height: 170px;
+  left: 12.4375rem;
+  top: 1.75rem;
+  width: 4.5625rem;
+  height: 10.625rem;
   user-select: none;
   -webkit-user-drag: none;
 }
 .disp-reply {
   position: absolute;
-  left: 288px;
-  top: 86px;
-  width: 56px;
-  height: 40px;
-  padding: 12px 0 0 16px;
+  left: 18.0rem;
+  top: 5.375rem;
+  width: 3.5rem;
+  /* V5.43（用户规格）：文字距气泡边沿 1rem（上下左右；原 0.75rem 0 0 1.0rem）、高 3rem=16+16+16 */
+  height: 3.0rem;
+  padding: 1.0rem;
   box-sizing: border-box;
   background: rgba(0, 103, 209, 0.7);
-  border-radius: 8px 0 8px 8px;
-  font-size: 12px;
-  line-height: 16px;
+  border-radius: 0.5rem 0 0.5rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.0rem;
   color: #fff;
 }
 
 /* ============ 能开平台节点卡片 ============ */
+/* V5.57（用户规格）：平台卡下边沿距注册中心子卡 0.75rem（子卡底 114+12）——高 8.875→7.875rem */
 .platform-card {
   position: relative;
-  width: 144px;
-  height: 142px;
+  width: 9.0rem;
+  height: 7.875rem;
   background: rgba(44, 184, 201, 0.4);
-  border: 1px solid #2cb8c9;
-  border-radius: 8px;
+  border: 0.0625rem solid #2cb8c9;
+  border-radius: 0.5rem;
 }
 .platform-card__name {
   position: absolute;
-  width: 56px;
-  height: 22px;
-  line-height: 22px;
+  width: 3.5rem;
+  height: 1.375rem;
+  line-height: 1.375rem;
   font-family: var(--font-yh);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -247,16 +277,16 @@
 .platform-card__sub {
   position: absolute;
   background: rgba(168, 159, 249, 0.4);
-  border: 1px solid #715afb;
-  border-radius: 8px;
+  border: 0.0625rem solid #715afb;
+  border-radius: 0.5rem;
 }
 .platform-card__subname {
   position: absolute;
-  width: 56px;
-  height: 22px;
-  line-height: 22px;
+  width: 3.5rem;
+  height: 1.375rem;
+  line-height: 1.375rem;
   font-family: var(--font-yh);
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -275,98 +305,200 @@
 /* ============ 面板浮现动画（外层定位/内层动画分离，避免 transform 冲突） ============ */
 .st-panel-in { animation: stPanelIn 0.3s ease-out; }
 @keyframes stPanelIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(0.375rem); }
   to { opacity: 1; transform: none; }
 }
 
-/* ============ XX-T 详细交互流程弹窗（V3.13 源自 react-panels：Task-T/Notification-T/Authorization-T） ============ */
-.tdialog { border-radius: 4px; }
+/* ============ XX-T 详细交互流程弹窗（V6.13：布局样式同步 react-panels 源——流式版式；
+     Task-T/Notification-T/Authorization-T + 检索智能体 search-panel） ============ */
+/* V6.16 的去模糊/实底覆盖已废止——V6.19 起全部弹窗面板统一走 .glass-panel 新规格
+   （圆角 0.5rem + blur 27px + 90deg 渐变/实底深蓝，见文件头部） */
 
 /* 渐变标题：仅透明裁切，渐变由组件内联指定（区别于 .p-title-text--gradient 的固定渐变） */
-.p-title-text--grad {
+.title-text--grad {
   color: transparent;
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-/* 面板内容纵向滚动（消息不超出面板） */
-.td-scroll {
-  position: absolute;
-  left: 0;
-  top: 41px;
-  right: 0;
-  bottom: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(243, 243, 243, 0.28) transparent;
-}
-.td-scroll::-webkit-scrollbar { width: 6px; }
-.td-scroll::-webkit-scrollbar-track { background: transparent; }
-.td-scroll::-webkit-scrollbar-thumb {
-  border-radius: 3px;
-  background: linear-gradient(180deg, rgba(243, 243, 243, 0.28), rgba(243, 243, 243, 0.1));
+/* 检索智能体标题（react-panels .title-text--gradient：固定青色渐变 135deg） */
+.title-text--gradient {
+  color: transparent;
+  background: linear-gradient(135deg, #c9f6f9, #2cb8c9);
+  -webkit-background-clip: text;
+  background-clip: text;
 }
 
-/* 气泡（单描边 + 顶部三角尾巴，同 NegotiationDialog 造型） */
-.td-bubble { position: absolute; }
+/* 弹窗标题行（react-panels .tdlg-*）：色条 + 渐变标题 + 次级标题 */
+.tdlg-head { font-size: 0.875rem; line-height: 1.375rem; }
+.tdlg-bar {
+  display: inline-block;
+  vertical-align: top;
+  width: 0.125rem;
+  height: 1rem;
+  margin-top: 0.1875rem;
+  margin-right: 0.5rem;
+  border-radius: 0.125rem;
+}
+.tdlg-title {
+  font-family: var(--font-yh);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.375rem;
+  white-space: nowrap;
+}
+
+/* 气泡（react-panels：流式内容 + 自动高度——TBubble ResizeObserver 实测）；
+    V6.17（用户反馈"文字先白后被遮盖"）：底色/描边为绝对定位层，按 CSS 绘制序
+    本会画在静态流内容之上（样式叠加），须 z-index:-1 沉到内容之下（react-panels
+    原样）；isolation:isolate 自建层叠上下文——.tdialog 已无 backdrop-filter
+    （V6.16）不自成上下文，负 z 需隔离以免沉到面板底色之下；
+    V6.14：删除阴影层（drop-shadow/backdrop-filter）——仅保留半透明底色 */
+.td-bubble { position: relative; isolation: isolate; }
 .td-bubble__bg {
   position: absolute;
   inset: 0;
-  background: rgba(8, 14, 96, 0.5);
-  -webkit-backdrop-filter: blur(11px);
-  backdrop-filter: blur(11px);
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+  z-index: -1;
+  /* V6.20（用户规格）：底色改实色 #080F78（原 rgba(8,14,96,0.5) 半透明） */
+  background: #080f78;
 }
 .td-bubble__outline {
   position: absolute;
   inset: 0;
+  z-index: -1;
   display: block;
   overflow: visible;
   pointer-events: none;
 }
 
-/* Task-T */
+/* Task-T：滚动区（react-panels 流式：负边距全宽 + 18.0625rem 视口高）/ 分隔线 / 时间轴 / 卡片 */
+.td-scroll {
+  margin: 0.5rem -1rem 0;
+  padding: 0 1rem;
+  height: 18.0625rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(243, 243, 243, 0.28) transparent;
+}
+.td-scroll::-webkit-scrollbar { width: 0.375rem; }
+.td-scroll::-webkit-scrollbar-track { background: transparent; }
+.td-scroll::-webkit-scrollbar-thumb {
+  border-radius: 0.1875rem;
+  background: linear-gradient(180deg, rgba(243, 243, 243, 0.28), rgba(243, 243, 243, 0.1));
+}
 .td-hline {
-  position: absolute;
-  height: 2px;
-  border-radius: 2px;
+  height: 0.125rem;
+  border-radius: 0.125rem;
   background: linear-gradient(90deg, rgba(150, 192, 247, 0), rgba(150, 192, 247, 0.5) 50%, rgba(150, 192, 247, 0));
 }
 .td-dot {
-  position: absolute;
-  width: 8px;
-  height: 8px;
-  border: 1px solid #979797;
+  display: block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border: 0.0625rem solid #979797;
   border-radius: 50%;
   box-sizing: border-box;
 }
 .td-dash {
-  position: absolute;
+  display: block;
   width: 0;
-  border-left: 1px dashed rgba(151, 151, 151, 0.63);
+  margin-left: 0.21875rem;
+  border-left: 0.0625rem dashed rgba(151, 151, 151, 0.63);
 }
-.td-card { position: relative; border-radius: 8px; background: rgba(102, 140, 247, 0.15); }
-.td-card__label { position: absolute; font-size: 12px; line-height: 20px; color: #939393; white-space: nowrap; }
-.td-card__value { position: absolute; font-size: 12px; line-height: 20px; color: #fff; }
+.td-card { border-radius: 0.5rem; background: rgba(102, 140, 247, 0.15); padding: 0.5rem 1rem 0; }
+.td-card__label { font-size: 0.75rem; line-height: 1.25rem; color: #939393; white-space: nowrap; }
+.td-card__value { margin-top: 0.25rem; font-size: 0.75rem; line-height: 1.25rem; color: #fff; }
+.td-card + .td-card { margin-top: 0.5rem; }
 
-/* Authorization-T */
-.auth-pill {
-  position: absolute;
-  width: 88px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 999px;
+/* Task-T 面板（react-panels .tt-*：模板单选行 + 时间轴左轨 + 卡片列） */
+.tt-panel { padding: 0.6875rem 1rem 0; }
+.tt-intro { width: 18.125rem; font-size: 0.75rem; line-height: 1.25rem; color: #fff; }
+.tt-text { font-size: 0.75rem; line-height: 1.25rem; color: #fff; white-space: nowrap; }
+.tt-text--dim { color: #939393; }
+.tt-radios {
+  width: 18.125rem;
+  height: 2rem;
+  padding: 0.125rem;
   background: rgba(102, 140, 247, 0.15);
-  border: 1px solid #2070f3;
+  border-radius: 0.375rem;
+}
+/* Task-T 模板单选（V6.19：选中动效——③ 段 plain→glass：渐变底经 ::after 垫层
+    opacity 0.3s 渐显、蓝框/白字随 transition 渐变；默认全部未选；
+    position:relative + z-index:0 建层叠上下文承托 ::after 的 z-index:-1 垫于文字下） */
+.tt-opt {
+  position: relative;
+  z-index: 0;
+  display: inline-block;
+  vertical-align: top;
+  width: calc((100% - 2.125rem) / 2);
+  height: 1.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.625rem;
+  text-align: center;
+  color: #c9c9c9;
+  white-space: nowrap;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+.tt-opt::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 0.25rem;
+  background:
+    radial-gradient(130% 160% at 28% 12%, rgba(145, 199, 255, 0.27) 0%, rgba(92, 172, 255, 0) 58%),
+    linear-gradient(180deg, rgba(92, 172, 255, 0.24) 0%, rgba(92, 172, 255, 0) 92%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: -1;
+}
+/* 通用 .radio-option--glass 的直贴渐变底在此关闭（由 ::after 垫层承载以获得动效） */
+.tt-opt.radio-option--glass { background: none; }
+.tt-opt.radio-option--glass::after { opacity: 1; }
+.tt-opt--more { width: 2.125rem; }
+.tt-steps { display: flow-root; }
+.tt-rail { float: left; width: 0.5rem; }
+.tt-rail__spacer { display: block; }
+.tt-cards { margin-left: 0.75rem; }
+
+/* Authorization-T（react-panels .at-* 与 .auth-pill：预授权胶囊 + 流程行） */
+.auth-pill {
+  display: inline-block;
+  vertical-align: top;
+  width: 5.5rem;
+  height: 1.75rem;
+  border-radius: 62.4375rem;
+  background: rgba(102, 140, 247, 0.15);
+  border: 0.0625rem solid #2070f3;
   color: #fff;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 0.75rem;
+  line-height: 1.625rem;
+  text-align: center;
   white-space: nowrap;
 }
 .auth-pill--gray { background: rgba(174, 174, 174, 0.15); border-color: #777777; color: #aeaeae; }
+.at-panel { padding: 0.6875rem 1rem 0; }
+.at-row { font-size: 0; }
+.at-svg { display: inline-block; vertical-align: top; }
+.at-text {
+  display: inline-block;
+  vertical-align: top;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: #fff;
+  white-space: nowrap;
+}
+.at-mini {
+  display: inline-block;
+  vertical-align: top;
+  font-size: 0.625rem;
+  line-height: 0.625rem;
+  white-space: nowrap;
+}
+.at-mini--yes { color: #36c18d; }
+.at-mini--no { color: #939393; }
 
 /* V5.4 Authorization-T 流程连线：流动虚线（流程图自上而下依次执行的动态效果；
    仅线段 path 流动，箭头 polygon 保持静止） */
@@ -378,40 +510,182 @@
   to { stroke-dashoffset: -7; }
 }
 
-/* Notification-T */
-/* V5.21（用户规格·十五次修订）：卡片 = 同色系底色（透明度 0.01）+ 叠加一层白色
-   （透明度 0.05，background-image 叠于 background-color 之上）；整卡描边白色高透明 0.1；
-   头部条内部横向色调 0.25、渐变尾端全透明（90deg / -90deg） */
-.notif-card {
-  position: absolute;
-  width: 136px;
-  height: 120px;
-  border-radius: 6px;
+/* Authorization-T V4（react-panels .at4-*：动网操作预授权 · 容器 9234 · 流式布局；
+    V6.31 复制——新版组件 AuthorizationTPanelV4；旧版 at-panel 保留） */
+.at4-panel {
+  padding: 0.6875rem 1.0625rem 0 1rem;
+  background:
+    linear-gradient(180deg, rgba(0, 103, 209, 0.1), rgba(245, 245, 245, 0)),
+    #000952;
 }
-.notif-card--red { border: 1px solid rgba(255, 255, 255, 0.1); background-color: rgba(238, 105, 111, 0.01); background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)); }
-.notif-card--green { border: 1px solid rgba(255, 255, 255, 0.1); background-color: rgba(54, 193, 141, 0.01); background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)); }
-.notif-card__head { position: absolute; left: 0; top: 0; width: 136px; height: 28px; border-radius: 6.4px 6.4px 0 0; }
-.notif-card__head--red { background: linear-gradient(90deg, #ee696f40 0%, #ee696f00 100%); }
-.notif-card__head--green { background: linear-gradient(-90deg, #36c18d40 0%, #36c18d00 100%); }
-.notif-card__title {
-  position: absolute;
-  left: 0;
-  top: 4px;
-  width: 136px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 22px;
+.td-bubble--solid .td-bubble__bg { background: #080f78; }
+.at4-row { font-size: 0; }
+.at4-row + .at4-row { margin-top: 0.5rem; }
+.at4-label {
+  display: inline-block;
+  vertical-align: top;
+  width: 7.75rem;
+  font-family: var(--font-yh);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: #c9c9c9;
   white-space: nowrap;
 }
-.notif-label { position: absolute; left: 16px; font-size: 12px; line-height: 20px; color: #c9c9c9; white-space: nowrap; }
-.notif-value { position: absolute; left: 68px; font-size: 12px; line-height: 20px; white-space: nowrap; }
+.at4-value {
+  display: inline-block;
+  vertical-align: top;
+  font-family: var(--font-yh);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: #fff;
+  white-space: nowrap;
+}
+.at4-reply {
+  display: inline-block;
+  font-family: var(--font-sc);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: #fff;
+  white-space: nowrap;
+}
+
+/* 工单展开详情 · 下拉面板（react-panels .wo-*：V4.0 · 容器 1111309 · 流式布局；
+    V6.31 复制——组件 WorkOrderDetailPanel；仅底圆角（挂接工单卡下沿）） */
+.wo-panel {
+  padding: 1rem;
+  border-radius: 0 0 0.5rem 0.5rem;
+  background: rgba(0, 103, 209, 0.15);
+}
+.wo-text {
+  font-family: var(--font-yh);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: #fff;
+}
+.wo-desc { margin-top: 0.5rem; }
+.wo-rows { margin-top: 0.5rem; }
+/* V6.35（用户规格）：行改 flex——label 定宽 3.5rem，value 固定占 label 右侧全部
+    剩余宽（值列宽固定，各行一致；集团名称在该列内换行，V6.34） */
+.wo-row { display: flex; }
+.wo-row + .wo-row { margin-top: 0.5rem; }
+.wo-label {
+  flex: none;
+  width: 3.5rem;
+  font-family: var(--font-yh);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: #c9c9c9;
+  white-space: nowrap;
+}
+.wo-value {
+  flex: 1;
+  margin-left: 1rem;
+  font-family: var(--font-yh);
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  color: #fff;
+  /* V6.34（用户规格）：值过长换行（集团名称——原 nowrap 溢出单行） */
+  white-space: normal;
+}
+
+/* Notification-T（react-panels .notif-* 与 .nt-*：对比卡横排 + 负边距箭头） */
+.notif-card {
+  display: inline-block;
+  vertical-align: top;
+  width: 8.5rem;
+  height: 7.5rem;
+  border-radius: 0.375rem;
+  border: 0.0625rem solid rgba(255, 255, 255, 0.1);
+  background-image: linear-gradient(rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05));
+}
+.notif-card--red { background-color: rgba(238, 105, 111, 0.03); }
+.notif-card--green { background-color: rgba(54, 193, 141, 0.03); }
+.notif-card__head {
+  height: 1.75rem;
+  padding-top: 0.25rem;
+  border-radius: 0.4rem 0.4rem 0 0;
+}
+.notif-card__head--red { background: linear-gradient(90deg, rgba(238, 105, 111, 0.25), rgba(238, 105, 111, 0)); }
+.notif-card__head--green { background: linear-gradient(-90deg, rgba(54, 193, 141, 0.25), rgba(54, 193, 141, 0)); }
+.notif-card__title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.375rem;
+  text-align: center;
+  white-space: nowrap;
+}
+.notif-rows { margin-top: 0.5rem; padding-left: 1rem; }
+.notif-row + .notif-row { margin-top: 0.5rem; }
+.notif-label {
+  display: inline-block;
+  width: 3.25rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: #c9c9c9;
+  white-space: nowrap;
+}
+.notif-value { display: inline-block; font-size: 0.75rem; line-height: 1.25rem; white-space: nowrap; }
+.notif-card + .notif-card { margin-left: 1rem; }
+.nt-panel { padding: 0.6875rem 1rem 0; }
+.nt-msg { font-size: 0.75rem; line-height: 1.25rem; color: #fff; white-space: nowrap; }
+.nt-cards { font-size: 0; }
+.nt-arrow { display: inline-block; vertical-align: top; }
+
+/* 检索智能体面板（react-panels .search-panel__*：流式版式） */
+.search-panel { padding: 0.6875rem 1rem 0; }
+.search-panel__head { font-size: 0.875rem; line-height: 1.375rem; }
+.search-panel__bar {
+  display: inline-block;
+  vertical-align: top;
+  width: 0.125rem;
+  height: 1rem;
+  margin-top: 0.1875rem;
+  margin-right: 0.5rem;
+  border-radius: 0.125rem;
+  background: #7ddfe7;
+}
+.search-panel__title {
+  font-family: var(--font-yh);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.375rem;
+  white-space: nowrap;
+}
+.search-panel__subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  color: #fff;
+  white-space: nowrap;
+}
+.search-panel__group {
+  margin: 0.5rem 1.25rem 0;
+  padding: 0.5rem;
+  width: 10.25rem;
+  height: 6.75rem;
+  background: rgba(102, 140, 247, 0.15);
+  border-radius: 0.375rem;
+}
+/* 选项（react-panels：不带基类 radio-option——静态样式，无过渡/::after 垫层动画；
+    V6.17：glass 渐变底由通用 .radio-option--glass 提供；
+    V6.23（用户规格）：文字水平居中——原左对齐 + 不对称 padding） */
+.search-panel__option {
+  width: 9.25rem;
+  height: 1.75rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.75rem;
+  text-align: center;
+  color: #c9c9c9;
+  white-space: nowrap;
+}
+.search-panel__option + .search-panel__option { margin-top: 0.25rem; }
 
 /* V3.21 投诉识别面板：分步渐入（visibility 随延迟翻转——隐藏期不参与命中/选中） */
 .ir-reveal {
   opacity: 0;
   visibility: hidden;
-  transform: translateY(8px);
+  transform: translateY(0.5rem);
   transition: opacity 0.5s ease, transform 0.5s ease, visibility 0s 0.5s;
 }
 .ir-reveal.ir-on {
@@ -421,9 +695,19 @@
   transition: opacity 0.5s ease, transform 0.5s ease, visibility 0s 0s;
 }
 
+/* V6.1（用户规格）：思考/行动/观察 三胶囊渐入提速（0.5s→0.25s→0.15s 两轮；
+   双选择器覆盖 .ir-reveal / .ir-reveal.ir-on 两态） */
+.ir-reveal--fast,
+.ir-reveal--fast.ir-on {
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s 0.15s;
+}
+.ir-reveal--fast.ir-on {
+  transition: opacity 0.15s ease, transform 0.15s ease, visibility 0s 0s;
+}
+
 /* V3.21 光轮外圈白色箭头：绕光轮中心（85.31, 83.75，与 orb.svg 外环圆心一致）顺时针旋转 */
 .orb-arrows {
-  transform-origin: 85.31px 83.75px;
+  transform-origin: 5.331875rem 5.234375rem;
   animation: orb-spin 10s linear infinite;
 }
 @keyframes orb-spin {

@@ -61,9 +61,14 @@ export default function LayerView({ node }) {
 
   if (node.kind === 'icon') {
     // src 补丁（V2.15：业务抢通胶囊换扳手图标；与 text 补丁同模式，未打补丁时保持设计 src）
+    // V5.53：icon/text 节点同样挂接交互（进度条标题/时长文字 zIndex2 浮于 chip 背板之上，
+    // 点击不落背板——须在文字节点本身触发回放，见 StorylineContext makeInteractions）
     const stSrc = st && st.src ? st.src : node.src;
     return (
-      <img data-node={node.name} data-id={node.id} src={stSrc} alt="" draggable={false} className={stc} title={stTitle} style={{ ...base, ...node.style, ...sts }} />
+      <img data-node={node.name} data-id={node.id} src={stSrc} alt="" draggable={false} className={stc} title={stTitle}
+        onClick={inter ? inter.onClick : undefined}
+        onPointerDown={inter ? inter.onPointerDown : undefined}
+        style={{ ...base, ...node.style, ...sts }} />
     );
   }
 
@@ -74,7 +79,10 @@ export default function LayerView({ node }) {
         ? node.segments.map((s, i) => (<span key={i} style={s.style}>{s.text}</span>))
         : node.text);
     return (
-      <div data-node={node.name} data-id={node.id} className={stc} title={stTitle} style={{ ...base, ...node.style, ...sts }}>
+      <div data-node={node.name} data-id={node.id} className={stc} title={stTitle}
+        onClick={inter ? inter.onClick : undefined}
+        onPointerDown={inter ? inter.onPointerDown : undefined}
+        style={{ ...base, ...node.style, ...sts }}>
         <span style={{ whiteSpace: 'pre' }}>
           {content}
         </span>

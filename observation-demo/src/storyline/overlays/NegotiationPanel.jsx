@@ -14,9 +14,19 @@ const NEG_LINE_KEY = 'zx-yx-neg';
 const PANEL_W = 336; // 面板尺寸（NegotiationDialog.css）
 const PANEL_H = 295;
 const OUT_MS = 800; // 协商窗口结束后延迟卸载（淡出 + 光束/选中动画收尾）
-// 工单1 协商补充的 cvlan 与 Propose 文案（与 case-data.js 协商消息同源）
+// 工单1/工单2 协商补充的 cvlan 与 Propose 文案（与 case-data.js 协商消息同源）；
+// V6.4（1020 文档修订）：工单2 新增协商——粤西 A端端口 P1310-中石油 不含子接口标识，
+// 专线补 cvlan=409；cvlan 选项区末枚随案（c1 cvlan1208 / c2 cvlan409）
 const CASE_NEG = {
   c1: { vlan: 'cvlan1208', propose: '接入端口名称不唯一，该端口下存在多个业务接入口，请提供具体的子接口ID或VLAN ID以确认唯一的业务。' },
+  c2: { vlan: 'cvlan409', propose: '接入端口名称不唯一，该端口下存在多个业务接入口，请提供具体的子接口ID或VLAN ID以确认唯一的业务。',
+    options: [
+      { id: 'cvlan99', label: 'cvlan99' },
+      { id: 'cvlan100', label: 'cvlan100' },
+      { id: 'cvlan101', label: 'cvlan101' },
+      { id: 'ellipsis', label: '…', disabled: true },
+      { id: 'cvlan409', label: 'cvlan409' },
+    ] },
 };
 
 export default function NegotiationPanel({ world, pub }) {
@@ -37,7 +47,8 @@ export default function NegotiationPanel({ world, pub }) {
   const neg = CASE_NEG[pub.caseId] || CASE_NEG.c1;
   const line = LINES[NEG_LINE_KEY].box;
   const left = Math.round(line.x + line.w / 2 - PANEL_W / 2);
-  const top = Math.round(line.y + line.h + 12);
+  // V6.2（用户规格）：面板处于连线下方 0.5rem（原 V5.56 距连线 0.25rem/+4px 废止）
+  const top = Math.round(line.y + line.h + 8);
   // 锚点：专线/粤西卡中心中点（面板随两侧卡片刚体平移、保持原比例）
   const ctr = (k) => ({ x: CARDS[k].box.x + CARDS[k].box.w / 2, y: CARDS[k].box.y + CARDS[k].box.h / 2 });
   const aZ = ctr('ZX'), aY = ctr('YX');
@@ -48,7 +59,7 @@ export default function NegotiationPanel({ world, pub }) {
         className={st.out ? 'st-neg-item st-neg-out' : 'st-neg-item'}
         style={{ position: 'absolute', left, top, ...satCssStyle(pub, { x: left, y: top, w: PANEL_W, h: PANEL_H }, anchor) }}
       >
-        <NegotiationDialog defaultSelected={neg.vlan} proposeText={neg.propose} accepted={st.accepted} />
+        <NegotiationDialog defaultSelected={neg.vlan} options={neg.options} proposeText={neg.propose} accepted={st.accepted} />
       </div>
     </div>
   );

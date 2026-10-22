@@ -1,16 +1,19 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import TBubble from './TBubble.jsx'
 import useStageClock from './useStageClock.js'
 import wrapLines from './textWrap.js'
 
-/* TaskTPanel — Task-T 详细交互流程（源自 react-panels，V3.13 复制入本工程）
-   V3.22 动态分步（窗口：任务下发 → 编排完成，见 SubStepPanels taskTWindow）：
-   ①首行任务描述 → ②匹配Prompt模板区（模板未选中）→ ③Task模板选中（专线投诉
-   场景 高亮）→ ④自然语言→确定性任务 → ⑤任务类型 → ⑥任务目标 → ⑦任务上下文 →
-   ⑧回复气泡（任务明确，马上执行！）；滚动区随各阶段自动下移（滚动条跟随）。
-   V5：消息气泡/任务卡片高度按文字实际折行数自适应（包裹住文字，不小于文字高度）——
-   卡片高 = 标签 32 + 行数×20 + 底距 10；气泡高 = 卡片栈底 + 底距 14；
-   回复气泡与滚动目标随布局联动（SCROLL_TO 按实测内容底缘计算）。 */
+/* TaskTPanel — Task-T 详细交互流程
+   V6.13（用户规格）：布局样式同步 react-panels 源——tt-panel 流式版式：
+    tdlg-head 标题行（色条 + 渐变标题 + 次级标题白字）+ td-scroll 流式滚动区
+    （负边距全宽 + 18.0625rem 视口高）+ 气泡流式内容（V6.14 底 padding 1rem——距最底部文字 1rem）
+   + tt-radios 模板单选行 + tt-rail 左轨时间轴 + tt-cards 卡片列；
+    文字内容与动画保留——V3.22 动态分步（①首行任务描述 → ②匹配Prompt模板区 →
+    ③Task模板选中（V6.19 恢复分步动效：默认未选 → ③ 段 glass 渐显）→ ④自然语言→确定性任务 → ⑤任务类型 →
+    ⑥任务目标 → ⑦任务上下文 → ⑧回复气泡）；滚动区随各阶段自动下移
+   （流式布局按各卡片实测内容底缘计算滚动目标）；卡片高度按文字折行数自适应
+   （高 = 8 + 20 + 4 + 行数×20 + 8），时间轴圆点与各卡片垂直居中
+   （spacer = h1/2−4、虚线段 = (hPrev+hNext)/2）。 */
 
 // V4：首行任务描述/任务类型/任务上下文随案例切换（工单1 中断 / 工单2 质差——原文档 Task-T 消息口径）
 const CASE_TT = {
@@ -28,141 +31,139 @@ const CASE_TT = {
   },
 }
 
-const VIEW_H = 289 // 滚动视口高（面板 330 − 顶偏移 41）
+// 卡片值文字行宽（卡 278 − 左右 padding 32）——仅作时间轴高度兜底估值
+// V6.14：卡底 padding 0（react-panels 口径）——h = 8 + 20 + 4 + 行数×20
+const VALUE_W = 246
+const estH = (text) => 32 + wrapLines(text, VALUE_W) * 20
 
 export default function TaskTPanel(props) {
   const stage = useStageClock(props, 8)
   const tt = CASE_TT[props.caseId === 'c2' ? 'c2' : 'c1']
-  // V5：卡片/气泡高度按文字折行数自适应（气泡始终包裹住全部文字）
-  const typeH = 32 + wrapLines(tt.type, 243) * 20 + 10
-  const targetH = 32 + wrapLines(tt.target, 243) * 20 + 10
-  const ctxH = 32 + wrapLines(tt.context, 243) * 20 + 10
-  const targetBottom = 200 + typeH + 8 + targetH
-  const ctxBottom = targetBottom + 8 + ctxH
-  const bubbleH = ctxBottom + 14
-  const replyTop = bubbleH + 16
-  const contentH = replyTop + 44 + 16
-  // 各阶段滚动目标（内容底缘 − 视口高；末段滚至内容底部）
-  const SCROLL_TO = [0, 0, 0, 0, 0, Math.max(0, targetBottom - VIEW_H), Math.max(0, ctxBottom - VIEW_H), Math.max(0, contentH - VIEW_H)]
+  // 时间轴几何：按渲染后卡片实测（offsetTop/offsetHeight 相对气泡盒——visibility 隐藏
+  // 不影响布局测量；文字折行数与 wrapLines 估值可能差 1 行，以实测为准）：
+  // spacer = 卡1中心−4、虚线段 = 相邻卡中心差−8（圆点 8px 占位）；
+  // V6.18：rem 布局下 offset* 为已乘 k 的布局像素，而 railH 数字入 inline style 会被
+  // remjsx ÷16 转 rem 再乘 16k（双乘 k）——测量值须 ÷k 还原设计 px（同 TBubble 高度修复）
+  const [railH, setRailH] = useState(() => {
+    const h1 = estH(tt.type), h2 = estH(tt.target), h3 = estH(tt.context)
+    return { s: h1 / 2 - 4, d1: (h1 + h2) / 2, d2: (h2 + h3) / 2 }
+  })
   const scrollRef = useRef(null)
+  useLayoutEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const rail = el.querySelector('.tt-rail')
+    const cards = el.querySelectorAll('.td-card')
+    if (!rail || cards.length < 3) return
+    const k = (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16
+    const cs = [...cards].map((n) => (n.offsetTop + n.offsetHeight / 2 - rail.offsetTop) / k)
+    setRailH({ s: cs[0] - 4, d1: cs[1] - cs[0] - 8, d2: cs[2] - cs[1] - 8 })
+  }, [tt])
+  // 滚动跟随（流式布局：按各卡片实测内容底缘——⑥任务目标卡底可见 / ⑦任务上下文卡底 / ⑧滚到底）
   useEffect(() => {
     const el = scrollRef.current
-    if (el) el.scrollTo({ top: SCROLL_TO[Math.min(stage, 8) - 1], behavior: 'smooth' })
+    if (!el) return
+    const cards = el.querySelectorAll('.td-card')
+    if (cards.length < 3) return
+    const elTop = el.getBoundingClientRect().top
+    const bot = (n) => n.getBoundingClientRect().bottom - elTop + el.scrollTop
+    const view = el.clientHeight
+    const targets = [
+      0, 0, 0, 0, 0,
+      Math.max(0, bot(cards[1]) - view),
+      Math.max(0, bot(cards[2]) - view),
+      el.scrollHeight - view,
+    ]
+    el.scrollTo({ top: targets[Math.min(stage, 8) - 1] ?? 0, behavior: 'smooth' })
   }, [stage])
   const on = (k) => (stage >= k ? ' ir-on' : '')
   return (
-    <div className="glass-panel tdialog" style={{ width: 358, height: 330 }}>
-      <div className="p-title-bar" style={{ left: 16, top: 14, background: '#8ca3fa' }} />
-      <div
-        className="p-title-text p-title-text--grad"
-        style={{ left: 26, top: 11, backgroundImage: 'linear-gradient(90deg, #d0d8fd, #2070f3)' }}
-      >
-        Task-T
-      </div>
-      <div className="p-title-text" style={{ left: 74, top: 11 }}>
-        详细交互流程
+    <div className="glass-panel tdialog tt-panel" style={{ width: '22.375rem', height: '20.625rem' }}>
+      <div className="tdlg-head">
+        <span className="tdlg-bar" style={{ background: '#8ca3fa' }} />
+        <span
+          className="tdlg-title title-text--grad"
+          style={{ backgroundImage: 'linear-gradient(90deg, #d0d8fd, #2070f3)' }}
+        >
+          Task-T
+        </span>
+        {/* V6.14（用户规格）：次级标题白字（原先继承暗灰看不清） */}
+        <span className="tdlg-title" style={{ marginLeft: '0.6875rem', color: '#fff' }}>
+          详细交互流程
+        </span>
       </div>
 
       <div className="td-scroll" ref={scrollRef}>
-        <div style={{ position: 'relative', height: contentH }}>
-          {/* 消息气泡：高度包裹住任务上下文（V5 随文字折行自适应） */}
-          <TBubble width={325} height={bubbleH} tail="left" style={{ left: 16, top: 0 }}>
-            {/* ① 首行任务描述 */}
-            <div
-              className={'p-abs ir-reveal' + on(1)}
-              style={{ left: 22, top: 12, width: 290, height: 40, fontSize: 12, lineHeight: '20px', color: '#fff' }}
-            >
-              {tt.first}
-            </div>
-            {/* ② 匹配Prompt模板区（③模板选中高亮） */}
-            <div className={'td-hline ir-reveal' + on(2)} style={{ left: 22, top: 62, width: 290 }} />
-            <div
-              className={'p-abs ir-reveal' + on(2)}
-              style={{ left: 22, top: 70, fontSize: 12, lineHeight: '20px', color: '#fff', whiteSpace: 'nowrap' }}
-            >
-              基于意图，精准匹配Prompt模板。
-            </div>
-            <div
-              className={'p-abs ir-reveal' + on(2)}
-              style={{ left: 22, top: 98, fontSize: 12, lineHeight: '20px', color: '#939393', whiteSpace: 'nowrap' }}
-            >
-              Task模板
-            </div>
-            <div className={'radio-group ir-reveal' + on(2)} style={{ left: 22, top: 122, width: 290, height: 32 }}>
-              {/* V5.6（用户规格）：初始全部未选中（统一 --plain 素态），③ 段动态选中「专线投诉场景」 */}
-              <div
-                className={'radio-option radio-option--plain' + (stage >= 3 ? ' radio-option--glass' : '')}
-                style={{ left: 2, top: 2, width: 88, height: 28, justifyContent: 'center', color: stage >= 3 ? '#fff' : undefined }}
-              >
-                专线投诉场景
-              </div>
-              <div className="radio-option radio-option--plain" style={{ left: 94, top: 2, width: 64, height: 28, justifyContent: 'center' }}>
-                节能场景
-              </div>
-              <div className="radio-option radio-option--plain" style={{ left: 162, top: 2, width: 88, height: 28, justifyContent: 'center' }}>
-                故障处理场景
-              </div>
-              <div className="radio-option radio-option--plain" style={{ left: 254, top: 2, width: 34, height: 28, justifyContent: 'center' }}>
-                ···
-              </div>
-            </div>
-            {/* ④ 自然语言 → 确定性任务 */}
-            <div className={'td-hline ir-reveal' + on(4)} style={{ left: 22, top: 164, width: 290 }} />
-            <div
-              className={'p-abs ir-reveal' + on(4)}
-              style={{ left: 22, top: 172, fontSize: 12, lineHeight: '20px', color: '#fff', whiteSpace: 'nowrap' }}
-            >
-              自然语言 → 确定性任务
-            </div>
-
-            {/* 时间轴：空心圆点 + 虚线（圆点与各卡片垂直居中，随对应卡片渐入） */}
-            <span className={'td-dot ir-reveal' + on(5)} style={{ left: 22, top: 226 }} />
-            <span className={'td-dot ir-reveal' + on(6)} style={{ left: 22, top: 200 + typeH + 8 + targetH / 2 - 4 }} />
-            <span className={'td-dot ir-reveal' + on(7)} style={{ left: 22, top: targetBottom + 8 + ctxH / 2 - 4 }} />
-            <span className={'td-dash ir-reveal' + on(6)} style={{ left: 25.5, top: 234, height: 200 + typeH + 8 + targetH / 2 - 4 - 234 }} />
-            <span className={'td-dash ir-reveal' + on(7)} style={{ left: 25.5, top: 200 + typeH + 8 + targetH / 2 + 4, height: targetBottom + 8 + ctxH / 2 - 4 - (200 + typeH + 8 + targetH / 2 + 4) }} />
-
-            {/* ⑤⑥⑦ 任务卡片：任务类型 / 任务目标 / 任务上下文（高度随文字自适应） */}
-            <div className="p-abs" style={{ left: 34, top: 200, width: 275 }}>
-              <div className={'td-card ir-reveal' + on(5)} style={{ width: 275, height: typeH }}>
-                <div className="td-card__label" style={{ left: 16, top: 8 }}>
-                  任务类型
-                </div>
-                <div className="td-card__value" style={{ left: 16, top: 32 }}>
-                  {tt.type}
-                </div>
-              </div>
-              <div className={'td-card ir-reveal' + on(6)} style={{ width: 275, height: targetH, marginTop: 8 }}>
-                <div className="td-card__label" style={{ left: 16, top: 8 }}>
-                  任务目标
-                </div>
-                <div className="td-card__value" style={{ left: 16, top: 32, width: 243 }}>
-                  {tt.target}
-                </div>
-              </div>
-              <div className={'td-card ir-reveal' + on(7)} style={{ width: 275, height: ctxH, marginTop: 8 }}>
-                <div className="td-card__label" style={{ left: 16, top: 8 }}>
-                  任务上下文
-                </div>
-                <div className="td-card__value" style={{ left: 16, top: 32, width: 243 }}>
-                  {tt.context}
-                </div>
-              </div>
-            </div>
-          </TBubble>
-
-          {/* ⑧ 回复消息（右侧，随气泡高度落位） */}
-          <div className={'p-abs ir-reveal' + on(8)} style={{ left: 178, top: replyTop, width: 163, height: 44 }}>
-            <TBubble width={163} height={44} tail="right" style={{ left: 0, top: 0 }}>
-              <div
-                className="p-abs"
-                style={{ left: 18, top: 12, fontSize: 12, lineHeight: '20px', color: '#fff', whiteSpace: 'nowrap' }}
-              >
-                任务明确，马上执行！
-              </div>
-            </TBubble>
+        {/* V6.14（用户规格）：气泡底 padding 1rem——距最底部文字 1rem */}
+        <TBubble width={325} tail="left" style={{ padding: '0.75rem 0.8125rem 1rem 1.375rem' }}>
+          {/* ① 首行任务描述（V4 按案） */}
+          <div className={'tt-intro ir-reveal' + on(1)}>{tt.first}</div>
+          {/* ② 匹配Prompt模板区（③模板选中高亮） */}
+          <div className={'td-hline ir-reveal' + on(2)} style={{ width: '18.125rem', marginTop: '0.625rem' }} />
+          <div className={'tt-text ir-reveal' + on(2)} style={{ marginTop: '0.375rem' }}>
+            1、基于意图，精准匹配Prompt模板。
           </div>
-        </div>
+          <div className={'tt-text tt-text--dim ir-reveal' + on(2)} style={{ marginTop: '0.5rem' }}>
+            Task模板
+          </div>
+          <div className={'tt-radios ir-reveal' + on(2)} style={{ marginTop: '0.25rem' }}>
+            {/* V6.19（用户规格）：模板选中动效——默认全部未选（plain），③ 段转选中
+                （glass：蓝框/白字过渡 + ::after 渐变底 0.3s 渐显，见 panels.css .tt-opt）；
+                V5.39 删除「节能场景」；V5.41 余下两项拉长填满（单元间无空隙）；
+                省略号单字符 …（U+2026） */}
+            <span
+              className={'tt-opt ' + (stage >= 3 ? 'radio-option--glass' : 'radio-option--plain')}
+              style={{ color: stage >= 3 ? '#fff' : undefined }}
+            >
+              专线投诉场景
+            </span>
+            <span className="tt-opt radio-option--plain">故障处理场景</span>
+            <span className="tt-opt tt-opt--more radio-option--plain">…</span>
+          </div>
+          {/* ④ 自然语言 → 确定性任务 */}
+          <div className={'td-hline ir-reveal' + on(4)} style={{ width: '18.125rem', marginTop: '0.625rem' }} />
+          <div className={'tt-text ir-reveal' + on(4)} style={{ marginTop: '0.375rem' }}>
+            2、自然语言 → 确定性任务
+          </div>
+
+          {/* 时间轴：空心圆点 + 虚线（圆点与各卡片垂直居中，随对应卡片渐入；
+              高度按渲染后卡片实测——spacer = 卡1中心−4、虚线 = 相邻卡中心差−8） */}
+          <div className="tt-steps" style={{ marginTop: '0.5rem' }}>
+            <span className="tt-rail">
+              <span className="tt-rail__spacer" style={{ height: railH.s }} />
+              <span className={'td-dot ir-reveal' + on(5)} />
+              <span className={'td-dash ir-reveal' + on(6)} style={{ height: railH.d1 }} />
+              <span className={'td-dot ir-reveal' + on(6)} />
+              <span className={'td-dash ir-reveal' + on(7)} style={{ height: railH.d2 }} />
+              <span className={'td-dot ir-reveal' + on(7)} />
+            </span>
+            {/* ⑤⑥⑦ 任务卡片：任务类型 / 任务目标 / 任务上下文（高度随文字折行自适应） */}
+            <div className="tt-cards">
+              <div className={'td-card ir-reveal' + on(5)}>
+                <div className="td-card__label">任务类型</div>
+                <div className="td-card__value">{tt.type}</div>
+              </div>
+              <div className={'td-card ir-reveal' + on(6)}>
+                <div className="td-card__label">任务目标</div>
+                <div className="td-card__value">{tt.target}</div>
+              </div>
+              <div className={'td-card ir-reveal' + on(7)}>
+                <div className="td-card__label">任务上下文</div>
+                <div className="td-card__value">{tt.context}</div>
+              </div>
+            </div>
+          </div>
+        </TBubble>
+
+        {/* ⑧ 回复消息（右侧尾对齐） */}
+        <TBubble
+          width={163}
+          tail="right"
+          className={'ir-reveal' + on(8)}
+          style={{ margin: '1rem 0 0 auto', padding: '0.75rem 0 1rem 1.125rem' }}
+        >
+          <div className="tt-text">任务明确，马上执行！</div>
+        </TBubble>
       </div>
     </div>
   )

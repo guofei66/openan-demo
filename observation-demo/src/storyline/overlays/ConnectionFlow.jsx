@@ -1,7 +1,7 @@
 // ConnectionFlow.jsx — 连线激光脉冲 + 协议胶囊（回放态，仅激活连线）
-// 激光对齐设计稿 Negotiation-T 连线上的静态脉冲：短条渐变彗星（亮头 ~28px + 拖尾至 ~150px），
-// 三层不同长度/透明度叠加以近似渐变，以 stroke-dashoffset 沿整条连线 path 滑动（SMIL）——
-// 严格贴线、过肘弯、端点处自然进出（超界部分不绘制）；
+// 激光为贴线滑动的渐变短条（六层不同尾长/透明度叠加以近似连续渐变，以
+// stroke-dashoffset 沿整条连线 path 滑动（SMIL））——严格贴线、过肘弯、端点处
+// 自然进出（超界部分不绘制）；
 // 协议胶囊 = 激活期间按设计稿位置/文案/配色呈现（SVG 绘制，替代隐藏的设计节点）：
 //   - rev（响应方向）：沿反向 path 滑动，胶囊呈响应变体（Task-T响应 绿 / Negotiation-T响应 琥珀）
 //   - label（事件覆盖）：如 Accept 后专线以完整参数重发任务 → 专线—粤东 task 线显示「Task-T请求」；
@@ -16,8 +16,28 @@ import { CASES } from '../cases';
 import { taskTWindowOf, notifWindowOf } from '../panel-timing';
 
 const FONT = "'HarmonyOS Sans SC','HarmonyOS Sans','HarmonyHeiTi','Microsoft YaHei','PingFang SC',sans-serif";
-// 彗星三层：[长度, 不透明度, 线宽]，亮头朝运动方向（src → dst）
-const COMET = [[28, 0.95, 3], [70, 0.5, 2.5], [150, 0.2, 2]];
+// V5.61→V5.62（用户规格）：光束总长减半（150→70）、粗细颠倒——**终点（目标卡）
+// 方向粗/亮、起点方向细/暗**（V5.61 亮端在起点侧），流速减半（≈75px/s，对齐科室
+// 滑块速度；原 ≈150px/s）。六层改为「尾隙 + 等长前端」排布：各层 dash **前端对齐**
+//（亮端=前端=终点方向），cfg=[尾隙G, 透明度, 线宽]，dash 长=70−G——最长层（G=0）
+// 最暗（0.09 尾底）、最短层最亮，前端六层叠加 ≈0.84、尾部 0.09（滑块
+// linear-gradient(-90deg,1→0) 亮前暗后的同款轮廓）；
+// V5.65（用户反馈修复）：原以 dasharray 前置 '0' 空段（'0 G D 10000'）实现「先隙
+// 后划」——零长度 dash 在 strokeLinecap:round 下渲染为 Ø=线宽的实心圆点，六层
+// 0 段同相（pattern 位 0 → 路径位 −offset，恰为最长层尾端）全程叠加 ≈0.81 不透明
+// 度的**明显尾光点**；改相位法：dasharray 'D 10000' + 各层 dashoffset 动画
+// 70−G→−len−G（层几何 [G−k,70−k] 与原完全等价、前端对齐不变，零长度段消失→尾点消失）
+const COMET_L = 70;
+const COMET = [[0, 0.09, 3], [12, 0.13, 3], [23, 0.18, 3], [35, 0.25, 3], [47, 0.35, 3], [58, 0.5, 3]];
+const COMET_STROKE = 'rgba(196,196,196,1)';
+// V5.62：流速 ≈75px/s（行程 = len+70）；V5.61 及以前 ≈150px/s（len/140+0.9 制）
+const cometDur = (len) => Math.min(8, Math.max(2.2, (len + COMET_L) / 75)).toFixed(2) + 's';
+// V5.57（用户规格）：检索线胶囊（标签）样式——底 #2CB8C926、圆角 0.2rem(3.2)，
+// 文字 #55CCD9、HarmonyOS Sans SC regular 0.6rem(9.6px)/1rem
+const SEARCH_PILL = { bg: '#2CB8C926', fg: '#55CCD9' };
+// V5.57（用户规格）：WAIMO 检索标签放到连线（竖线段 x828.5）左侧、距线 0.25rem
+//（胶囊 40 宽 → x 784.5，原线右侧 x833）
+const WAIMO_PILL_X = 784.5;
 
 // 响应方向（rev）协议胶囊：配色对齐日志徽章（Task-T响应绿 / Negotiation-T响应琥珀）
 const RESP_LABEL = {
@@ -33,6 +53,9 @@ const LABEL_COLORS = {
   'Notification-T·上报': { bg: 'rgba(44,184,201,0.15)', fg: 'rgba(85,204,217,1)' },
   'Notification-T·成功': { bg: 'rgba(44,184,201,0.15)', fg: 'rgba(85,204,217,1)' },
   'Task-T响应': { bg: 'rgba(54,193,141,0.15)', fg: 'rgba(54,193,141,1)' },
+  // V6.4（1020 文档修订）：Authorization-T 动网操作授权（工单2 问题处置——请求/响应
+  // 经 zx-yx-neg 线，紫罗兰色系对齐注册中心/检索配色）
+  'Authorization-T': { bg: 'rgba(168,159,249,0.15)', fg: 'rgba(168,159,249,1)' },
 };
 // 胶囊宽度估算（CJK 12px / 西文 6.3px + 两侧留白，与设计稿 Task-T=52、Negotiation-T=93 对齐）
 const textW = (t) => Math.round([...t].reduce((a, c) => a + (c.charCodeAt(0) > 0x2e7f ? 12 : 6.3), 0)) + 13;
@@ -99,7 +122,7 @@ export default function ConnectionFlow({ world, pub }) {
   if (world.negotiation && !world.flows['zx-yx-neg']) held.push('zx-yx-neg');
   if (!active.length && !held.length) return null;
   return (
-    <svg className="st-flow" viewBox="0 0 1920 1080" width="1920" height="1080" aria-hidden="true">
+    <svg className="st-flow" viewBox="0 0 1920 1080" style={{ width: '120rem', height: '67.5rem' }} aria-hidden="true">
       {active.map((key) => {
         const f = FLOWS[key];
         if (!f) return null;
@@ -109,7 +132,7 @@ export default function ConnectionFlow({ world, pub }) {
         const d = rev ? flowPickRev(world, key, pub) : flowPick(world, key, pub);
         // V2.13：重映射后连线变长 → 彗星行程/时长按实际路径长度修正（展开态沿用导出 len）
         const len = pub ? pathLength(d) : f.len;
-        const dur = Math.min(4.5, Math.max(1.6, len / 140 + 0.9)).toFixed(2) + 's';
+        const dur = cometDur(len);
         const base = L && L.label ? L.label : null;
         const resp = rev && base ? RESP_LABEL[base.text] : null;
         // 胶囊文案：事件覆盖（label）> 响应变体（rev）> 设计标签；非设计文案 → 宽度按字宽估算，以原胶囊中心居中
@@ -139,34 +162,43 @@ export default function ConnectionFlow({ world, pub }) {
           || (key === 'waimo-zx-notif' && notifHold)
           || (world.negotiation && (key === 'zx-yx-neg' || key === 'zx-yx-task'))
           || searchLine;
+        // V5.57：检索线胶囊——WAIMO 检索标签移连线左侧（cx 覆盖）、青色系配色/字号
+        const pillCx = searchLine && key === 'reg-waimo-search'
+          ? WAIMO_PILL_X + L.pillBox.w / 2 : cx;
+        const pillX = pillCx - w / 2;
+        const pillBg = searchLine ? SEARCH_PILL.bg : colors.bg;
+        const pillFg = searchLine ? SEARCH_PILL.fg : colors.fg;
+        const pillFont = searchLine ? 9.6 : 12;
         return (
           <g key={key} data-key={key} data-dir={rev ? 'rev' : 'fwd'}>
             {COMET.map((cfg, i) => (
-              <path key={i} d={d} fill="none" stroke="rgba(220,220,220,1)"
-                strokeWidth={cfg[2]} strokeOpacity={cfg[1]} strokeLinecap="butt"
-                strokeDasharray={'0 ' + (150 - cfg[0]) + ' ' + cfg[0] + ' 10000'}
-                strokeDashoffset="150">
-                <animate attributeName="stroke-dashoffset" from="150" to={-len}
+              <path key={i} d={d} fill="none" stroke={COMET_STROKE}
+                strokeWidth={cfg[2]} strokeOpacity={cfg[1]} strokeLinecap="round"
+                strokeDasharray={(COMET_L - cfg[0]) + ' 10000'}
+                strokeDashoffset={COMET_L - cfg[0]}>
+                <animate attributeName="stroke-dashoffset" from={COMET_L - cfg[0]} to={-len - cfg[0]}
                   dur={dur} repeatCount="indefinite" />
               </path>
             ))}
             {colors && text ? (
               <g style={{ transform: ctr, transition: 'transform 0.25s ease' }}>
                 <g className="st-pill" data-key={key}>
-                  <rect x={x} y={L.pillBox.y} width={w} height={L.pillBox.h}
-                    rx="4" fill={colors.bg} />
-                  <text x={cx} y={L.pillBox.y + 16.5} textAnchor="middle"
-                    fontSize="12" fontWeight="400" fontFamily={FONT} fill={colors.fg}>{text}</text>
+                  <rect x={pillX} y={L.pillBox.y} width={w} height={L.pillBox.h}
+                    rx={searchLine ? 3.2 : 4} fill={pillBg} />
+                  <text x={pillCx} y={L.pillBox.y + 16.5} textAnchor="middle"
+                    fontSize={pillFont} fontWeight="400" fontFamily={FONT} fill={pillFg}>{text}</text>
                 </g>
                 {fo.result && base && !searchLine ? (
                   <text className="st-flow-result" x={x + w + 8} y={L.pillBox.y + 16.5}
                     fontSize="12" fontWeight="400" fontFamily={FONT} fill={base.fg}>{fo.result}</text>
                 ) : null}
                 {fo.msg && !msgHidden ? (
-                  // A2A-T 消息：连线下方展示（胶囊/连线之下），与连线保持 1rem 距离（V2.17：胶囊底≈线顶，
-                  // 基线 = 胶囊底 + 1rem + 12px 文本 bbox 顶偏移≈13），宽度不超过连线跨度（按实际字体
-                  // 度量截断，V5.4 再留 8px 安全边——不越出连线两端、不覆盖节点卡片）、超出以 …… 截断
-                  <text className="st-flow-msg" data-key={key} x={cx} y={L.pillBox.y + L.pillBox.h + 16 + 13}
+                  // A2A-T 消息：连线下方展示（胶囊/连线之下）——V6.5（用户规格）：文字距连线
+                  // 0.5rem（胶囊底≈线顶−4 → 文字顶 = 线 + 8：基线 = 胶囊底 + 12 + 12px 文本
+                  // bbox 顶偏移≈13）、文字 0.75rem（12px），宽度不超过连线跨度（按实际字体
+                  // 度量截断，V5.4 再留 8px 安全边——不越出连线两端、不覆盖节点卡片）、
+                  // 超出以 …… 截断
+                  <text className="st-flow-msg" data-key={key} x={cx} y={L.pillBox.y + L.pillBox.h + 12 + 13}
                     textAnchor="middle" fontSize="12" fontWeight="400" fontFamily={FONT}
                     fill="rgba(201,201,201,1)">{fitMsg(fo.msg, Math.max(0, msgMax - 8))}</text>
                 ) : null}
@@ -185,17 +217,17 @@ export default function ConnectionFlow({ world, pub }) {
         const f = FLOWS[key];
         const d = f ? flowPick(world, key, pub) : null;
         const len = pub && d ? pathLength(d) : (f ? f.len : 0);
-        const dur = Math.min(4.5, Math.max(1.6, len / 140 + 0.9)).toFixed(2) + 's';
+        const dur = cometDur(len);
         const ctr = pillCounterTransform(pub, L.pillBox);
         const cx = L.pillBox.x + L.pillBox.w / 2;
         return (
           <g key={'held-' + key} style={{ transform: ctr, transition: 'transform 0.25s ease' }}>
             {d ? COMET.map((cfg, i) => (
-              <path key={i} d={d} fill="none" stroke="rgba(220,220,220,1)"
-                strokeWidth={cfg[2]} strokeOpacity={cfg[1]} strokeLinecap="butt"
-                strokeDasharray={'0 ' + (150 - cfg[0]) + ' ' + cfg[0] + ' 10000'}
-                strokeDashoffset="150">
-                <animate attributeName="stroke-dashoffset" from="150" to={-len}
+              <path key={i} d={d} fill="none" stroke={COMET_STROKE}
+                strokeWidth={cfg[2]} strokeOpacity={cfg[1]} strokeLinecap="round"
+                strokeDasharray={(COMET_L - cfg[0]) + ' 10000'}
+                strokeDashoffset={COMET_L - cfg[0]}>
+                <animate attributeName="stroke-dashoffset" from={COMET_L - cfg[0]} to={-len - cfg[0]}
                   dur={dur} repeatCount="indefinite" />
               </path>
             )) : null}

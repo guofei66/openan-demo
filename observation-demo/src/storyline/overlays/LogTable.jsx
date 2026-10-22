@@ -34,19 +34,21 @@ export default function LogTable({ logs, anchor, pub }) {
   }, [logs.length]);
 
   const b = LOGS.bodyBox;
-  // V2.13：左栏收起时表体随面板展宽（left/width 真实重排，列距自然拉开、文字保持原比例——不整表缩放拉伸）；
-  // 宽度含竖直滚动条槽位（14px）：行宽在出滚动条时恰好齐平，不产生横向滚动条。
-  // V2.14：视口铺满下盒体按视口系数补偿放大 + 整表反向缩放（原点 0 0）——定位/盒体随面板铺满，
-  // 内部文字保持设计尺寸与长宽比（12px 字号/40px 行高物理像素不变）
+  // V6.1：面板可拖拽调高（FlowLogPanel）——表体在面板根内（面板本地系）：
+  // top 62 = 设计 944−882；高度 = logH − 头区 62 − 底距 16（默认 198 → 120 = bodyBox.h）；
+  // left/width 随左栏收起拉伸（logStretchX，面板本地 = 画布 −305）
   const { sx, sy } = viewFactors(pub);
-  const left = logStretchX(pub, b.x);
-  const width = (logStretchX(pub, b.x + b.w + 14) - left) * sx;
+  const logH = pub.logH || 198;
+  const left = logStretchX(pub, b.x) - logStretchX(pub, 305);
+  const width = (logStretchX(pub, b.x + b.w + 14) - logStretchX(pub, b.x)) * sx;
+  const top = 62;
+  const height = (logH - 62 - 16) * sy;
   const counter = sx !== 1 || sy !== 1 ? 'scale(' + 1 / sx + ', ' + 1 / sy + ')' : undefined;
   return (
     <div ref={ref} className="st-logtable" style={{
-      left, top: b.y, width, height: b.h * sy,
+      left, top, width, height,
       transform: counter, transformOrigin: '0 0',
-      transition: 'left 0.25s ease, width 0.25s ease, height 0.25s ease, transform 0.25s ease',
+      transition: 'left 0.25s ease, width 0.25s ease',
     }}>
       {logs.map((l, i) => {
         const internal = l.from === l.to; // 内部步骤：路由仅显示节点名称（无 → 接收方）
@@ -54,7 +56,14 @@ export default function LogTable({ logs, anchor, pub }) {
           <div key={i} className={'st-lrow' + (open === i ? ' st-lrow-open' : '')}
             onClick={() => setOpen(open === i ? -1 : i)}>
             <div className="st-lmain">
-              <span className={'st-lchev' + (open === i ? ' st-lchev-open' : '')}>▾</span>
+              <span className={'st-lchev' + (open === i ? ' st-lchev-open' : '')}>
+                {/* V6.2（用户规格）：行首 › 改 SVG 箭头（10px 描边尖角，参考把手箭头样式）；
+                    展开 .st-lchev-open 旋转 90°（向下）；flex 行内与徽章/文字垂直居中对齐 */}
+                <svg width="0.625rem" height="0.625rem" viewBox="0 0 10 10" aria-hidden="true">
+                  <path d="M3 1.5 L7.5 5 L3 8.5" fill="none" stroke="rgba(223,223,223,1)"
+                    strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
               <span className="st-lbadge" style={BADGE[l.badge] || BADGE['Task-T请求']}>{l.badge}</span>
               <span className="st-ltime">{l.clock}</span>
               <span className="st-lroute">

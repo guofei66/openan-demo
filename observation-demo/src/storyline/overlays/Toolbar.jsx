@@ -1,4 +1,7 @@
 // Toolbar.jsx — 工具栏透明点击层（回放/单步/倍速/停止）+ 倍速下拉 + 播放态暂停图标
+// V5.57 曾在按钮内叠覆盖层文字（.st-tbtn-text）与设计烤入文字「回放」（23:137028）
+// 重合（用户反馈"2 个重合的"）——V5.58 废止覆盖层，文字切换改由 roles.js 补丁
+// 直接改写设计文字节点（暂停/回放）
 import React, { useState } from 'react';
 import { BUTTONS } from '../roles';
 

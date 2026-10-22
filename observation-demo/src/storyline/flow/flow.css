@@ -1,0 +1,462 @@
+/* flow.css — V6.0 流式布局改造：节点卡/步骤条/工单卡/日志头/面板骨架的流式样式
+   设计子树（卡片内容/步骤条 chip/工单卡/日志标题）由覆盖层流式组件重建
+   （flow/NodeCard.jsx、StepBar.jsx、OrderPanel.jsx、LogHeader.jsx），
+   外壳几何常量（CARDS/CHEVRONS/ORDERS/LOGS）仍作连线端点/锚定/房间条的坐标锚 */
+
+/* ---- 节点卡（四卡：V6.2 用户规格版式——无描述行/无副题；
+    垂直链 上边沿1rem→图标→0.75rem→标题→0.75rem→技能胶囊→1.5rem→子步骤；
+    V6.3：宽度初始化按内容计算（NodeCard 内联 cardW——内容最宽行+左右1rem，
+    见 flow/geometry.js）、回放过程固定；定高见 geometry CARD_H_V62 ---- */
+.fl-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: none;
+  background: rgba(0, 103, 209, 0.4);
+  border: 0.0625rem solid rgba(32, 112, 243, 1);
+  border-radius: 0.5rem;
+  /* V6.8（用户规格）：内容距下边沿 0.25rem（原 1rem；上/左右仍 1rem） */
+  padding: 1rem 1rem 0.25rem;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+}
+.fl-card--running {
+  border-color: rgba(0, 103, 209, 1);
+  box-shadow: 0 0 25.02px 0 rgba(71, 101, 184, 1), 0 0 50.04px 0 rgba(71, 101, 184, 0.5);
+}
+.fl-card__icon { flex: none; }
+.fl-card__title {
+  margin-top: 0.75rem;
+  color: rgba(255, 255, 255, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  /* V6.5（用户规格）：标题 1rem 加粗 */
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  white-space: nowrap;
+}
+/* 技能胶囊行：flex wrap 居中（枚举增减自动换行）；文字 0.75rem */
+.fl-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 0.5rem;
+  margin-top: 0.75rem;
+}
+.fl-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  height: 1.25rem;
+  padding: 0 0.5rem;
+  border-radius: 6.1875rem;
+  background: rgba(92, 162, 233, 0.3);
+  color: rgba(255, 255, 255, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+.fl-pill img { width: 0.75rem; height: 0.75rem; }
+/* 编排中心子卡（ZX 卡内，V6.2 用户规格：5.75×1.75rem / 图标 1.25rem / 文字 0.75rem） */
+.fl-cc {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 5.75rem;
+  height: 1.75rem;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+  margin-top: 0.75rem;
+  border-radius: 0.5rem;
+  background: rgba(168, 159, 249, 0.4);
+  border: 0.0625rem solid rgba(113, 90, 251, 1);
+  color: rgba(255, 255, 255, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+.fl-cc img { width: 1.25rem; height: 1.25rem; }
+/* 徽标（进行中/已完成，卡左上角——设计 badge 绝对坐标=卡原点；远离检索面板覆盖区） */
+.fl-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 3.25rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.5rem 0 0.5rem 0;
+  color: rgba(255, 255, 255, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+
+/* ---- 迷你步骤行（V6.2 用户规格：子步骤文字 0.875rem；点距 62 = 点 14 + 连线 48；
+   标题 56 宽居中于 14 宽点列（align-items:center 自动居中）） ---- */
+.fl-minis {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.fl-mini {
+  width: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.fl-mini__dot { width: 0.875rem; height: 0.875rem; overflow: visible; }
+.fl-mini__title {
+  width: 3.5rem;
+  margin-top: 0.25rem;
+  text-align: center;
+  /* V6.5（用户规格）：子步骤文字 Microsoft YaHei 加粗白字 */
+  color: #FFFFFF;
+  font-family: 'Microsoft YaHei';
+  font-weight: bold;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+/* 执行中选中胶囊（V3.17/V3.26 规格：#002E6A 底 + #5CACFF 边 + 4px 圆角）；
+    V6.2 修复：width:auto——固定 3.5rem 在 0.875rem 文字下装不下（边框包裹不住文字），
+    改按内容自适应（文字+左右 padding），列内居中不受影响；
+    V6.3（用户规格）：选中不放大文字——保持 400 字重，选中态仅以底色/边框区分；
+    V6.4（用户规格）：选中不产生纵向偏移（正在执行比执行过向下偏移 2px 的根因 =
+    纵向 padding+边框增高）——纵向零 padding、line-height 与常态一致（20px 恒高），
+    边框改 inset box-shadow（不占布局空间）；框再小一点（左右 padding 4→3px） */
+.fl-mini__title--active {
+  width: auto;
+  padding: 0 0.1875rem;
+  line-height: 1.25rem;
+  border-radius: 0.25rem;
+  background: #002e6a;
+  box-shadow: inset 0 0 0 1px #5cacff;
+}
+.fl-mini-conn {
+  flex: none;
+  display: block;
+}
+
+/* ---- 卡底描述区（V6.2 恢复：子步骤详细描述——迷你行下方，flex-1 垂直居中；
+    V6.4（用户规格）：文字 0.75rem） ---- */
+.fl-desczone {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 0.25rem;
+}
+.fl-desc {
+  font-size: 0.75rem;
+  font-weight: 400;
+  /* V6.44（用户规格反馈「描述超出卡片」）：行距 1.0625rem→1rem——三行文字
+     （唯一三行描述=粤西抢通执行）恰等于定高卡描述区（48px），不再外溢；
+     V6.36 flex:none 保留（区域更小的卡以自然高居中溢入卡底 padding） */
+  line-height: 1rem;
+  flex: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-all;
+  text-align: left;
+  color: #ffffff;
+  animation: flDescIn 0.3s ease-out;
+  transition: opacity 0.4s;
+}
+.fl-desc-out { opacity: 0; }
+/* V6.44：入场位移 0.375rem→0.1875rem——原 6px 下移滑入时第三行越过卡底边
+    （51px 描述+6px>卡内沿余量），改 3px 后全程在卡内 */
+@keyframes flDescIn { from { opacity: 0; transform: translateY(0.1875rem); } to { opacity: 1; transform: translateY(0); } }
+
+/* ---- 步骤条（chevron 箭头造型保持——宽度恒 221.29 与房间条竖线/胶囊坐标锚一致） ---- */
+.fl-steps { position: absolute; display: flex; }
+.fl-chip {
+  flex: none;
+  width: 13.830625rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0 0.875rem;
+  box-sizing: border-box;
+  background: rgba(243, 243, 243, 0.2);
+  border-radius: 0.25rem;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.2s ease;
+}
+.fl-chip:hover { background: rgba(92, 172, 255, 0.2); }
+.fl-chip--active { background: rgba(0, 103, 209, 0.4); }
+.fl-chip--active:hover { background: rgba(0, 103, 209, 0.55); }
+.fl-chip--todo { opacity: 0.45; }
+.fl-chip img { width: 1rem; height: 1rem; filter: brightness(0) invert(1); }
+.fl-chip__name {
+  color: rgba(255, 255, 255, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  /* V6.4（用户规格）：步骤名 1.125rem 加粗 */
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  white-space: nowrap;
+}
+.fl-chip__dur {
+  color: rgba(201, 201, 201, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  /* V6.4（用户规格）：时长 0.875rem */
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+
+/* ---- 工单卡（内容纵向流式；外壳 256×142 恒定——列表槽位几何不变） ---- */
+/* V6.45（用户规格）：工单列表区域滚动——展开详情后列高超出左侧区域
+    （列顶 170..画布底 1080 → max-height 910）时出现滚动条；宽 17rem =
+    卡 16rem + 滚动条槽（条贴容器右缘，不压卡面、不碰收起把手 304）；
+    默认 6 卡（高 760）不触发；子项 flex-shrink:0——限高时列表滚动而非卡片压缩 */
+.fl-orders {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 17rem;
+  max-height: 56.875rem;
+  padding-bottom: 0.5rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(243, 243, 243, 0.28) transparent;
+}
+.fl-orders > * { flex-shrink: 0; }
+.fl-orders::-webkit-scrollbar { width: 0.375rem; }
+.fl-orders::-webkit-scrollbar-track { background: transparent; }
+.fl-orders::-webkit-scrollbar-thumb { background: rgba(243, 243, 243, 0.28); border-radius: 0.1875rem; }
+.fl-orders::-webkit-scrollbar-thumb:hover { background: rgba(243, 243, 243, 0.45); }
+/* 工单列表收起把手（V6.2 用户规格）：设计 boder 同位（304,492 12×48 右圆角竖条，
+   贴面板右缘）；图标参考日志面板把手箭头样式（左指 = 收起方向） */
+.fl-ordertab {
+  position: absolute;
+  left: 19rem;
+  top: 30.75rem;
+  width: 0.75rem;
+  height: 3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(2, 12, 69, 1);
+  border: 0.0625rem solid rgba(57, 57, 57, 1);
+  border-radius: 0 0.25rem 0.25rem 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.fl-ordertab:hover { background: rgba(92, 172, 255, 0.18); }
+
+/* ---- 流程中心卡（V6.2：设计节点 23:136979 隐藏后画布层流式重建——随 pan/缩放；
+   样式 = 设计底 + V5.12 SVC_STYLE（#A89FF966 底/1px #715AFB 边/8px 圆角），内容纵向居中） ---- */
+.fl-lc {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 0.75rem;
+  background: rgba(168, 159, 249, 0.4);
+  border: 0.0625rem solid rgba(113, 90, 251, 1);
+  border-radius: 0.5rem;
+}
+.fl-lc img { width: 2rem; height: 2rem; }
+.fl-lc__name {
+  margin-top: 0.5rem;
+  color: rgba(255, 255, 255, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
+  white-space: nowrap;
+}
+.fl-order {
+  position: relative;
+  box-sizing: border-box;
+  width: 16rem;
+  /* V6.2（用户规格）：高 7rem；内容容器距卡边 1rem；三行内容（工单号/单位名称/时间行）
+     行距 0.5rem；描述行删除（末行右侧增 展开 文字+向下角标，见 .fl-order__expand） */
+  height: 7rem;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  cursor: pointer;
+  user-select: text;
+  transition: background 0.15s ease;
+}
+.fl-order:hover { background: rgba(92, 172, 255, 0.14); }
+.fl-order * { user-select: text; }
+/* V6.37（用户规格）：静态展示卡（列表下方×4）——不可点击：默认指针、无 hover 高亮 */
+.fl-order--static { cursor: default; }
+.fl-order--static:hover { background: none; }
+/* V6.33（用户规格）：工单展开详情面板占位层——卡列流内（下方卡自动下移不遮盖）；
+    margin-top -1rem 抵消列 gap 使面板贴卡下沿（wo-panel 顶角方形=挂接设计）；
+    V6.34/36（用户规格）：展开态边框包住详情——面板补 1px 左右+底边（无顶边），
+    色随选中态（--wo-bc：蓝/灰）与卡侧边框连续；卡/详情分隔线=卡底边（恒灰，
+    见 OrderPanel 内联）；全局 border-box，16rem 外沿与卡两侧边框对齐，
+    底圆角沿用 wo-panel 自带 0 0 0.5rem 0.5rem */
+.fl-order-detail { margin-top: -1rem; }
+.fl-order-detail .wo-panel {
+  border: 1px solid var(--wo-bc, rgba(119, 119, 119, 1));
+  border-top: none;
+}
+.fl-order__expand { cursor: pointer; }
+.fl-order__expand--open svg { transition: transform 0.2s ease; }
+.fl-order__no {
+  color: rgba(147, 147, 147, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fl-order__row { display: flex; align-items: center; gap: 0.5rem; }
+.fl-order__row img { width: 1rem; height: 1rem; flex: none; }
+.fl-order__cust {
+  flex: 1;
+  min-width: 0;
+  color: #ffffff;
+  font-family: 'Microsoft YaHei';
+  font-weight: bold;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fl-order__pill {
+  flex: none;
+  width: 3.25rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.25rem;
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+}
+/* 描述行（用户规格：font-weight 400、#C9C9C9、单行截断——悬浮 title 全文） */
+.fl-order__time {
+  color: rgba(201, 201, 201, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+/* 末行：时间居左、展开（文字+向下角标）居右（V6.2 用户规格：#5CA2E9 / 0.75rem） */
+.fl-order__last {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.fl-order__expand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: rgba(92, 162, 233, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+.fl-order__check { position: absolute; top: 0; right: 0; width: 2rem; height: 2rem; pointer-events: none; }
+.fl-order__check img { width: 100%; height: 100%; display: block; }
+
+/* ---- 日志面板头（标题+计数 横向流式；表体 LogTable 本为流式滚动表） ---- */
+.fl-loghead {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+.fl-loghead__title {
+  /* 设计 23:137193 同款：18px + 0° 渐变裁切文字（#EEE → #5CACFF）；
+     V6.1（用户规格）：加粗 500→700 */
+  background-image: linear-gradient(0deg, rgba(238, 238, 238, 1) -29.44%, rgba(92, 172, 255, 1) 129.44%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.625rem;
+  white-space: nowrap;
+  pointer-events: auto;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
+}
+.fl-loghead__count {
+  color: rgba(201, 201, 201, 1);
+  font-family: 'HarmonyOS Sans SC', 'HarmonyOS Sans', 'HarmonyHeiTi', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
+}
+
+/* ---- A2A-T 协作日志面板（V6.1 流式重建：可拖拽调高，遮盖拓扑不缩放） ----
+   版式（设计 23:137186/187/189）：面板根含 12px 唇区（顶缘..顶线）——把手居唇区内
+   （顶线上方、上圆角下开口）；渐变底 + 1px 顶线自 +12 起（边线在收起图标下方横贯全宽） */
+.fl-logpanel {
+  position: absolute;
+  z-index: 40;
+  pointer-events: none;
+}
+.fl-logbg {
+  position: absolute;
+  top: 0.75rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* 设计 23:137187 同款渐变（顶实底透）+ backdrop blur */
+  background: linear-gradient(180deg, rgba(3, 13, 58, 1) 0%, rgba(3, 13, 58, 0.5) 136.24%);
+  backdrop-filter: blur(5.44px);
+  -webkit-backdrop-filter: blur(5.44px);
+  border-top: 0.0625rem solid rgba(57, 57, 57, 1);
+}
+.fl-logdrag {
+  position: absolute;
+  top: -0.375rem;
+  left: 0;
+  right: 0;
+  height: 1.5rem;
+  cursor: row-resize;
+  pointer-events: auto;
+}
+.fl-logtab {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 3rem;
+  height: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: rgba(2, 12, 69, 1);
+  border: 0.0625rem solid rgba(57, 57, 57, 1);
+  border-bottom: none;
+  border-radius: 0.25rem 0.25rem 0 0;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.fl-logtab:hover { background: rgba(92, 172, 255, 0.18); }

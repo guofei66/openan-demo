@@ -11,7 +11,8 @@ const Arrow = ({ dir }) => {
   const rot = { right: 0, down: 90, left: 180, up: 270 }[dir] || 0;
   return (
     <svg width="10" height="10" viewBox="0 0 10 10" style={{ transform: 'rotate(' + rot + 'deg)' }} aria-hidden="true">
-      <path d="M3 1.5 L7.5 5 L3 8.5" fill="none" stroke="rgba(140,163,250,1)" strokeWidth="1.4"
+      {/* V6.2（用户规格）：增亮提对比度 #C9C9C9（原 #393939 过暗） */}
+      <path d="M3 1.5 L7.5 5 L3 8.5" fill="none" stroke="rgba(201,201,201,1)" strokeWidth="1.4"
         strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
@@ -25,7 +26,8 @@ export default function PanelHandles({ pub }) {
       {ordersHidden ? (
         <button className="st-panelhandle" style={{ left: 0, top: 540, width: 12, height: 48, borderRadius: '4px 0 0 4px' }}
           onClick={api.toggleOrders} title="展开工单列表" aria-label="展开工单列表">
-          <Arrow dir="left" />
+          {/* V6.2（用户规格）：收起后变展开图标——箭头右指（面板向右展开，原左指废止） */}
+          <Arrow dir="right" />
         </button>
       ) : null}
       {logHidden ? (

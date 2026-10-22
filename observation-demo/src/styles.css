@@ -1,15 +1,16 @@
 * { box-sizing: border-box; }
+/* V5.30 rem 缩放（用户规格）：根字号由 ScreenCanvas 按视口设置（16k，k=min(vw/1920,vh/1080)，
+   此处 16px 为 k=1 兜底）；画布 .screen-canvas 120rem×67.5rem（1rem≡16k px → 呈现 1920k×1080k）；
+   画布内组件内联 px 经 remjsx 包装器、CSS px 经 rem 换算（见各 css），随根字号等比重排版——
+   任意视口/DPR 清晰（V5.27 zoom 方案废止）；.screen-scaler flex 居中，不足方向留白融入 body 底色 */
+html { font-size: 16px; }
 html, body, #root { margin: 0; padding: 0; height: 100%; background: rgb(2, 10, 57); overflow: hidden; }
-/* V2.14：整页铺满（G=scale(vw/1920, vh/1080) 非等比）——文字/图标经 uiPatches 反向缩放保比例 */
-.screen-scaler { position: fixed; inset: 0; }
+.screen-scaler { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
 .screen-canvas {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 1920px;
-  height: 1080px;
+  position: relative;
+  flex-shrink: 0;
+  width: 120rem;
+  height: 67.5rem;
   overflow: hidden;
   background: #161618;
-  transform-origin: top left;
-  flex-shrink: 0;
 }

@@ -5,9 +5,11 @@
 // 纯函数（入参为案例对象 c），不依赖其他模块
 
 // V5.2（回退此前逻辑，用户规格）：意图识别面板 5 段等分（各 12 业务秒）、常驻累计——
-// ①输入（三行投诉文本整体）→ ②Reasoning → ③Action → ④Observation（绕光轮顺时针依次出现）
+// ①输入（三行投诉文本整体）→ ②思考 → ③行动 → ④观察（绕光轮顺时针依次出现）
 // → ⑤输出；窗口 = mini0 全窗（60 业务秒，全部展示完成后才进入定界定位）
-export const INTENT_WEIGHTS = [0.2, 0.2, 0.2, 0.2, 0.2];
+// V6.36（用户规格）：思考/行动/观察弹出间隔再短一半（各 12→6 业务秒，1x≈1.5 观众秒），
+// 输入段维持 12 业务秒，释放时长顺延——输出提前至 42 且完整版式停留至 mini0 完成
+export const INTENT_WEIGHTS = [0.2, 0.1, 0.1, 0.1, 0.5];
 
 // V5.2：定界定位无详情面板——内容改在 WAIMO 卡底描述区 4 句依次出现
 //（cases.js mini1/desc 事件驱动，见 §0.6）；BOUNDARY_WEIGHTS/boundaryWindowOf 随面板移除
@@ -21,7 +23,13 @@ export const ORCH_WEIGHTS = [1 / 3, 1 / 3, 1 / 3];
 // V5.8（用户规格）：Authorization-T 面板（工单2）3 段等分——①抢通方案生成 →
 // ②查询预授权策略 → ③剩余元素同时出现（是/否/分支箭头连线/执行动网操作/人工授权）；
 // 窗口 = Task-T响应 汇总回传结束 → YX mini1（抢通执行）激活（V5.17，见 authorizationWindowOf）
+//（旧版 at-panel 组件保留未挂载；现行 at4 面板分步见 AUTHZ_WEIGHTS）
 export const AUTH_WEIGHTS = [1 / 3, 1 / 3, 1 / 3];
+
+// V6.35（用户规格）：Authorization-T 详细交互流程面板（at4 · 工单2）2 段等分——
+// ①请求气泡（传输→粤西 动网操作要素）→ ②响应气泡（粤西→传输 授权成功）；
+// 窗口 24 业务秒（请求/响应流各 12）→ 中点 436 恰为响应流起点，两气泡分别呈现
+export const AUTHZ_WEIGHTS = [0.5, 0.5];
 
 // V5：Notification-T 面板 3 段等分（抢通前 → 箭头 → 抢通后，各 12 业务秒；
 // 窗口终点=下一子步骤（WAIMO 投诉闭环），分步全部完成后面板才退场）
@@ -105,24 +113,29 @@ export const notifWindowOf = (c) => {
 // 汇总回传 WAIMO（首段 waimo-zx-notif 流）结束后呈现 → YX mini1（抢通执行）激活即退场：
 // 面板消失后才开始抢通执行；V5.18（用户规格）：抢通执行完成后粤西SPN 再发送
 // Notification-T·抢通方案上报（445..457）；工单1 无抢通执行（无 YX mini1）→ 窗口置零即面板不挂载
+// V6.35（用户规格·at4 详细交互流程面板）：窗口改为授权消息流直驱——传输→粤西 请求
+// （zx-yx-task · Authorization-T 标签流 on，c2 424）出现即挂载；粤西→传输 响应
+// （zx-yx-neg · Authorization-T 标签流，436..448）结束后即退场（工单1 无授权流 → 不挂载）
 export const authorizationWindowOf = (c) => {
-  const wf = flowWindowOf(c, 'waimo-zx-notif'); // 首段：专线 → WAIMO Task-T响应 汇总回传
-  const w1 = miniWindowOf(c, 'YX', 1);          // 抢通执行
-  if (!wf.t1 || !w1.t0 || w1.t0 <= wf.t1) return { t0: 0, t1: 0 };
-  return { t0: wf.t1, t1: w1.t0 };
+  const req = c.events.find((e) => e.type === 'flow' && e.line === 'zx-yx-task' && e.on && e.label === 'Authorization-T');
+  if (!req) return { t0: 0, t1: 0 };
+  const resp = c.events.find((e) => e.type === 'flow' && e.line === 'zx-yx-neg' && e.on && e.label === 'Authorization-T' && e.t >= req.t);
+  if (!resp) return { t0: req.t, t1: req.t };
+  const off = c.events.find((e) => e.type === 'flow' && e.line === 'zx-yx-neg' && !e.on && e.t > resp.t);
+  return { t0: req.t, t1: off ? off.t : resp.t };
 };
 
-// V3.30：调度处置面板窗口——WAIMO mini2（调度处置）激活起，mini2 仅 4/3 业务秒，
-// 延展窗口保三段分步节奏可读；
+// V3.30：调度处置面板窗口——WAIMO mini2（调度处置）激活起；
 // V4：①案例二 WAIMO 无调度处置子步骤（槽位空缺留白）——窗口置零即面板不挂载；
-// ②案例一无 Notification-T 面板、亦无 ZX 修复验证子步骤（修复验证并入投诉闭环）——
-// 窗口延展至 mini2 后 40 业务秒（现场上站修复驻留期）
+// ②案例一无 Notification-T 面板、亦无 ZX 修复验证子步骤（修复验证并入投诉闭环）
 export const dispatchWindowOf = (c) => {
   const w = miniWindowOf(c, 'WAIMO', 2);
   if (!w.t0 && !w.t1) return { t0: 0, t1: 0 };
   const nw = notifWindowOf(c);
   if (nw.t1 > 0) return { t0: w.t0, t1: Math.max(w.t0, nw.t0) };
-  return { t0: w.t0, t1: w.t1 + 40 };
+  // V5.54（用户规格）：mini2（调度处置）窗口扩至面板消失（421..473，原 done 433+40 延展
+  // 废止）——loading 动效持续到面板退场（窗口 = mini2 全窗，两端同拍）
+  return { t0: w.t0, t1: w.t1 };
 };
 
 // V3.31→V5.2：意图识别面板窗口 = mini0（投诉识别）全窗——5 段渐入且每段 ≥12 业务秒，
@@ -147,7 +160,7 @@ export function panelStageBeats(c) {
   push(searchWindowOf(c, 'reg-waimo-search'), [0.5, 0.5]);
   push(searchWindowOf(c, 'reg-zx-search'), [0.5, 0.5]);
   push(orchestrationWindowOf(c), ORCH_WEIGHTS);
-  push(authorizationWindowOf(c), AUTH_WEIGHTS);
+  push(authorizationWindowOf(c), AUTHZ_WEIGHTS);
   push(notifWindowOf(c), NOTIF_WEIGHTS);
   push(dispatchWindowOf(c), DISPATCH_WEIGHTS);
   return beats;

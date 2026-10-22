@@ -2,16 +2,15 @@
 
 .negotiation-dialog {
   position: relative;
-  width: 336px;
-  height: 295px;
-  border-radius: 8px;
-  /* V3.11：与 react-panels 详情面板（panels.css .glass-panel）背景一致——
-     原设计稿规格 rgba(0,0,0,0.3) + 90deg 横向渐变改为 0.4 黑底 + 180deg 顶部渐变 */
+  width: 21.0rem;
+  height: 18.4375rem;
+  border-radius: 0.5rem;
+  /* V6.19（用户规格）：与 .glass-panel 弹窗面板统一——90deg 蓝晕渐变 + 实底深蓝 */
   background:
-    linear-gradient(180deg, rgba(103, 103, 103, 0.05) 0%, rgba(245, 245, 245, 0) 55%),
-    rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(27px);
-  -webkit-backdrop-filter: blur(27px);
+    linear-gradient(90deg, rgba(0, 103, 209, 0.1) 0%, rgba(245, 245, 245, 0) 94%),
+    rgba(0, 9, 82, 1);
+  backdrop-filter: blur(1.6875rem);
+  -webkit-backdrop-filter: blur(1.6875rem);
   box-shadow: none;
   animation: nd-enter 0.5s ease-out both;
 }
@@ -19,7 +18,7 @@
 @keyframes nd-enter {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(0.625rem);
   }
   to {
     opacity: 1;
@@ -31,25 +30,25 @@
 
 .nd-accent-bar {
   position: absolute;
-  left: 16px;
-  top: 14px;
-  width: 2px;
-  height: 16px;
-  border-radius: 2px;
+  left: 1.0rem;
+  top: 0.875rem;
+  width: 0.125rem;
+  height: 1.0rem;
+  border-radius: 0.125rem;
   background: #d19f00;
   z-index: 3;
 }
 
 .nd-title {
   position: absolute;
-  left: 26px;
-  top: 11px;
+  left: 1.625rem;
+  top: 0.6875rem;
   display: flex;
   align-items: center;
-  gap: 4px;
-  height: 22px;
-  font-size: 14px;
-  line-height: 22px;
+  gap: 0.25rem;
+  height: 1.375rem;
+  font-size: 0.875rem;
+  line-height: 1.375rem;
   z-index: 3;
 }
 
@@ -66,20 +65,24 @@
   color: #eeeeee;
 }
 
-/* ---------- 消息列表（垂直滚动容器）：left:0 使第二条气泡贴左，与第一条贴右对称 ---------- */
+/* ---------- 消息列表（垂直滚动容器）：V5.43 气泡距面板外边框 1rem（左右内缩），
+   第二条气泡贴左、第一条贴右（聊天对称）；
+   V5.56（用户规格）：首气泡距面板标题 0.5rem——padding-top 1rem→0
+   （列表顶 41 − 标题底 33 = 8px）；气泡间距 1rem（.nd-bubble--accept margin-top） ---------- */
 
 .nd-messages {
   position: absolute;
-  left: 0;
-  top: 41px;
-  right: 0;
-  bottom: 16px;
+  left: 1.0rem;
+  top: 2.5625rem;
+  right: 1.0rem;
+  bottom: 1.0rem;
+  padding-top: 0;
   overflow-y: auto;
   overflow-x: hidden;
 }
 
 .nd-messages::-webkit-scrollbar {
-  width: 6px;
+  width: 0.375rem;
 }
 
 .nd-messages::-webkit-scrollbar-track {
@@ -87,7 +90,7 @@
 }
 
 .nd-messages::-webkit-scrollbar-thumb {
-  border-radius: 3px;
+  border-radius: 0.1875rem;
   background: linear-gradient(180deg, rgba(243, 243, 243, 0.28), rgba(243, 243, 243, 0.1));
 }
 
@@ -101,9 +104,9 @@
   position: absolute;
   inset: 0;
   background: rgba(8, 14, 96, 0.4);
-  backdrop-filter: blur(11px);
-  -webkit-backdrop-filter: blur(11px);
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.2));
+  backdrop-filter: blur(0.6875rem);
+  -webkit-backdrop-filter: blur(0.6875rem);
+  filter: drop-shadow(0 0.125rem 0.3125rem rgba(0, 0, 0, 0.2));
 }
 
 .nd-bubble__outline {
@@ -120,14 +123,14 @@
 
 /* 第二条消息（Accept）：专线返回补充信息时入场（淡入 + 上滑，V2.25 放慢至 0.7s） */
 .nd-bubble--accept {
-  margin-top: 16px;
+  margin-top: 1.0rem;
   animation: ndMsgIn 0.7s ease-out both;
 }
 
 @keyframes ndMsgIn {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(0.875rem);
   }
   to {
     opacity: 1;
@@ -137,36 +140,38 @@
 
 .nd-bubble__text {
   position: absolute;
-  /* V5.4：清除 <p> 默认 1em 上下边距——原边距使文字实际下移 12px，Accept 第二行文字
+  /* V5.4：清除 <p> 默认 1em 上下边距——原边距使文字实际下移 0.75rem，Accept 第二行文字
      被 CPE 端口面板图片遮盖（用户反馈）；各定位公式均以 top:4 起算 */
   margin: 0;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
   color: #ffffff;
   text-align: left;
   z-index: 2;
 }
 
+/* V5.43（用户规格）：文字距气泡边沿 1rem（上下左右）——propose 文字区宽 219（251−32） */
 .nd-bubble__text--propose {
-  left: 16px;
-  top: 4px;
-  width: 204px;
+  left: 1.0rem;
+  top: 1.0rem;
+  width: 13.6875rem;
 }
 
+/* V5.43：accept 文字区宽 272（气泡 304−32） */
 .nd-bubble__text--accept {
-  left: 31px;
-  top: 4px;
-  width: 254px;
+  left: 1.0rem;
+  top: 1.0rem;
+  width: 17.0rem;
 }
 
-/* ---------- CPE 端口面板（设计稿导出 SVG，266×48） ---------- */
+/* ---------- CPE 端口面板（设计稿导出 SVG，266×48）；V5.43 左缘 1rem ---------- */
 
 .nd-port-grid-svg {
   position: absolute;
-  left: 31px;
-  top: 67px;
-  width: 266px;
-  height: 48px;
+  left: 1.0rem;
+  top: 4.1875rem;
+  width: 16.625rem;
+  height: 3.0rem;
   z-index: 2;
   user-select: none;
   -webkit-user-drag: none;
@@ -175,12 +180,12 @@
 /* 网格下方斜向辉光 */
 .nd-grid-glow {
   position: absolute;
-  left: 31px;
-  top: 92px;
-  width: 266px;
-  height: 44px;
+  left: 1.0rem;
+  top: 5.75rem;
+  width: 16.625rem;
+  height: 2.75rem;
   background: radial-gradient(
-    ellipse 130px 24px at 80% 45%,
+    ellipse 8.125rem 1.5rem at 80% 45%,
     rgba(201, 201, 201, 0.18),
     transparent 70%
   );
@@ -188,38 +193,41 @@
   z-index: 1;
 }
 
-/* ---------- 单选按钮组（268 × 32） ---------- */
+/* ---------- 单选按钮组（272 × 32）；V5.43 左缘 1rem、宽 17rem（气泡 304−32） ---------- */
 
 .nd-radio-group {
   position: absolute;
-  left: 31px;
-  top: 139px;
-  width: 268px;
-  height: 32px;
-  border-radius: 6px;
+  left: 1.0rem;
+  top: 8.6875rem;
+  width: 17.0rem;
+  height: 2.0rem;
+  border-radius: 0.375rem;
   background: rgba(102, 140, 247, 0.15);
   display: flex;
   align-items: stretch;
-  gap: 3px;
-  padding: 2px 3px;
+  gap: 0.1875rem;
+  padding: 0.125rem 0.1875rem;
   overflow: hidden;
   z-index: 2;
 }
 
 .nd-chip {
-  flex: 0 0 auto;
+  /* V5.53（用户规格）：cvlan 选项容器拉宽——flex:1 等分铺满父容器（原 flex:0 0 auto
+     自然宽），文字居中（参考 Task-T radio-option 版式） */
+  flex: 1 1 0;
   min-width: 0;
-  height: 28px;
-  padding: 0 2px;
-  border: 1px solid transparent;
-  border-radius: 4px;
+  height: 1.75rem;
+  padding: 0 0.125rem;
+  border: 0.0625rem solid transparent;
+  border-radius: 0.25rem;
   background: transparent;
   display: flex;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 0.125rem;
   font-family: inherit;
-  font-size: 10.5px;
-  line-height: 20px;
+  font-size: 0.65625rem;
+  line-height: 1.25rem;
   color: #c9c9c9;
   white-space: nowrap;
   cursor: pointer;
@@ -229,8 +237,15 @@
     border-color 0.15s ease;
 }
 
+/* V5.53（用户规格）：省略号单元参考 Task-T 模板——定宽 34px、字号 12px，
+   '…'（U+2026）点距自然分散可辨（原 '···' 10.5px 窄单元看不清） */
+.nd-chip--ellipsis {
+  flex: 0 0 2.125rem;
+  font-size: 0.75rem;
+}
+
 .nd-chip__label {
-  letter-spacing: -0.3px;
+  letter-spacing: -0.01875rem;
 }
 
 .nd-chip:hover:not(:disabled):not(.nd-chip--selected) {
@@ -248,7 +263,7 @@
     radial-gradient(circle at 30% 30%, rgba(145, 199, 255, 0.35), rgba(92, 172, 255, 0) 72%),
     linear-gradient(180deg, rgba(92, 172, 255, 0.3), rgba(92, 172, 255, 0.12));
   border-color: #5cacff;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  box-shadow: inset 0 0.0625rem 0 rgba(255, 255, 255, 0.4);
   color: #ffffff;
   cursor: default;
   animation: ndChipPick 0.3s ease-out;
@@ -274,7 +289,7 @@
   z-index: 3;
   pointer-events: none;
   overflow: visible;
-  filter: drop-shadow(0 0 5px rgba(92, 172, 255, 0.5));
+  filter: drop-shadow(0 0 0.3125rem rgba(92, 172, 255, 0.5));
   animation: ndBeam 1.6s ease-out 0.75s both;
 }
 

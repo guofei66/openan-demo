@@ -1258,7 +1258,7 @@ export const root = {
            "children": [
             {
              "id": "23:135918",
-             "name": "WAIMO投诉处置智能体",
+             "name": "WAIMO投诉处理智能体",
              "kind": "text",
              "x": 36,
              "y": 64,
@@ -1275,7 +1275,7 @@ export const root = {
               "justifyContent": "flex-start",
               "alignItems": "flex-start"
              },
-             "text": "WAIMO投诉处置智能体"
+             "text": "WAIMO投诉处理智能体"
             },
             {
              "id": "23:135919",
@@ -2694,7 +2694,7 @@ export const root = {
            "children": [
             {
              "id": "23:136488",
-             "name": "专线投诉处置智能体",
+             "name": "专线投诉处理智能体",
              "kind": "text",
              "x": 99,
              "y": 64,
@@ -2711,7 +2711,7 @@ export const root = {
               "justifyContent": "flex-start",
               "alignItems": "flex-start"
              },
-             "text": "专线投诉处置智能体"
+             "text": "专线投诉处理智能体"
             },
             {
              "id": "23:136489",
