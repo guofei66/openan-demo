@@ -4,40 +4,60 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /** Chart panel — an SVG line chart fed by script events (`push` actions).
- *  Config: series definitions + y-range; data: { points: { seriesId: [v...] } }. */
-import React from 'react';
+ *  Config: series definitions + y-range; data: { points: { seriesId: [v...] } }.
+ *
+ *  The SVG viewBox equals the container's real pixel size (ResizeObserver), so
+ *  text, dots and strokes render 1:1 — no non-uniform stretching (glyphs were
+ *  horizontally widened ~2x and the endpoint dot became an ellipse when a tiny
+ *  viewBox was scaled with preserveAspectRatio="none"). */
+import React, { useEffect, useRef, useState } from 'react';
 
-const W = 100;
-const H = 54;
-const PAD_L = 8;
-const PAD_B = 6;
-const PAD_T = 4;
 const WINDOW = 24;
+const PAD_L = 34; // y-axis labels
+const PAD_R = 38; // room for the live value label at the line tip
+const PAD_T = 8;
+const PAD_B = 8;
 
 const ChartPanel = ({ config, data, isDark }) => {
     const series = config.series || [];
     const yMin = typeof config.yMin === 'number' ? config.yMin : 0;
     const yMax = typeof config.yMax === 'number' ? config.yMax : 100;
-    const unit = config.unit || '';
     const points = data?.points || {};
+
+    const wrapRef = useRef(null);
+    const [size, setSize] = useState(null);
+
+    useEffect(() => {
+        const el = wrapRef.current;
+        if (!el || typeof ResizeObserver === 'undefined') return undefined;
+        const ro = new ResizeObserver((entries) => {
+            const r = entries[0].contentRect;
+            setSize((prev) => {
+                const w = Math.max(1, Math.round(r.width));
+                const h = Math.max(1, Math.round(r.height));
+                return prev && prev.w === w && prev.h === h ? prev : { w, h };
+            });
+        });
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
 
     const gridColor = isDark ? 'rgba(56,189,248,0.08)' : '#e4e4e7';
     const axisColor = isDark ? '#3f3f46' : '#d4d4d8';
     const labelColor = isDark ? '#71717a' : '#a1a1aa';
 
-    const plotW = W - PAD_L - 2;
-    const plotH = H - PAD_T - PAD_B;
-    const xOf = (i, n) => PAD_L + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
-    const yOf = (v) => PAD_T + (1 - (Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin || 1)) * plotH;
+    let body = null;
+    if (size) {
+        const W = size.w;
+        const H = size.h;
+        const plotW = Math.max(10, W - PAD_L - PAD_R);
+        const plotH = Math.max(10, H - PAD_T - PAD_B);
+        const xOf = (i, n) => PAD_L + (n <= 1 ? 0 : (i / (n - 1)) * plotW);
+        const yOf = (v) => PAD_T + (1 - (Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin || 1)) * plotH;
 
-    return (
-        <div className="h-full w-full p-2 flex flex-col min-h-0">
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full flex-1 min-h-0" preserveAspectRatio="none">
+        body = (
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%">
                 <defs>
-                    <filter id="ss-line-glow" x="-30%" y="-30%" width="160%" height="160%">
-                        <feGaussianBlur stdDeviation="0.7" result="b" />
-                        <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
-                    </filter>
                     {series.map((s) => (
                         <linearGradient key={s.id} id={`ss-fill-${s.id}`} x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor={s.color} stopOpacity={isDark ? 0.28 : 0.16} />
@@ -45,22 +65,22 @@ const ChartPanel = ({ config, data, isDark }) => {
                         </linearGradient>
                     ))}
                 </defs>
-                {/* y grid */}
+                {/* y grid + labels */}
                 {[0, 0.25, 0.5, 0.75, 1].map((f) => {
                     const y = PAD_T + f * plotH;
                     const v = Math.round(yMax - f * (yMax - yMin));
                     return (
                         <g key={f}>
-                            <line x1={PAD_L} y1={y} x2={W - 2} y2={y} stroke={gridColor} strokeWidth={0.25} />
-                            <text x={PAD_L - 1} y={y + 1} textAnchor="end" fontSize={2.4} fill={labelColor} style={{ fontFamily: 'monospace' }}>
+                            <line x1={PAD_L} y1={y} x2={W - PAD_R} y2={y} stroke={gridColor} strokeWidth={0.5} />
+                            <text x={PAD_L - 4} y={y + 3} textAnchor="end" fontSize={9} fill={labelColor} style={{ fontFamily: 'monospace' }}>
                                 {v}
                             </text>
                         </g>
                     );
                 })}
-                <line x1={PAD_L} y1={H - PAD_B} x2={W - 2} y2={H - PAD_B} stroke={axisColor} strokeWidth={0.4} />
+                <line x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B} stroke={axisColor} strokeWidth={1} />
 
-                {/* series */}
+                {/* series — thin crisp lines, round tip dot, unstretched labels */}
                 {series.map((s) => {
                     const arr = points[s.id] || [];
                     if (arr.length === 0) return null;
@@ -80,16 +100,15 @@ const ChartPanel = ({ config, data, isDark }) => {
                                 points={pts}
                                 fill="none"
                                 stroke={s.color}
-                                strokeWidth={isDark ? 0.85 : 0.7}
+                                strokeWidth={isDark ? 1.5 : 1.25}
                                 strokeLinejoin="round"
                                 strokeLinecap="round"
-                                filter={isDark ? 'url(#ss-line-glow)' : undefined}
                             />
-                            <circle cx={xOf(windowed.length - 1, n)} cy={yOf(last)} r={isDark ? 1.1 : 0.9} fill={s.color} filter={isDark ? 'url(#ss-line-glow)' : undefined} />
+                            <circle cx={xOf(windowed.length - 1, n)} cy={yOf(last)} r={2.5} fill={s.color} />
                             <text
-                                x={xOf(windowed.length - 1, n) + 1.6}
-                                y={yOf(last) + 0.9}
-                                fontSize={2.4}
+                                x={xOf(windowed.length - 1, n) + 6}
+                                y={yOf(last) + 3.5}
+                                fontSize={10}
                                 fontWeight={700}
                                 fill={s.color}
                                 style={{ fontFamily: 'monospace' }}
@@ -100,6 +119,14 @@ const ChartPanel = ({ config, data, isDark }) => {
                     );
                 })}
             </svg>
+        );
+    }
+
+    return (
+        <div className="h-full w-full p-2 flex flex-col min-h-0">
+            <div ref={wrapRef} className="relative w-full flex-1 min-h-0">
+                {body}
+            </div>
 
             {/* legend — each item stays on one line (whitespace-nowrap); the
                 row itself wraps when the panel is narrow, so every series
