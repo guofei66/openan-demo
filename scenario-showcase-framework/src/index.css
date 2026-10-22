@@ -1,0 +1,148 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Neutralize UA default <button> chrome (preflight is disabled so the plugin
+   CSS never resets the host portal page). Scoped to .ss-root: inside the
+   portal the host preflight already does this — standalone (no preflight)
+   would otherwise render native gray button backgrounds (#6b6b6b in dark
+   color-scheme). Same for heading/paragraph margins: without this the UA
+   0.67em/1em margins blow up compact headers and tight text stacks
+   (flex items don't margin-collapse, so the spacing compounds). */
+.ss-root button {
+    background-color: transparent;
+    border: 0;
+    font: inherit;
+    color: inherit;
+}
+.ss-root button:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: 1px;
+}
+.ss-root h1, .ss-root h2, .ss-root h3, .ss-root h4,
+.ss-root p, .ss-root figure, .ss-root blockquote {
+    margin: 0;
+}
+
+/* slim custom scrollbar — same feel as the designer panels */
+.ss-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.ss-scroll::-webkit-scrollbar-track { background: transparent; }
+.ss-scroll::-webkit-scrollbar-thumb { background: rgba(113, 113, 122, 0.35); border-radius: 9999px; }
+.ss-scroll::-webkit-scrollbar-thumb:hover { background: rgba(113, 113, 122, 0.6); }
+
+/* message / panel entrance */
+@keyframes ss-fade-up {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.ss-fade-up { animation: ss-fade-up 0.35s ease-out both; }
+
+@keyframes ss-pulse-dot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.75; }
+}
+.ss-pulse-dot { animation: ss-pulse-dot 1.2s ease-in-out infinite; }
+
+@keyframes ss-marker-travel {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+.ss-marker { animation: ss-marker-travel 0.5s ease-out both; }
+
+/* ── Conference tech layer (dark mode) ─────────────────────────────── */
+
+/* faint blueprint grid, fading out towards the bottom */
+.ss-grid-bg {
+    background-image:
+        linear-gradient(rgba(56, 189, 248, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(56, 189, 248, 0.055) 1px, transparent 1px);
+    background-size: 44px 44px;
+    -webkit-mask-image: radial-gradient(ellipse 95% 85% at 50% 0%, black 25%, transparent 78%);
+    mask-image: radial-gradient(ellipse 95% 85% at 50% 0%, black 25%, transparent 78%);
+}
+
+/* drifting aurora glow blobs */
+@keyframes ss-aurora {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(46px, 26px) scale(1.14); }
+}
+.ss-aurora { animation: ss-aurora 15s ease-in-out infinite; }
+.ss-aurora-2 { animation: ss-aurora 19s ease-in-out infinite reverse; }
+
+/* sheen sweeping across the progress rail */
+@keyframes ss-shimmer {
+    0% { transform: translateX(-120%); }
+    100% { transform: translateX(260%); }
+}
+.ss-shimmer { animation: ss-shimmer 2.6s linear infinite; }
+
+/* marching dashes on the map route */
+@keyframes ss-dash-march {
+    to { stroke-dashoffset: -12; }
+}
+.ss-dash-flow { animation: ss-dash-march 1.2s linear infinite; }
+
+/* soft breathing glow on the active step */
+@keyframes ss-glow-breathe {
+    0%, 100% { box-shadow: 0 0 14px rgba(59, 130, 246, 0.45); }
+    50% { box-shadow: 0 0 26px rgba(34, 211, 238, 0.65); }
+}
+.ss-glow-breathe { animation: ss-glow-breathe 2s ease-in-out infinite; }
+
+/* gradient text helper — retired in the simplified style (kept for reference) */
+
+/* status LED blink — retired in the simplified style */
+
+/* full-page scanline sweep */
+.ss-scanline { overflow: hidden; }
+.ss-scanline::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 140px;
+    background: linear-gradient(180deg, transparent, rgba(34, 211, 238, 0.045), transparent);
+    animation: ss-scan 9s linear infinite;
+    pointer-events: none;
+}
+@keyframes ss-scan {
+    0% { transform: translateY(-140px); }
+    100% { transform: translateY(105vh); }
+}
+
+/* radar sweep behind the map */
+.ss-radar {
+    background: conic-gradient(from 0deg, rgba(34, 211, 238, 0.16), transparent 16%, transparent 100%);
+    animation: ss-radar-rot 7s linear infinite;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%, black 0 58%, transparent 74%);
+    mask-image: radial-gradient(circle at 50% 50%, black 0 58%, transparent 74%);
+}
+@keyframes ss-radar-rot {
+    to { transform: rotate(360deg); }
+}
+
+/* slow pan on the blueprint grid */
+@keyframes ss-grid-pan {
+    from { background-position: 0 0; }
+    to { background-position: 44px 44px; }
+}
+.ss-grid-pan { animation: ss-grid-pan 7s linear infinite; }
+
+/* animated data pulse on the stepper connector (dark only) */
+@keyframes ss-flow-move {
+    0% { background-position: 50% 100%; }
+    100% { background-position: 50% 0%; }
+}
+.dark .ss-flow-line {
+    background-color: transparent;
+    background-image: linear-gradient(180deg, rgba(59, 130, 246, 0.9), rgba(34, 211, 238, 0.9), rgba(59, 130, 246, 0.12));
+    background-size: 100% 300%;
+    animation: ss-flow-move 2.6s linear infinite;
+}
+
+/* status LED blink — retired in the simplified style */
+
+/* standalone shell only (portal provides its own background) */
+html, body, #root { height: 100%; }
+body { margin: 0; }
