@@ -145,8 +145,78 @@ function absoluteUrl(base, ref) {
     }
 }
 
-function openCard(card) {
+/** Build the scenario-framework launch URL from the card's `launch` config:
+ *  case + agent startup options (enabled agents, autostart, driver) + the
+ *  portal's current language are carried as URL params, which the framework
+ *  parses and injects (PSOP flow, agent team, replay filter, driver mode, UI
+ *  language). `opts` overrides the configured defaults (from the launch
+ *  options popover: {driver, agents}). */
+function buildLaunchUrl(card, lang, opts) {
+    const l = card.launch || {};
+    const u = new URL(card.url);
+    if (l.case) u.searchParams.set('case', l.case);
+    const st = { ...((l.startup) || {}), ...(opts || {}) };
+    let agents = null;
+    if (Array.isArray(st.agents)) agents = st.agents;
+    else if (st.agents && typeof st.agents === 'object') {
+        agents = Object.keys(st.agents).filter((k) => st.agents[k] && st.agents[k].enabled !== false);
+    }
+    if (agents && agents.length) u.searchParams.set('agents', agents.join(','));
+    if (st.autoStart === false) u.searchParams.set('autostart', '0');
+    if (st.driver === 'mockAgent' || st.driver === 'script') u.searchParams.set('driver', st.driver);
+    u.searchParams.set('src', 'showroom');
+    if (lang === 'zh' || lang === 'en') u.searchParams.set('lang', lang);
+    return u.href;
+}
+
+/** Launch the scenario framework in a NAMED window: the first click opens and
+ *  loads the page; every later click just focuses the same window — the page
+ *  (and its replay state) keeps living instead of being re-launched.
+ *
+ *  The target page is an INDEPENDENT deployment (e.g. the standalone
+ *  scenario-showcase server), so it is usually cross-origin: we cannot read
+ *  w.location. Instead we probe the page via postMessage — an already-launched
+ *  scenario page answers 'openan-scenario-pong' (see the framework's
+ *  launchHandshake.js). No pong within the probe window → first launch (or the
+ *  tab was navigated away) → navigate it. If the page is alive but the launch
+ *  OPTIONS changed (driver mode / agents / language), the framework relaunches
+ *  itself at the new URL — the ping carries it. */
+function launchScenario(card, lang, opts) {
+    const l = card.launch || {};
+    const url = buildLaunchUrl(card, lang, opts);
+    const name = l.window || `openan-scenario-${l.case || card.id || 'case'}`;
+    const langTag = (lang === 'zh' || lang === 'en') ? lang : null;
+    let w = null;
+    try { w = window.open('about:blank', name); } catch (e) { w = null; }
+    if (!w || w.closed) { // popup blocked → fall back to a plain new tab
+        window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+    }
+    let alive = false;
+    const onPong = (ev) => {
+        if (ev && ev.data && ev.data.type === 'openan-scenario-pong') {
+            alive = true;
+            try { w.focus(); } catch (e) { /* ignore */ }
+        }
+    };
+    window.addEventListener('message', onPong);
+    try {
+        w.postMessage({ type: 'openan-scenario-ping', case: l.case || '', lang: langTag, url }, '*');
+    } catch (e) { /* ignore */ }
+    setTimeout(() => {
+        window.removeEventListener('message', onPong);
+        if (!alive) {
+            try { w.location.href = url; } catch (e) { window.open(url, '_blank', 'noopener,noreferrer'); }
+        }
+    }, 400);
+}
+
+function openCard(card, lang) {
     if (!card || !card.url) return;
+    if (card.launch && card.launch.type === 'scenario-framework') {
+        launchScenario(card, lang);
+        return;
+    }
     if (card.openIn === 'same-tab') {
         window.location.href = card.url;
         return;
@@ -192,6 +262,10 @@ function IconCard() {
 export default function VirtualShowroomPlugin() {
     const [lang, setLang] = useState(detectLang());
     const [state, setState] = useState({ status: 'loading', cards: [], error: '' });
+    // launch-options popover: which card's popover is open + the selections
+    // (driver mode + per-agent startup checkboxes) made in it
+    const [launchCard, setLaunchCard] = useState(null);
+    const [launchSel, setLaunchSel] = useState({ driver: 'mockAgent', agents: {} });
 
     // follow portal language switches + (re)register i18n resources
     useEffect(() => {
@@ -222,6 +296,42 @@ export default function VirtualShowroomPlugin() {
     const pickLang = useCallback((zhVal, enVal) => (
         (lang || detectLang()) === 'zh' ? (zhVal || enVal || '') : (enVal || zhVal || '')
     ), [lang]);
+
+    /** scenario-framework cards open a launch-options popover (driver mode +
+     *  agent startup) instead of launching immediately; other cards open
+     *  directly as before. */
+    const handleCardClick = useCallback((card) => {
+        if (card.launch && card.launch.type === 'scenario-framework') {
+            const st = card.launch.startup || {};
+            const agentsSel = {};
+            (card.launch.agents || []).forEach((a) => {
+                agentsSel[a.id] = !Array.isArray(st.agents) || st.agents.indexOf(a.id) !== -1;
+            });
+            setLaunchSel({
+                // Agent 执行 is the popover default (real agent launch);
+                // Demo 回放 never launches the agent service.
+                driver: st.driver === 'script' ? 'script' : 'mockAgent',
+                agents: agentsSel,
+            });
+            setLaunchCard(card.id || card.url);
+            return;
+        }
+        openCard(card, lang);
+    }, [lang]);
+
+    const closeLaunch = useCallback(() => setLaunchCard(null), []);
+
+    const confirmLaunch = useCallback((card) => {
+        // Agent 执行 launches the (selected) agents; Demo 回放 is a pure
+        // local timeline replay and passes no agent options at all.
+        const opts = { driver: launchSel.driver };
+        if (launchSel.driver === 'mockAgent') {
+            const selected = Object.keys(launchSel.agents).filter((k) => launchSel.agents[k]);
+            if (selected.length) opts.agents = selected;
+        }
+        launchScenario(card, lang, opts);
+        setLaunchCard(null);
+    }, [lang, launchSel]);
 
     const load = useCallback(async () => {
         setState({ status: 'loading', cards: [], error: '' });
@@ -295,8 +405,8 @@ export default function VirtualShowroomPlugin() {
                             <article
                                 key={card.id || card.url}
                                 className="vs-card"
-                                onClick={() => openCard(card)}
-                                onKeyDown={(e) => { if (e.key === 'Enter') openCard(card); }}
+                                onClick={() => handleCardClick(card)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') handleCardClick(card); }}
                                 tabIndex={0}
                                 role="link"
                                 title={title}
@@ -317,6 +427,89 @@ export default function VirtualShowroomPlugin() {
                                         <span className="vs-host">{safeHost(card.url)}</span>
                                     </div>
                                 </div>
+
+                                {/* launch-options popover — pick Demo / mockAgent
+                                    driver + agent startup options before launching */}
+                                {(card.launch && card.launch.type === 'scenario-framework' && launchCard === (card.id || card.url)) && (
+                                    <div
+                                        className="vs-launch"
+                                        role="dialog"
+                                        aria-label={tr('virtual-showroom.launchTitle', '拉起选项', 'Launch options')}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onKeyDown={(e) => e.stopPropagation()}
+                                    >
+                                        <div className="vs-launch-head">
+                                            <span className="vs-launch-title">
+                                                {tr('virtual-showroom.launchTitle', '拉起选项', 'Launch options')}
+                                            </span>
+                                            <button type="button" className="vs-launch-x" onClick={closeLaunch} aria-label="close">✕</button>
+                                        </div>
+
+                                        <div className="vs-launch-label">
+                                            {tr('virtual-showroom.launchDriver', '驱动模式', 'Driver mode')}
+                                        </div>
+                                        <div className="vs-launch-modes">
+                                            <button
+                                                type="button"
+                                                className={`vs-launch-mode${launchSel.driver === 'script' ? ' on' : ''}`}
+                                                onClick={() => setLaunchSel((s) => ({ ...s, driver: 'script' }))}
+                                            >
+                                                {tr('virtual-showroom.modeDemo', 'Demo 回放', 'Demo Replay')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`vs-launch-mode${launchSel.driver === 'mockAgent' ? ' on agent' : ''}`}
+                                                onClick={() => setLaunchSel((s) => ({ ...s, driver: 'mockAgent' }))}
+                                            >
+                                                {tr('virtual-showroom.modeAgent', 'Agent 执行', 'Agent Run')}
+                                            </button>
+                                        </div>
+                                        <p className="vs-launch-note">
+                                            {launchSel.driver === 'mockAgent'
+                                                ? tr('virtual-showroom.noteAgent', '真实拉起 Agent 服务，消息实时拉取', 'Launches the agent service; messages pulled live')
+                                                : tr('virtual-showroom.noteDemo', '纯本地时间线回放，不拉起 Agent 服务', 'Pure local timeline replay; no agent service launched')}
+                                        </p>
+
+                                        {/* 智能体启动选项 only applies to Agent 执行 —
+                                            Demo 回放 does not launch agents */}
+                                        {launchSel.driver === 'mockAgent' && (card.launch.agents || []).length > 0 && (
+                                            <>
+                                                <div className="vs-launch-label">
+                                                    {tr('virtual-showroom.launchAgents', '智能体启动选项', 'Agent startup options')}
+                                                </div>
+                                                <div className="vs-launch-agents">
+                                                    {(card.launch.agents || []).map((a) => (
+                                                        <label key={a.id} className="vs-launch-agent">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={!!launchSel.agents[a.id]}
+                                                                onChange={(e) => setLaunchSel((s) => ({
+                                                                    ...s,
+                                                                    agents: { ...s.agents, [a.id]: e.target.checked },
+                                                                }))}
+                                                            />
+                                                            <span>{pickLang(a.zh, a.en) || a.id}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <div className="vs-launch-actions">
+                                            <button type="button" className="vs-launch-cancel" onClick={closeLaunch}>
+                                                {tr('virtual-showroom.cancel', '取消', 'Cancel')}
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="vs-launch-go"
+                                                onClick={() => confirmLaunch(card)}
+                                            >
+                                                {tr('virtual-showroom.launch', '拉起', 'Launch')}
+                                                <IconExternal />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
                             </article>
                         );
                     })}
