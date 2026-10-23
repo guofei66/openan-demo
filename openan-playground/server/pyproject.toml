@@ -3,7 +3,7 @@ name = "openan-debug-server"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
-    "a2a-sdk[http-server]==1.1.0",
+    "a2a-sdk[http-server]==1.2.2",
     "fastapi>=0.115,<1",
     "uvicorn[standard]>=0.34,<1",
     "sqlalchemy>=2.0,<3",

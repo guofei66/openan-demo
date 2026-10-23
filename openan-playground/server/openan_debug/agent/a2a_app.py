@@ -39,5 +39,11 @@ def build_a2a_app(
     handler = DefaultRequestHandler(
         agent_executor=executor, task_store=InMemoryTaskStore(), agent_card=agent_card
     )
-    routes = [*create_agent_card_routes(agent_card), *create_rest_routes(handler)]
+    # 卡片双路径：a2a-sdk 1.2.x 默认 /.well-known/agent-card.json（规范路径）；
+    # 同时保留根路径 /，兼容按旧版（1.1.x）根路径发现卡片的调用方（ODA Canvas 等）
+    routes = [
+        *create_agent_card_routes(agent_card),
+        *create_agent_card_routes(agent_card, card_url="/"),
+        *create_rest_routes(handler),
+    ]
     return EchoExtensionsMiddleware(Starlette(routes=routes))

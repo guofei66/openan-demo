@@ -1,4 +1,4 @@
-a2a-sdk[http-server]==1.1.2
+a2a-sdk[http-server]==1.2.2
 fastapi>=0.115,<1
 uvicorn[standard]>=0.34,<1
 sqlalchemy>=2.0,<3

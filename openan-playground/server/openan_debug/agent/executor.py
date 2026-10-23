@@ -29,11 +29,11 @@ STATE_JSON = {
 
 TERMINAL_STATES = ("TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELED", "TASK_STATE_REJECTED")
 
-REPLY_MODES = ("auto", "workflow", "llm", "dataset")
+REPLY_MODES = ("auto", "variant", "workflow", "llm", "dataset")
 
 
 def normalize_reply_mode(value) -> str:
-    """归一化答复模式：auto（优先级链）/ workflow / llm / dataset，其余按 auto。"""
+    """归一化答复模式：auto（优先级链）/ variant（剧本回放·变体池固定文本）/ workflow / llm / dataset，其余按 auto。"""
     mode = str(value or "").strip().lower()
     return mode if mode in REPLY_MODES else "auto"
 
@@ -167,15 +167,34 @@ class MockAgentExecutor(AgentExecutor):
             logging.getLogger(__name__).exception("agent reply_mode lookup failed")
         return "auto"
 
+    def _pick_variant(self, template_uri):
+        """变体池直取（固定文本；cursor 轮转由 flow_env 锁保护）。"""
+        engine = self._runtime.get("engine")
+        if engine is None or template_uri is None:
+            return None
+        with Session(engine) as session:
+            with self._flow_env.cursor_lock:
+                variant = pick_variant(session, self._runtime["agent_id"], template_uri, self._flow_env.cursor)
+            return copy.deepcopy(variant.variant_json) if variant else None
+
     def _select_stub(self, template_uri, prompt_text, info: dict, reply_mode: str = "auto"):
         """桩数据选择优先级：工作流编排模式 → LLM 生成模式 → 数据集匹配（标识回填）→ 变体池。
 
-        reply_mode 门控：'auto' 走完整优先级链；'workflow'/'llm'/'dataset' 只走指定
-        模式——指定模式不可用（实例未配置 / 执行失败）时降级数据集匹配，并在
+        reply_mode 门控：'auto' 走完整优先级链；'variant'（剧本回放）直取变体池
+        固定文本（不检索不生成）；'workflow'/'llm'/'dataset' 只走指定模式——指定
+        模式不可用（实例未配置 / 执行失败）时降级数据集匹配，并在
         info["replyMode"] 标注 fallback 原因（对调用方可见、落 RequestLog）。"""
         mode = normalize_reply_mode(reply_mode)
         info["replyMode"] = {"mode": mode}
-        if mode in ("auto", "workflow"):
+        if mode == "variant":
+            picked = self._pick_variant(template_uri)
+            if picked is not None:
+                info["replyMode"]["used"] = "variant"
+                return picked
+            info["replyMode"]["used"] = "dataset"
+            info["replyMode"]["fallback"] = "variant pool empty for template"
+            # 降级：落入下方数据集匹配公共路径
+        elif mode in ("auto", "workflow"):
             workflow_result = self._workflow_reply(template_uri, prompt_text, info)
             if workflow_result is not None:
                 info["replyMode"]["used"] = "workflow"
@@ -214,13 +233,7 @@ class MockAgentExecutor(AgentExecutor):
                 info["datasetMatch"] = None
         else:
             info["datasetMatch"] = None
-        engine = self._runtime.get("engine")
-        if engine is None or template_uri is None:
-            return None
-        with Session(engine) as session:
-            with self._flow_env.cursor_lock:
-                variant = pick_variant(session, self._runtime["agent_id"], template_uri, self._flow_env.cursor)
-            return copy.deepcopy(variant.variant_json) if variant else None
+        return self._pick_variant(template_uri)
 
     def _agent_available(self) -> bool:
         engine = self._runtime.get("engine")

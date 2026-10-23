@@ -278,11 +278,13 @@
     "targetUnderTest": "Agent under test:",
     "replyMode": {
       "label": "Reply mode:",
-      "auto": "Auto (agent default chain)",
+      "variant": "Bank replay (default)",
+      "variantStub": "Bank replay (variant pool)",
+      "auto": "Auto (default chain)",
       "workflow": "Workflow orchestration (organization)",
-      "llm": "LLM generation (degrades without key)",
-      "dataset": "Dataset matching (template retrieval)",
-      "hint": "replyMode sent with each request (content source): dataset matching / LLM generation, with the fixed-text variant pool as last resort; Auto = the agent's default chain (workflow-enabled agents orchestrate first, content decided by the sub-agents). Unavailable modes degrade to dataset matching; reasons recorded in RequestLog"
+      "llm": "LLM generation",
+      "dataset": "Dataset matching",
+      "hint": "replyMode sent with each request (three content sources, same names as the showroom card): bank replay = fixed text from the variant pool (no retrieval, no generation); dataset matching = template retrieval + variable filling; LLM generation = model generation (auto-degrades to dataset without a key). Without an explicit mode the agent runs its default chain (workflow → LLM → dataset → variant pool); degrade reasons recorded in RequestLog"
     },
     "hint": {
       "realTrafficOrDataset": "Template examples automatically use captured traffic; or generate a request from a dataset →"
@@ -320,7 +322,7 @@
     "details": "Details",
     "statusRunning": "Running",
     "replyModeLabel": "Reply mode",
-    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately). Content sources = dataset / LLM; workflow is an organization pattern enabled per instance via workflow.enabled (tried first by the auto chain, not a selectable mode)",
+    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately). Content sources = bank replay (variant pool) / dataset / LLM; Auto = the full default chain (workflow → LLM → dataset → variant pool; workflow is an organization pattern enabled per instance via workflow.enabled)",
     "statusAbnormal": "Abnormal/Starting",
     "statusStopped": "Stopped",
     "start": "Start",

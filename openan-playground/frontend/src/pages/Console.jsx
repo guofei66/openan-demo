@@ -47,10 +47,12 @@ function A2aConsole() {
   const [target, setTarget] = useState('')
   const [instanceError, setInstanceError] = useState('')
   const [traceExamples, setTraceExamples] = useState([])
-  // 答复模式（随请求下发的 replyMode 元数据）：'' = auto（完整优先级链
-  // 工作流编排 → LLM 生成 → 数据集匹配）；指定模式不可用时 Agent 自动降级
-  // 数据集匹配并在响应/RequestLog 标注 fallback 原因
-  const [replyMode, setReplyMode] = useState('')
+  // 答复模式（随请求下发的 replyMode 元数据）——三种内容源，与虚拟展厅卡片同名：
+  //   variant = 剧本回放（默认·变体池固定文本，不检索不生成）
+  //   dataset = 数据集匹配（模板检索 + 变量填充）
+  //   llm     = LLM 生成（未配 key 自动降级数据集）
+  // 指定模式不可用时 Agent 自动降级并在响应/RequestLog 标注 fallback 原因
+  const [replyMode, setReplyMode] = useState('variant')
 
   const loadInstances = useCallback(async () => {
     try {
@@ -208,9 +210,9 @@ function A2aConsole() {
         style={{ paddingRight: 24 }}
         title={t('console.replyMode.hint')}
       >
-        <option value="">{t('console.replyMode.auto')}</option>
-        <option value="llm">{t('console.replyMode.llm')}</option>
+        <option value="variant">{t('console.replyMode.variant')}</option>
         <option value="dataset">{t('console.replyMode.dataset')}</option>
+        <option value="llm">{t('console.replyMode.llm')}</option>
       </select>
       {traceExamples.length > 0 && (
         <span className="muted" style={{ fontSize: 12, marginLeft: 10 }}>
