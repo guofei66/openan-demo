@@ -278,11 +278,11 @@
     "targetUnderTest": "Agent under test:",
     "replyMode": {
       "label": "Reply mode:",
-      "auto": "Auto (priority chain)",
-      "workflow": "Workflow orchestration",
-      "llm": "LLM generation",
-      "dataset": "Dataset matching",
-      "hint": "Sent as replyMode metadata with each request: when the selected mode is unavailable (not configured / failed), the Agent degrades to dataset matching and records the reason in RequestLog"
+      "auto": "Auto (workflow → LLM → dataset)",
+      "workflow": "Workflow orchestration (multi-agent)",
+      "llm": "LLM generation (degrades without key)",
+      "dataset": "Dataset matching (template retrieval)",
+      "hint": "replyMode sent with each request: content sources = dataset matching / LLM generation (fixed text as last resort); workflow orchestration is an organization pattern (multi-agent; content decided by the sub-agents). Unavailable modes degrade to dataset matching; reasons recorded in RequestLog"
     },
     "hint": {
       "realTrafficOrDataset": "Template examples automatically use captured traffic; or generate a request from a dataset →"
@@ -306,13 +306,13 @@
     "colName": "Name",
     "colEndpoint": "Endpoint",
     "colWorkDir": "Working Dir",
-    "colModel": "Model",
+    "colModel": "Content / orchestration",
     "colAssoc": "Dataset Association",
     "colStatus": "Status",
     "colActions": "Actions",
-    "llmMode": "LLM Generation Mode",
-    "datasetMode": "Dataset Matching Mode (pure stub)",
-    "workflowMode": "Workflow · {{id}}",
+    "llmMode": "Content: LLM generation",
+    "datasetMode": "Content: dataset matching (pure stub)",
+    "workflowMode": "Organization: workflow · {{id}}",
     "seedBadge": "Seed {{n}}",
     "expandedBadge": "Expanded {{n}}",
     "tplSummary": "{{tplCount}} templates · {{pairTotal}} pairs in total",
@@ -320,7 +320,7 @@
     "details": "Details",
     "statusRunning": "Running",
     "replyModeLabel": "Reply mode",
-    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately)",
+    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately). Content sources = dataset / LLM; workflow orchestration is an organization pattern whose sub-agents decide content by their own defaults",
     "statusAbnormal": "Abnormal/Starting",
     "statusStopped": "Stopped",
     "start": "Start",

@@ -341,7 +341,7 @@
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* 答复模式 4 项：2×2 胶囊网格，字号略小以保持弹层紧凑 */
+/* 答复模式 4 项：2×2 胶囊网格，双行（主标签 + 内容源/组织方式副标签） */
 .vs-launch-modes-reply {
     flex-wrap: wrap;
     border-radius: 12px;
@@ -352,6 +352,16 @@
     font-size: 12px;
     border-radius: 8px;
     white-space: nowrap;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.3;
+}
+.vs-launch-mode-sub {
+    font-size: 10px;
+    font-weight: 600;
+    font-style: normal;
+    opacity: 0.72;
+    letter-spacing: 0.02em;
 }
 
 .vs-launch-mode {
