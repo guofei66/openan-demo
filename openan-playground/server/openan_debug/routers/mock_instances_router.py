@@ -1,32 +1,36 @@
-"""Mock Agent 打桩实例管理 API。
+"""Mock Agent 打桩实例管理 API（单进程单端口：实例挂载为主服务进程内运行时）。
 
-- GET    /api/v1/mock-instances               实例列表（含运行状态/健康探测/Agent 行映射）
-- POST   /api/v1/mock-instances/{id}/start    以子进程拉起独立实例（standalone_agent runner）
-- POST   /api/v1/mock-instances/{id}/stop     停止实例（含服务重启后的孤儿进程）
+- GET    /api/v1/mock-instances               实例列表（含挂载状态/Agent 行映射）
+- POST   /api/v1/mock-instances/{id}/start    挂载实例运行时到主服务路径（同进程同端口）
+- POST   /api/v1/mock-instances/{id}/stop     卸载实例运行时
 - GET    /api/v1/mock-instances/{id}/logs     读取实例工作目录日志尾部
-- GET    /api/v1/mock-instances/{id}/card     代理获取实例 AgentCard（避免浏览器跨端口直连）
+- GET    /api/v1/mock-instances/{id}/card     返回实例 AgentCard（挂载时构建）
+
+实例 A2A 端点 = 主服务原生路由 /api/v1/mock-instances/{id}/a2a/*（公开，与
+/debug/a2a 一致的 agent 公开面），无需任何转发；跨端页面（场景演示框架等）
+以同源方式直接调用。未挂载的实例该路径返回 404，由调用方自行回退。
 """
 import json
 import os
-import subprocess
-import sys
-import threading
-import time
 from pathlib import Path
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import PlainTextResponse, Response
+from fastapi.responses import PlainTextResponse
 from sqlalchemy import select
 
 from ..auth import get_current_user, require_admin
+from ..instance_runtime import (
+    get_runtime,
+    instance_mount_path,
+    is_mounted,
+    mount_instance,
+    unmount_instance,
+)
 from ..models import Agent
 
 router = APIRouter(prefix="/api/v1/mock-instances", tags=["mock-instances"])
 
 DEFINE_FILENAME = "mock_agent_define.json"
-_PROCESSES: dict[str, subprocess.Popen] = {}
-_LOCK = threading.Lock()
 
 
 def resolve_define_path() -> Path:
@@ -64,37 +68,6 @@ def _instance_by_id(define: dict, instance_id: str) -> dict:
     return instance
 
 
-def _health_probe(port: int, timeout: float = 1.0) -> bool:
-    try:
-        response = httpx.get(f"http://127.0.0.1:{port}/health", timeout=timeout)
-        return response.status_code == 200
-    except Exception:
-        return False
-
-
-def _pid_alive(pid: int) -> bool:
-    if pid <= 0:
-        return False
-    if os.name == "nt":
-        try:
-            out = subprocess.run(
-                ["tasklist", "/FI", f"PID eq {pid}"], capture_output=True, text=True, timeout=10
-            ).stdout
-            return str(pid) in out
-        except Exception:
-            return False
-    try:
-        os.kill(pid, 0)
-        return True
-    except OSError:
-        return False
-
-
-def _managed_running(instance_id: str) -> bool:
-    proc = _PROCESSES.get(instance_id)
-    return proc is not None and proc.poll() is None
-
-
 def _agent_id_for(request: Request, organization: str, name: str) -> int | None:
     try:
         from sqlalchemy.orm import Session
@@ -109,27 +82,16 @@ def _agent_id_for(request: Request, organization: str, name: str) -> int | None:
 
 
 def _instance_view(request: Request, define: dict, instance: dict) -> dict:
-    port = int(instance.get("port", 9300))
-    managed = _managed_running(instance["id"])
-    healthy = _health_probe(port)
-    pid = None
-    if managed:
-        pid = _PROCESSES[instance["id"]].pid
-    else:
-        pid_file = Path(instance.get("workDir", "")) / "instance.pid" if instance.get("workDir") else None
-        if pid_file and pid_file.exists():
-            try:
-                pid = int(pid_file.read_text(encoding="utf-8").strip())
-            except (OSError, ValueError):
-                pid = None
+    entry = get_runtime(instance["id"])
+    mounted = entry is not None
     llm = {**(define.get("defaults", {}).get("llm") or {}), **(instance.get("llm") or {})}
     return {
         "id": instance["id"],
         "name": instance.get("agentName") or instance.get("name"),
         "organization": instance.get("organization", "OpenAN"),
         "description": instance.get("description", ""),
-        "port": port,
-        "endpoint": f"http://127.0.0.1:{port}",
+        "port": int(instance.get("port", 9300)),  # 兼容保留：进程内模式不再监听该端口（仅独立进程模式使用）
+        "endpoint": instance_mount_path(instance["id"]),
         "workDir": instance.get("workDir", ""),
         "layer": instance.get("layer", "service"),
         "networkDomain": instance.get("networkDomain"),
@@ -146,10 +108,13 @@ def _instance_view(request: Request, define: dict, instance: dict) -> dict:
             "enabled": bool((instance.get("workflow") or {}).get("enabled")),
             "workflowId": (instance.get("workflow") or {}).get("workflowId"),
         },
-        "running": bool(managed or (pid and _pid_alive(pid) and healthy)),
-        "healthy": healthy,
-        "pid": pid,
-        "agentId": _agent_id_for(request, instance.get("organization", "OpenAN"), instance.get("agentName") or instance.get("name")),
+        "running": mounted,
+        "healthy": mounted,
+        "mounted": mounted,
+        "mode": "in-process",
+        "pid": None,
+        "agentId": (entry.get("agent_id") if entry else None)
+        or _agent_id_for(request, instance.get("organization", "OpenAN"), instance.get("agentName") or instance.get("name")),
     }
 
 
@@ -179,82 +144,30 @@ def start_instance(instance_id: str, request: Request, _: dict = Depends(require
     define_path = resolve_define_path()
     define = _load_define(define_path)
     instance = _instance_by_id(define, instance_id)
-    port = int(instance.get("port", 9300))
-    with _LOCK:
-        if _managed_running(instance_id):
-            raise HTTPException(status_code=409, detail="实例已在本服务中运行")
-        if _health_probe(port):
-            raise HTTPException(status_code=409, detail=f"端口 {port} 已有实例在运行（可能是外部启动）")
-        work_dir = _work_dir(instance)
-        work_dir.mkdir(parents=True, exist_ok=True)
-        log_file = open(work_dir / "instance.log", "ab")
-        try:
-            proc = subprocess.Popen(
-                [
-                    sys.executable, "-m", "openan_debug.standalone_agent",
-                    "--define", str(define_path),
-                    "--instance", instance_id,
-                ],
-                cwd=str(Path(__file__).resolve().parents[2]),
-                env=os.environ.copy(),
-                stdout=log_file,
-                stderr=subprocess.STDOUT,
-            )
-        except Exception as exc:
-            log_file.close()
-            raise HTTPException(status_code=500, detail=f"进程拉起失败：{exc}")
-        _PROCESSES[instance_id] = proc
-    deadline = time.time() + 20
-    while time.time() < deadline:
-        if proc.poll() is not None:
-            _PROCESSES.pop(instance_id, None)
-            tail = _log_tail(instance, 40)
-            raise HTTPException(status_code=500, detail=f"实例进程退出（code={proc.returncode}）：\n{tail}")
-        if _health_probe(port):
-            return {"status": "running", "id": instance_id, "pid": proc.pid, "port": port}
-        time.sleep(0.5)
-    tail = _log_tail(instance, 40)
-    raise HTTPException(status_code=504, detail=f"健康检查超时（20s）：\n{tail}")
+    if is_mounted(instance_id):
+        raise HTTPException(status_code=409, detail="实例已挂载（进程内运行时）")
+    try:
+        entry = mount_instance(
+            request.app, instance, define, request.app.state.settings, engine=request.app.state.engine
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"实例挂载失败：{exc}")
+    return {
+        "status": "running",
+        "id": instance_id,
+        "mode": "in-process",
+        "endpoint": instance_mount_path(instance_id),
+        "agentId": entry["agent_id"],
+    }
 
 
 @router.post("/{instance_id}/stop")
 def stop_instance(instance_id: str, request: Request, _: dict = Depends(require_admin)):
-    define_path = resolve_define_path()
-    define = _load_define(define_path)
+    define = _load_define(resolve_define_path())
     instance = _instance_by_id(define, instance_id)
-    stopped = False
-    with _LOCK:
-        proc = _PROCESSES.pop(instance_id, None)
-        if proc is not None and proc.poll() is None:
-            proc.terminate()
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.wait(timeout=5)
-            stopped = True
+    stopped = unmount_instance(request.app, instance_id, instance=instance)
     if not stopped:
-        pid_file = _work_dir(instance) / "instance.pid"
-        if pid_file.exists():
-            try:
-                pid = int(pid_file.read_text(encoding="utf-8").strip())
-            except (OSError, ValueError):
-                pid = 0
-            if pid > 0 and _pid_alive(pid):
-                if os.name == "nt":
-                    subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, timeout=15)
-                else:
-                    os.kill(pid, 9)
-                stopped = True
-        try:
-            pid_file.unlink()
-        except OSError:
-            pass
-    deadline = time.time() + 3
-    while time.time() < deadline and _health_probe(int(instance.get("port", 9300)), timeout=0.5):
-        time.sleep(0.3)
-    if not stopped and not _health_probe(int(instance.get("port", 9300)), timeout=0.5):
-        return {"status": "stopped", "id": instance_id, "note": "实例本就未在运行"}
+        return {"status": "stopped", "id": instance_id, "note": "实例本就未挂载"}
     return {"status": "stopped", "id": instance_id}
 
 
@@ -267,102 +180,7 @@ def instance_logs(instance_id: str, lines: int = 100, _: dict = Depends(get_curr
 
 @router.get("/{instance_id}/card")
 def instance_card(instance_id: str, _: dict = Depends(get_current_user)):
-    define = _load_define(resolve_define_path())
-    instance = _instance_by_id(define, instance_id)
-    port = int(instance.get("port", 9300))
-    try:
-        response = httpx.get(f"http://127.0.0.1:{port}/.well-known/agent-card.json", timeout=3)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"实例不可达：{exc}")
-    if response.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"实例返回 HTTP {response.status_code}")
-    return response.json()
-
-
-@router.post("/{instance_id}/a2a/{path:path}")
-async def instance_a2a_proxy(instance_id: str, path: str, request: Request):
-    """实例 A2A 公开反代（无鉴权——与 /debug/a2a 一致的 agent 公开面）。
-
-    供跨端页面（如独立场景演示框架 :9010）以同源方式调用打桩实例的 A2A
-    端点（message:send 等）：浏览器只需能达本服务，实例端口无需对外暴露。
-    报文原样透传；A2A-Version / A2A-Extensions 请求头一并转发。实例未
-    运行时返回 503，由调用方自行回退。
-    """
-    define = _load_define(resolve_define_path())
-    instance = _instance_by_id(define, instance_id)
-    port = int(instance.get("port", 9300))
-    if not _health_probe(port, timeout=1.0):
-        raise HTTPException(status_code=503, detail=f"实例 {instance_id} 未运行，请先在 设置>Mock Agent管理 启动")
-    body = await request.body()
-    headers = {"Content-Type": request.headers.get("content-type") or "application/json"}
-    a2a_version = request.headers.get("a2a-version")
-    if a2a_version:
-        headers["A2A-Version"] = a2a_version
-    extensions = request.headers.get("a2a-extensions")
-    if extensions:
-        headers["A2A-Extensions"] = extensions
-    try:
-        # 300s：冷实例首跑工作流（加载 workflow-engine SDK + PSOP 派发）可能超过 120s
-        async with httpx.AsyncClient(timeout=300) as client:
-            response = await client.post(f"http://127.0.0.1:{port}/{path}", content=body, headers=headers)
-    except httpx.HTTPError as exc:
-        raise HTTPException(status_code=502, detail=f"实例请求失败：{exc}")
-    return Response(content=response.content, status_code=response.status_code, media_type="application/json")
-
-
-def autostart_instances() -> None:
-    """服务启动后拉起 define 中 autoStart=true 的实例（后台线程，失败仅记日志，不阻塞服务）。
-
-    OPENAN_DEBUG_AUTOSTART（逗号分隔实例 id）设置时优先生效：为空串=不自动启动，
-    非空=仅拉起列出的实例（ODA Canvas 部署按用户勾选注入）。
-    """
-    import logging
-    import os
-
-    def _run():
-        try:
-            define_path = resolve_define_path()
-            define = _load_define(define_path)
-        except Exception:
-            return
-        override = os.environ.get("OPENAN_DEBUG_AUTOSTART")
-        if override is not None:
-            wanted = {x.strip() for x in override.split(",") if x.strip()}
-        else:
-            wanted = None
-        for instance in define.get("instances", []):
-            if wanted is not None:
-                if instance["id"] not in wanted:
-                    continue
-            elif not instance.get("autoStart"):
-                continue
-            instance_id = instance["id"]
-            try:
-                with _LOCK:
-                    if _managed_running(instance_id) or _health_probe(int(instance.get("port", 9300))):
-                        continue
-                    work_dir = Path(instance["workDir"])
-                    work_dir.mkdir(parents=True, exist_ok=True)
-                    log_file = open(work_dir / "instance.log", "ab")
-                    proc = subprocess.Popen(
-                        [
-                            sys.executable, "-m", "openan_debug.standalone_agent",
-                            "--define", str(define_path),
-                            "--instance", instance_id,
-                        ],
-                        cwd=str(Path(__file__).resolve().parents[2]),
-                        env=os.environ.copy(),
-                        stdout=log_file,
-                        stderr=subprocess.STDOUT,
-                    )
-                    _PROCESSES[instance_id] = proc
-                deadline = time.time() + 20
-                while time.time() < deadline and proc.poll() is None and not _health_probe(int(instance.get("port", 9300))):
-                    time.sleep(0.5)
-                logging.getLogger(__name__).info(
-                    "autostart instance %s: pid=%s healthy=%s", instance_id, proc.pid, _health_probe(int(instance.get("port", 9300)))
-                )
-            except Exception:
-                logging.getLogger(__name__).exception("autostart instance %s failed", instance_id)
-
-    threading.Thread(target=_run, daemon=True).start()
+    entry = get_runtime(instance_id)
+    if entry is None:
+        raise HTTPException(status_code=409, detail=f"实例 {instance_id} 未挂载，请先在 设置>Mock Agent管理 启动")
+    return entry["card"]

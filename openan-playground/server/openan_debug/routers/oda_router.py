@@ -167,9 +167,8 @@ def _manifests(cfg: OdaConfig) -> list[dict]:
         "spec": {"accessModes": ["ReadWriteOnce"], "resources": {"requests": {"storage": cfg.storageSize or "2Gi"}}},
     })
 
-    container_ports = [{"name": "http", "containerPort": 9000}] + [
-        {"name": f"agent-{a['name']}", "containerPort": a["port"]} for a in agents
-    ]
+    # 单进程单端口：全部 Agent（内嵌默认 + 打桩实例）都由主服务 9000 端口按路径提供
+    container_ports = [{"name": "http", "containerPort": 9000}]
     env = [
         {"name": "OPENAN_DEBUG_HOST", "value": "0.0.0.0"},
         {"name": "OPENAN_DEBUG_PORT", "value": "9000"},
@@ -210,9 +209,7 @@ def _manifests(cfg: OdaConfig) -> list[dict]:
         },
     })
 
-    service_ports = [{"name": "http", "port": 9000, "targetPort": "http"}] + [
-        {"name": f"agent-{a['name']}", "port": a["port"], "targetPort": f"agent-{a['name']}"} for a in agents
-    ]
+    service_ports = [{"name": "http", "port": 9000, "targetPort": "http"}]
     objs.append({
         "apiVersion": "v1",
         "kind": "Service",
@@ -232,11 +229,12 @@ def _manifests(cfg: OdaConfig) -> list[dict]:
     for a in agents:
         exposed.append({
             "name": f"mockagent-{a['name']}",
-            "specification": [f"http://{svc}:{a['port']}/openapi.json"],
+            "specification": [f"{public_base}/openapi.json"],
             "apiType": "openapi",
             "implementation": svc,
-            "path": "/",
-            "port": a["port"],
+            "path": f"/api/v1/mock-instances/{a['id']}/a2a",
+            "developerUI": f"{public_base}/docs",
+            "port": 9000,
         })
     management = [{
         "name": "mockagent-console",

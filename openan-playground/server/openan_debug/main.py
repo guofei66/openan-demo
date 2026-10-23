@@ -27,9 +27,10 @@ from .routers.variants_router import router as variants_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    from .routers.mock_instances_router import autostart_instances
+    from .instance_runtime import autostart_instances
 
-    autostart_instances()
+    # 打桩实例在主服务进程内挂载（单进程单端口），不再拉起子进程
+    autostart_instances(app)
     yield
     app.state.engine.dispose()
 

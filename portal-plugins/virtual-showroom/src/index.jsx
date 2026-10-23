@@ -474,8 +474,8 @@ export default function VirtualShowroomPlugin() {
                                         </div>
                                         <p className="vs-launch-note">
                                             {launchSel.driver === 'mockAgent'
-                                                ? tr('virtual-showroom.noteAgent', '真实拉起 Agent 服务，消息实时拉取', 'Launches the agent service; messages pulled live')
-                                                : tr('virtual-showroom.noteDemo', '纯本地时间线回放，不拉起 Agent 服务', 'Pure local timeline replay; no agent service launched')}
+                                                ? tr('virtual-showroom.noteAgent', '真实调用 Agent 服务（与 Playground 同一服务进程，单端口多 Agent），消息实时拉取', 'Calls the real agent service (same single process & port as the Playground); messages pulled live')
+                                                : tr('virtual-showroom.noteDemo', '纯本地时间线回放，不调用 Agent 服务', 'Pure local timeline replay; no agent service called')}
                                         </p>
 
                                         {/* 答复模式 only applies to Agent 执行 — Demo 回放

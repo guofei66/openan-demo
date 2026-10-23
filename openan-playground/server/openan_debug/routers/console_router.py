@@ -12,7 +12,7 @@ from ..auth import get_current_user
 from ..deps import get_db, get_settings
 from ..models import Agent, RequestLog
 from ..schemas import ConsoleSendRequest
-from .mock_instances_router import _health_probe, _instance_by_id, _load_define, resolve_define_path
+from .mock_instances_router import _instance_by_id, _load_define, resolve_define_path
 
 router = APIRouter(prefix="/api/v1/console", tags=["console"])
 
@@ -26,15 +26,16 @@ def _local_base(url: str) -> str:
     return url
 
 
-def _resolve_instance_target(db: Session, instance_id: str) -> tuple[str, int | None]:
-    """调测台打桩实例目标：请求打到实例进程真实端口（与外部 SDK 客户端完全一致的链路）。"""
+def _resolve_instance_target(db: Session, instance_id: str, settings) -> tuple[str, int | None]:
+    """调测台打桩实例目标：主服务内挂载路径（同端口回环，仍是真实 A2A 报文链路）。"""
+    from ..instance_runtime import is_mounted, service_base_url
+
     define = _load_define(resolve_define_path())
     instance = _instance_by_id(define, instance_id)
-    port = int(instance.get("port") or 0)
-    if port <= 0 or not _health_probe(port):
+    if not is_mounted(instance_id):
         raise HTTPException(
             status_code=409,
-            detail=f"打桩实例 {instance_id} 未运行，请先在 设置>Mock Agent管理 启动",
+            detail=f"打桩实例 {instance_id} 未挂载，请先在 设置>Mock Agent管理 启动",
         )
     agent_id = None
     agent = db.execute(
@@ -42,7 +43,7 @@ def _resolve_instance_target(db: Session, instance_id: str) -> tuple[str, int | 
     ).scalars().first()
     if agent is not None:
         agent_id = agent.id
-    return f"http://127.0.0.1:{port}/message:send", agent_id
+    return f"{service_base_url(settings)}/api/v1/mock-instances/{instance_id}/a2a/message:send", agent_id
 
 
 def _resolve_target(settings, db: Session, agent_id: int | None, default_agent_id: int | None) -> str:
@@ -87,7 +88,7 @@ async def console_send(
 ):
     log_agent_id = body.agentId
     if body.instanceId:
-        target, log_agent_id = _resolve_instance_target(db, body.instanceId)
+        target, log_agent_id = _resolve_instance_target(db, body.instanceId, settings)
     else:
         target = _resolve_target(settings, db, body.agentId, request.app.state.default_agent_id)
     headers = {

@@ -295,7 +295,7 @@
     "descSuffix": "，各自维护独立变体池",
     "stubInstancesTitle": "打桩实例（mock_agent_define.json）",
     "stubDescPrefix": "实例按 ",
-    "stubDescSuffix": " 声明启动为独立进程（各自端口/工作目录/模型连接方案），变体池与历史联调记录与主服务共用；llm.enabled=false 时为纯打桩模式。",
+    "stubDescSuffix": " 声明挂载为主服务进程内运行时（单进程单端口：A2A 路径 /api/v1/mock-instances/<id>/a2a；各自工作目录/模型连接方案），变体池与历史联调记录与主服务共用；llm.enabled=false 时为纯打桩模式。",
     "selectedCount": "已勾选 {{selected}} / {{total}} 个实例",
     "selectDeployFirst": "先在表格勾选要部署的 Agent",
     "deployToOda": "🚀 部署到 ODA Canvas",

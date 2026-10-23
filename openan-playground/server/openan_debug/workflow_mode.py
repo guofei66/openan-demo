@@ -79,8 +79,12 @@ def list_builtin() -> list[dict]:
     return result
 
 
-def agent_cards_for(workflow_dict: dict, define: dict) -> list[dict]:
-    """工作流引用的 Agent 名 → 打桩实例 A2A 卡（a2a-sdk 1.1.2 AgentCard schema）。"""
+def agent_cards_for(workflow_dict: dict, define: dict, service_base: str = "http://127.0.0.1:9100") -> list[dict]:
+    """工作流引用的 Agent 名 → 打桩实例 A2A 卡（a2a-sdk 1.1.2 AgentCard schema）。
+
+    派发目标为主服务内挂载路径（{service_base}/api/v1/mock-instances/{id}/a2a/，
+    同端口回环，仍是真实 A2A HTTP 报文链路）。
+    """
     needed: set[str] = set()
     for step in workflow_dict.get("steps", []):
         for task in step.get("subtasks") or []:
@@ -91,14 +95,13 @@ def agent_cards_for(workflow_dict: dict, define: dict) -> list[dict]:
     for inst in define.get("instances", []):
         name = inst.get("agentName") or inst.get("name") or ""
         if name in needed:
-            port = int(inst.get("port", 9300))
             cards.append({
                 "name": name,
                 "description": inst.get("description", ""),
                 "version": "1.0.0",
                 "capabilities": {"streaming": False},
                 "supportedInterfaces": [{
-                    "url": f"http://127.0.0.1:{port}/",
+                    "url": f"{service_base}/api/v1/mock-instances/{inst['id']}/a2a/",
                     "protocolBinding": "HTTP+JSON",
                     "protocolVersion": "1.1",
                 }],
