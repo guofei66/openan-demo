@@ -1,0 +1,13 @@
+[Unit]
+Description=OpenAN-Debug (A2A-T mock agent + debug API)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/OpenA2A-T/openan-debug/server
+ExecStart=/OpenA2A-T/openan-debug/server/.venv/bin/uvicorn openan_debug.main:create_app --factory --host 127.0.0.1 --port 9100
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

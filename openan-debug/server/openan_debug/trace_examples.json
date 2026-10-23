@@ -1,0 +1,139 @@
+{
+  "source": "工作台实际返回给waimo的报文.txt（2026-10-12 实采；文件仅含响应流，请求 body 按 a2a-t-sdk-python 契约重建）；另含 A2A-T Demo.docx 实采对（demo-pair-*）；另含 A2A-T Demo.docx 实采对（demo-pair-*）；另含 A2A-T Demo.docx 实采对（demo-pair-*）；另含 A2A-T Demo.docx 实采对（demo-pair-*）",
+  "examples": [
+    {
+      "id": "trace-sub-ack",
+      "templateUri": "Notification-T/network-layer/subscribe-incident/v1",
+      "label": "实采·订阅回执（订阅结果：成功）",
+      "promptText": "## 订阅结果\n订阅结果：成功",
+      "partsText": null
+    },
+    {
+      "id": "trace-event-running",
+      "templateUri": "Notification-T/network-layer/recovery-event-subscription/v1",
+      "label": "实采·业务抢通事件（未启动）",
+      "promptText": "### 业务抢通事件\n1. 业务抢通方案执行状态：未启动\n2. 投诉诊断任务流水号：64d43d20-d1ff-49e1-865d-ba27f1b667ed\n3. OSS侧事件流水号：CMCC-GD-TSCLX-20260923-025824\n4. 接入端口名称：P45053-智能光模块演示设备-HW-PTN980B-1-TPN2EX10S-8\n5. 是否已授权OMC自动抢通：是\n6. 业务抢通方案名称：隧道调优\n7. 业务抢通方案详情：场景: PROTECT_PATH_FAULT; 抢通方案已就绪，已自动下发执行\n    调优前：\n    - 隧道1：P45053-智能光模块演示设备-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel2，源网元:P48010-海珠2时钟源下沉-CPE-03，宿网元:P45053-智能光模块演示设备-HW-PTN980B，主备类型：protect，状态：down，时延：1000000ms，丢包率：0%，带宽：20bps\n       - 隧道路由列表：\n          - 链路0：P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)-P45054-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-7(PORT-7)，源网元:P48010-海珠2时钟源下沉-CPE-03，源端口：2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)，宿网元:P45054-智能光模块演示设备-HW-PTN980B，宿端口：1-TPN2EX10S-7(PORT-7)，时延：500000ms\n          - 链路1：P45054-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-3(PORT-3)-P45053-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-3(PORT-3)，源网元:P45054-智能光模块演示设备-HW-PTN980B，源端口：1-TPN2EX10S-3(PORT-3)，宿网元:P45053-智能光模块演示设备-HW-PTN980B，宿端口：1-TPN2EX10S-3(PORT-3)，时延：500000ms\n    - 隧道2：P45053-智能光模块演示设备-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel12，源网元:P45053-智能光模块演示设备-HW-PTN980B，宿网元:P48010-海珠2时钟源下沉-CPE-03，主备类型：protect，状态：down，时延：1000000ms，丢包率：0%，带宽：20bps\n       - 隧道路由列表：\n          - 链路0：P45053-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-3(PORT-3)-P45054-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-3(PORT-3)，源网元:P45053-智能光模块演示设备-HW-PTN980B，源端口：1-TPN2EX10S-3(PORT-3)，宿网元:P45054-智能光模块演示设备-HW-PTN980B，宿端口：1-TPN2EX10S-3(PORT-3)，时延：500000ms\n          - 链路1：P45054-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-7(PORT-7)-P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)，源网元:P45054-智能光模块演示设备-HW-PTN980B，源端口：1-TPN2EX10S-7(PORT-7)，宿网元:P48010-海珠2时钟源下沉-CPE-03，宿端口：2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)，时延：500000ms\n    调优后：\n    - 隧道1：P45053-智能光模块演示设备-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel2，源网元:P48010-海珠2时钟源下沉-CPE-03，宿网元:P45053-智能光模块演示设备-HW-PTN980B，主备类型：protect，状态：up，时延：500000ms，丢包率：0%，带宽：25bps\n       - 隧道路由列表：\n          - 链路0：P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)-P45053-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-7(PORT-7)，源网元:P48010-海珠2时钟源下沉-CPE-03，源端口：2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)，宿网元:P45053-智能光模块演示设备-HW-PTN980B，宿端口：1-TPN2EX10S-7(PORT-7)，时延：500000ms\n    - 隧道2：P45053-智能光模块演示设备-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel12，源网元:P45053-智能光模块演示设备-HW-PTN980B，宿网元:P48010-海珠2时钟源下沉-CPE-03，主备类型：protect，状态：up，时延：500000ms，丢包率：0%，带宽：25bps\n       - 隧道路由列表：\n          - 链路0：P45053-智能光模块演示设备-HW-PTN980B_1-TPN2EX10S-7(PORT-7)-P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)，源网元:P45053-智能光模块演示设备-HW-PTN980B，源端口：1-TPN2EX10S-7(PORT-7)，宿网元:P48010-海珠2时钟源下沉-CPE-03，宿端口：2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)，时延：500000ms",
+      "partsText": "业务抢通事件订阅"
+    },
+    {
+      "id": "trace-event-final",
+      "templateUri": "Notification-T/network-layer/recovery-event-subscription/v1",
+      "label": "实采·业务抢通事件（已结束·9字段）",
+      "promptText": "### 业务抢通事件\n1. 业务抢通方案执行状态：已结束\n2. 投诉诊断任务流水号：sim-20260923-172500\n3. OSS侧事件流水号：CMCC-GZ-TSCL-20260923-SIM001\n4. 接入端口名称：P45053-智能光模块演示设备-HW-PTN980B-1-TPN2EX10S-8\n5. 是否已授权OMC自动抢通：是\n6. 业务抢通方案名称：隧道调优\n7. 业务抢通方案详情：将受影响隧道调优到新路径。\n8. 业务抢通方案执行结束时间：2026-09-23T09:25:00Z\n9. 业务抢通方案执行结果：成功",
+      "partsText": "业务抢通事件订阅"
+    },
+    {
+      "id": "taskt-plc-sample",
+      "templateUri": "Task-T/network-layer/private-line-complaint/v1",
+      "label": "样例·私线投诉诊断（SDK 模板渲染）",
+      "promptText": "## 任务类型(Task Type)\n传输专线业务投诉诊断\n\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行投诉场景的网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n\n## 任务目标(Task Target)\n对网络侧故障进行诊断，返回故障根因和修复建议等诊断结果信息。 \n\n## 任务对象(Task Object)\n专线业务名称：惠州江北汇聚专线业务_100M_SPN\n\n## 任务上下文(Task Context)\n投诉分类:专线中断。OSS侧事件流水号：fault-id-1-017-20230511-09013\n\n## 预期输出(Expected Output)\n要求投诉诊断任务的结果包含如下信息：\n1. 诊断结果；参数的取值范围包括：成功、失败；(必选)\n2. 诊断结果详细信息； (必选)\n3. 修复建议； (可选)\n4. 故障根因列表，每个故障根因包含故障根因名称、详细描述、修复建议、故障根因点位置等信息； (可选) \n\n\n## 术语解释(Terminology Explanation)\n1. 专线中断 \n   - 同义词术语：private line interruption，业务中断，网络无法连通，业务不通，业务无法访问\n2. 专线质差\n   - 同义词术语：private line poor quality，业务卡顿，业务访问超时，业务丢包，业务时延大，业务抖动，业务拥塞，业务体验下滑，业务误码率高，业务光功率异常",
+      "partsText": "传输专线投诉诊断",
+      "source": "a2a-t SDK 内置 Task-T 模板 + slot.json 示例值渲染",
+      "responseSample": {
+        "faultManagement.TroubleTicket": {
+          "ticketId": "TT-STUB-{{caseId}}",
+          "status": "processing",
+          "诊断结果": "成功",
+          "诊断结果详细信息": "已完成网络侧根因定位：接入光缆中断导致专线业务中断，正在执行保护倒换恢复业务",
+          "修复建议": "保护倒换完成后确认业务恢复；如未恢复联系传输机房熔接修复",
+          "故障根因列表": [
+            {
+              "故障根因名称": "光缆中断",
+              "详细描述": "接入段光缆被施工挖断，专线业务信号丢失",
+              "修复建议": "熔接修复或倒换至保护路由",
+              "故障根因点位置": "P180-SZ-PTN7900-23-TPA1EG24-17"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "taskt-energy-sample",
+      "templateUri": "Task-T/network-layer/ran-energy-saving/v1",
+      "label": "样例·无线节能（SDK 模板渲染）",
+      "promptText": "## 操作类型(Operation Type)\n\n创建\n\n## 任务类型(Task Type)\n\n无线网络节能\n\n## 任务描述(Task Description)\n\n基于<任务对象>、<任务上下文>，输出无线网络节能方案，达成<任务目标>中定义的无线网络节能目标，并按照<预期输出>中定义的格式返回无线网络节能结果。\n\n## 任务对象(Task Object)\n\n区域为松山湖管委会。\n\n## 任务目标(Task Target)\n\n能耗目标：30%\n\n## 任务上下文(Task Context)\n\n节能的小区制式：NR；需要节能的时间范围：起始时间“08:00:00”，结束时间“12:00:00”；分时段速率保障目标：{00:00~06:00,2Mbps}、{06:00~18:00,10Mbps}。\n\n## 预期输出(Expected Output)\n",
+      "partsText": "无线网络节能任务",
+      "source": "a2a-t SDK 内置 Task-T 模板 + slot.json 示例值渲染",
+      "responseSample": {
+        "energyManagement.EnergySaving": {
+          "cellId": "CELL-STUB-{{caseId}}",
+          "action": "deep_sleep",
+          "expectedSaving": "12%",
+          "duration": "02:00-04:00"
+        }
+      }
+    },
+    {
+      "id": "demo-pair-1",
+      "pairId": "demo-pair-1",
+      "templateUri": "Task-T/network-layer/complaint-diagnosis/v1",
+      "label": "Demo实采·工单1·WAIMO→处置·集客投诉诊断（专线中断）",
+      "promptText": "## 任务类型(Task Type)\n集客专线业务投诉诊断\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行集客专线业务投诉场景网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n## 任务目标(Task Target)\n基于用户的投诉上下文信息，对网络侧故障进行根因诊断，返回故障根因、修复建议等诊断结果信息。\n## 任务对象(Task Object)\n电路编号：广州-深圳GE1508KA/P。产品编号：30122038024。A端接入端口：P36169-YWHJ-棠溪村微网格业务汇聚机房1（990）-1-1-TPN1EM10F-10-ETH。\nZ端接入端口：24696-华泰证券万国数据-L-T-3-1-1-TPK1EX4S-4-ETH.2501-2502。\n## 任务上下文(Task Context)\n故障发生时间：2026-09-24 02:31:09。故障现象：专线中断。投诉工单编号：CMCC-GZ-TSCLX-20260924-004403。投诉所在城市：广州。\n## 预期输出(Expected Output)\n要求投诉诊断任务的结果包含如下信息：1. 诊断结果；参数的取值范围包括：成功、失败；(必选)2. 诊断结果详细信息； (必选)3. 修复建议； (可选)4. 故障根因列表，每个故障根因包含故障根因名称、详细描述、修复建议、故障根因点位置等信息； (可选)",
+      "partsText": "发起专线投诉诊断",
+      "source": "A2A-T Demo.docx 工单1 协作日志"
+    },
+    {
+      "id": "demo-pair-2",
+      "pairId": "demo-pair-2",
+      "templateUri": "Task-T/private-line-complaint/v1",
+      "label": "Demo实采·工单1·处置→粤西SPN·专线诊断（专线中断）",
+      "promptText": "## 任务类型(Task Type)\n传输专线业务投诉诊断\n\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行投诉场景的网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n\n## 任务目标(Task Target)\n对网络侧故障进行诊断，返回故障根因和修复建议等诊断结果信息。\n\n## 任务对象(Task Object)\n接入端口名称：P36169-YWHJ-棠溪村微网格业务汇聚机房1（990）-1-1-TPN1EM10F-10-ETH\n\n## 任务上下文(Task Context)\n投诉分类：专线中断；问题发生时间：2026-09-22T15:25:50；OSS侧事件流水号：CMCC-GZ-TSCLX-20260924-004403；投诉详情：专线中断，本智能体负责片区为粤西，片区内告警：告警区域GX-L-U2000",
+      "partsText": "创建专线业务投诉诊断任务",
+      "source": "A2A-T Demo.docx 工单1 协作日志"
+    },
+    {
+      "id": "demo-pair-3",
+      "pairId": "demo-pair-3",
+      "templateUri": "Task-T/private-line-complaint/v1",
+      "label": "Demo实采·工单1·处置→粤东SPN·专线诊断（专线中断）",
+      "promptText": "## 任务类型(Task Type)\n传输专线业务投诉诊断\n\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行投诉场景的网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n\n## 任务目标(Task Target)\n对网络侧故障进行诊断，返回故障根因和修复建议等诊断结果信息。\n\n## 任务对象(Task Object)\n接入端口名称：24696-华泰证券万国数据-L-T-3-1-1-TPK1EX4S-4-ETH.2501-2502\n\n## 任务上下文(Task Context)\n投诉分类：专线中断；问题发生时间：2026-09-22T15:25:50；OSS侧事件流水号：CMCC-GZ-TSCLX-20260924-004403；投诉详情：专线中断，本智能体负责片区为粤东，片区内告警：告警区域GD-L-U2000",
+      "partsText": "创建专线业务投诉诊断任务",
+      "source": "A2A-T Demo.docx 工单1 协作日志"
+    },
+    {
+      "id": "demo-pair-7",
+      "pairId": "demo-pair-7",
+      "templateUri": "Negotiation-T/information-negotiation/propose/v1",
+      "label": "Demo实采·工单1·粤西SPN→工作台·信息协商PROPOSE",
+      "promptText": "## 信息协商请根据<所需信息项>补充相关内容## 所需信息项1. 接入端口名称不唯一，该端口下存在多个业务接入口，请提供具体的子接口ID或VLAN ID以确认唯一的业务，示例：“网元名-端口名(cvlan=xx)”",
+      "partsText": "存在信息缺失，请补充信息",
+      "source": "A2A-T Demo.docx 工单1 协作日志（negotiationContext PROPOSE round1/5）"
+    },
+    {
+      "id": "demo-pair-4",
+      "pairId": "demo-pair-4",
+      "templateUri": "Task-T/network-layer/complaint-diagnosis/v1",
+      "label": "Demo实采·工单2·WAIMO→处置·集客投诉诊断（专线质差）",
+      "promptText": "## 任务类型(Task Type)\n集客专线业务投诉诊断\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行集客专线业务投诉场景网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n## 任务目标(Task Target)\n基于用户的投诉上下文信息，对网络侧故障进行根因诊断，返回故障根因、修复建议等诊断结果信息。\n## 任务对象(Task Object)\n电路编号：广州-汕头FE2100KA/P。产品编号：30122038024。A端接入端口：P1310-中石油（黄埔大道中路-风光路）-VIP-JK-3A-1-1-TN81EG8E-1-ETH.409。Z端接入端口：21722-汕头潮阳关埠加油站-1-4-TND1EF8T-1-ETH.3532。\n## 任务上下文(Task Context)\n故障发生时间：2026-09-24 02:31:09。故障现象：专线质差。投诉工单编号：CMCC-GZ-TSCLX-20260928-008503。投诉所在城市：广州。\n## 预期输出(Expected Output)\n要求投诉诊断任务的结果包含如下信息：1. 诊断结果；参数的取值范围包括：成功、失败；(必选)2. 诊断结果详细信息； (必选)3. 修复建议； (可选)4. 故障根因列表，每个故障根因包含故障根因名称、详细描述、修复建议、故障根因点位置等信息； (可选)",
+      "partsText": "发起专线投诉诊断",
+      "source": "A2A-T Demo.docx 工单2 协作日志"
+    },
+    {
+      "id": "demo-pair-5",
+      "pairId": "demo-pair-5",
+      "templateUri": "Task-T/private-line-complaint/v1",
+      "label": "Demo实采·工单2·处置→粤东SPN·专线诊断（专线质差）",
+      "promptText": "## 任务类型(Task Type)\n传输专线业务投诉诊断\n\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行投诉场景的网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n\n## 任务目标(Task Target)\n对网络侧故障进行诊断，返回故障根因和修复建议等诊断结果信息。\n\n## 任务对象(Task Object)\n接入端口名称：21722-汕头潮阳关埠加油站-1-4-TND1EF8T-1-ETH.3532\n\n## 任务上下文(Task Context)\n投诉分类：专线质差；问题发生时间：2026-09-27T10:20:08；OSS侧事件流水号：CMCC-GZ-TSCLX-20260928-008503；投诉详情：专线质差，本智能体负责片区为粤东，片区内告警：告警区域GD-L-U2000",
+      "partsText": "创建专线业务投诉诊断任务",
+      "source": "A2A-T Demo.docx 工单2 协作日志"
+    },
+    {
+      "id": "demo-pair-6",
+      "pairId": "demo-pair-6",
+      "templateUri": "Task-T/private-line-complaint/v1",
+      "label": "Demo实采·工单2·处置→粤西SPN·专线诊断（专线质差）",
+      "promptText": "## 任务类型(Task Type)\n传输专线业务投诉诊断\n\n## 任务描述(Task Description)\n基于<任务对象>、<任务上下文> 进行投诉场景的网络侧故障根因诊断, 达成<任务目标>中定义的投诉诊断目标，按照<预期输出>中定义的结构返回任务处理结果。\n\n## 任务目标(Task Target)\n对网络侧故障进行诊断，返回故障根因和修复建议等诊断结果信息。\n\n## 任务对象(Task Object)\n接入端口名称：P1310-中石油（黄埔大道中路-风光路）-VIP-JK-3A-1-1-TN81EG8E-1-ETH.409\n\n## 任务上下文(Task Context)\n投诉分类：专线质差；问题发生时间：2026-09-27T10:20:08；OSS侧事件流水号：CMCC-GZ-TSCLX-20260928-008503；投诉详情：专线质差，本智能体负责片区为粤西，片区内告警：告警区域GX-L-U2000",
+      "partsText": "创建专线业务投诉诊断任务",
+      "source": "A2A-T Demo.docx 工单2 协作日志"
+    },
+    {
+      "id": "demo-pair-8",
+      "pairId": "demo-pair-8",
+      "templateUri": "Notification-T/network-layer/service-recovery/v1",
+      "label": "Demo实采·工单2·粤西SPN·抢通方案上报（未启动·隧道调优）",
+      "promptText": "### 业务抢通事件\n1. 业务抢通方案执行状态：未启动\n2. 投诉诊断任务流水号；3a433236-5cc7-441c-b05d-68ae27fd70f2\n3. OSS侧事件流水号；CMCC-GZ-TSCLX-20260928-008503\n4. 接入端口名称；P1310-中石油（黄埔大道中路-风光路）-VIP-JK-3A-1-1-TN81EG8E-1-ETH.409\n5. 是否已授权OMC自动抢通：是\n6. 业务抢通方案名称；隧道调优\n7. 业务抢通方案详情；\n    场景: PROTECT_PATH_FAULT; 抢通方案已就绪，已自动下发执行\n    调优前：\n    - 隧道1：P45053-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel2，源网元:P48010-海珠2时钟源下沉-CPE-03，宿网元:P45053-HW-PTN980B，主备类型：protect，状态：down，时延：1000000ms，丢包率：0%，带宽：20bps\n       - 隧道路由列表：\n          - 链路0：P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)-P45054-HW-PTN980B_1-TPN2EX10S-7(PORT-7)，源网元:P48010-海珠2时钟源下沉-CPE-03，源端口：2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)，宿网元:P45054-HW-PTN980B，宿端口：1-TPN2EX10S-7(PORT-7)，时延：500000ms\n          - 链路1：P45054-HW-PTN980B_1-TPN2EX10S-3(PORT-3)-P45053-HW-PTN980B_1-TPN2EX10S-3(PORT-3)，源网元:P45054-HW-PTN980B，源端口：1-TPN2EX10S-3(PORT-3)，宿网元:P45053-HW-PTN980B，宿端口：1-TPN2EX10S-3(PORT-3)，时延：500000ms\n    - 隧道2：P45053-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel12，源网元:P45053-HW-PTN980B，宿网元:P48010-海珠2时钟源下沉-CPE-03，主备类型：protect，状态：down，时延：1000000ms，丢包率：0%，带宽：20bps\n       - 隧道路由列表：\n          - 链路0：P45053-HW-PTN980B_1-TPN2EX10S-3(PORT-3)-P45054-HW-PTN980B_1-TPN2EX10S-3(PORT-3)，源网元:P45053-HW-PTN980B，源端口：1-TPN2EX10S-3(PORT-3)，宿网元:P45054-HW-PTN980B，宿端口：1-TPN2EX10S-3(PORT-3)，时延：500000ms\n          - 链路1：P45054-HW-PTN980B_1-TPN2EX10S-7(PORT-7)-P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)，源网元:P45054-HW-PTN980B，源端口：1-TPN2EX10S-7(PORT-7)，宿网元:P48010-海珠2时钟源下沉-CPE-03，宿端口：2-HGF1CXPB0-2-CPE-03 ETH-14(TO-P45054)，时延：500000ms\n    调优后：\n    - 隧道1：P45053-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel2，源网元:P48010-海珠2时钟源下沉-CPE-03，宿网元:P45053-HW-PTN980B，主备类型：protect，状态：up，时延：500000ms，丢包率：0%，带宽：25bps\n       - 隧道路由列表：\n          - 链路0：P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)-P45053-HW-PTN980B_1-TPN2EX10S-7(PORT-7)，源网元:P48010-海珠2时钟源下沉-CPE-03，源端口：2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)，宿网元:P45053-HW-PTN980B，宿端口：1-TPN2EX10S-7(PORT-7)，时延：500000ms\n    - 隧道2：P45053-HW-PTN980B_P48010-海珠2时钟源下沉-CPE-03_20260922 Tunnel12，源网元:P45053-HW-PTN980B，宿网元:P48010-海珠2时钟源下沉-CPE-03，主备类型：protect，状态：up，时延：500000ms，丢包率：0%，带宽：25bps\n       - 隧道路由列表：\n          - 链路0：P45053-HW-PTN980B_1-TPN2EX10S-7(PORT-7)-P48010-海珠2时钟源下沉-CPE-03_2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)，源网元:P45053-HW-PTN980B，源端口：1-TPN2EX10S-7(PORT-7)，宿网元:P48010-海珠2时钟源下沉-CPE-03，宿端口：2-HGF1CXPB0-2-CPE-03 ETH-13(TO-P45053)，时延：500000ms",
+      "partsText": "业务抢通事件",
+      "source": "A2A-T Demo.docx 工单2 协作日志"
+    }
+  ]
+}

@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "comment": "Mock Agent 打桩实例定义。mock-instances 管理 API 读取本文件按实例拉起/停止独立进程；实例与主调试服务共用同一数据库（Agent 行 / 变体 / 历史联调记录）。defaults.stubVariants 为调测台全部 12 模板的基线桩（实例同模板条目优先覆盖），stubVariants 仅在该实例对应模板无任何变体时导入，不覆盖种子页手工维护的内容。llm.enabled=false 时实例以纯打桩模式运行（LLM 调用失败自动回落桩数据）。",
+  "defaults": {
+    "host": "0.0.0.0",
+    "workDirRoot": "data/mock_agents",
+    "publicUrlBase": "http://127.0.0.1",
+    "llm": {
+      "enabled": false,
+      "provider": "openai",
+      "baseUrl": "http://127.0.0.1:8000/v1",
+      "model": "qwen2.5-7b-instruct",
+      "apiKeyEnv": "MOCK_AGENT_LLM_API_KEY",
+      "maxAttempts": 1,
+      "language": "zh-CN"
+    },
+    "stubVariants": [
+      {
+        "templateUri": "Task-T/network-layer/private-line-complaint/v1",
+        "variantJson": {
+          "faultManagement.TroubleTicket": {
+            "ticketId": "TT-STUB-{{caseId}}",
+            "status": "processing",
+            "诊断结果": "成功",
+            "诊断结果详细信息": "已完成网络侧根因定位：接入光缆中断导致专线业务中断，正在执行保护倒换恢复业务",
+            "修复建议": "保护倒换完成后确认业务恢复；如未恢复联系传输机房熔接修复",
+            "故障根因列表": [
+              {
+                "故障根因名称": "光缆中断",
+                "详细描述": "接入段光缆被施工挖断，专线业务信号丢失",
+                "修复建议": "熔接修复或倒换至保护路由",
+                "故障根因点位置": "P180-SZ-PTN7900-23-TPA1EG24-17"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "templateUri": "Task-T/network-layer/ran-energy-saving/v1",
+        "variantJson": {
+          "energyManagement.EnergySaving": {
+            "cellId": "CELL-STUB-{{caseId}}",
+            "action": "deep_sleep",
+            "expectedSaving": "12%",
+            "duration": "02:00-04:00"
+          }
+        }
+      },
+      {
+        "templateUri": "Notification-T/network-layer/subscribe-incident/v1",
+        "variantJson": {
+          "faultManagement.Incident": {
+            "csn": "INC-{{timestamp}}",
+            "name": "ETH-LOS",
+            "priority": "critical",
+            "status": "open",
+            "topic": "{{slots.通知主题}}"
+          }
+        }
+      },
+      {
+        "templateUri": "Notification-T/network-layer/service-recovery/v1",
+        "variantJson": {
+          "faultManagement.ServiceRecovery": {
+            "recoveryId": "STUB-REC-{{caseId}}",
+            "status": "recovered"
+          }
+        }
+      },
+      {
+        "templateUri": "Authorization-T/authorization-policy-management/v1",
+        "variantJson": {
+          "Authorization-T.policy": {
+            "policyId": "POL-STUB-{{caseId}}",
+            "action": "created",
+            "status": "active"
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/information-negotiation/propose/v1",
+        "variantJson": {
+          "Negotiation-T.informationProposal": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "status": "proposed",
+            "informationItems": [
+              "告警详情",
+              "根因分析"
+            ]
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/information-negotiation/accept-reject/v1",
+        "variantJson": {
+          "Negotiation-T.informationDecision": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "decision": "accept"
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/target-negotiation/propose/v1",
+        "variantJson": {
+          "Negotiation-T.targetProposal": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "target": "受影响业务",
+            "status": "proposed"
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/target-negotiation/accept-reject/v1",
+        "variantJson": {
+          "Negotiation-T.targetDecision": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "decision": "accept"
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/feasibility-negotiation/propose/v1",
+        "variantJson": {
+          "Negotiation-T.feasibilityProposal": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "feasible": true
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/feasibility-negotiation/accept-reject/v1",
+        "variantJson": {
+          "Negotiation-T.feasibilityDecision": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "decision": "accept"
+          }
+        }
+      },
+      {
+        "templateUri": "Negotiation-T/common/abort/v1",
+        "variantJson": {
+          "Negotiation-T.abort": {
+            "sessionId": "NEG-STUB-{{caseId}}",
+            "aborted": true,
+            "reason": "stub abort"
+          }
+        }
+      }
+    ]
+  },
+  "instances": [
+    {
+      "id": "fault-diagnosis-stub",
+      "name": "故障诊断打桩 Agent",
+      "organization": "OpenAN-Stub",
+      "description": "私线投诉诊断打桩：Task-T 私线投诉模板，返回确定性工单桩数据",
+      "layer": "service",
+      "port": 9005,
+      "workDir": "data/mock_agents/fault-diagnosis-stub",
+      "autoStart": false,
+      "llm": {
+        "enabled": false
+      },
+      "stubVariants": [
+        {
+          "templateUri": "Task-T/network-layer/private-line-complaint/v1",
+          "variantJson": {
+            "faultManagement.TroubleTicket": {
+              "ticketId": "TT-STUB-{{caseId}}",
+              "status": "processing",
+              "诊断结果": "成功",
+              "诊断结果详细信息": "已完成网络侧根因定位：接入光缆中断导致专线业务中断，正在执行保护倒换恢复业务",
+              "修复建议": "保护倒换完成后确认业务恢复；如未恢复联系传输机房熔接修复",
+              "故障根因列表": [
+                {
+                  "故障根因名称": "光缆中断",
+                  "详细描述": "接入段光缆被施工挖断，专线业务信号丢失",
+                  "修复建议": "熔接修复或倒换至保护路由",
+                  "故障根因点位置": "P180-SZ-PTN7900-23-TPA1EG24-17"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "templateUri": "Task-T/network-layer/private-line-complaint/v1",
+          "variantJson": {
+            "faultManagement.TroubleTicket": {
+              "ticketId": "TT-STUB-{{caseId}}-B",
+              "status": "resolved",
+              "诊断结果": "成功",
+              "诊断结果详细信息": "接入光缆熔接修复完成，专线业务恢复正常，误码率与时延指标回归正常范围",
+              "修复建议": "无需进一步处理",
+              "故障根因列表": [
+                {
+                  "故障根因名称": "光缆中断",
+                  "详细描述": "接入段光缆被施工挖断，专线业务信号丢失",
+                  "修复建议": "熔接修复或倒换至保护路由",
+                  "故障根因点位置": "P180-SZ-PTN7900-23-TPA1EG24-17"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "datasetTemplates": [
+        "Task-T/network-layer/private-line-complaint/v1",
+        "Task-T/network-layer/complaint-diagnosis/v1",
+        "Task-T/private-line-complaint/v1",
+        "Negotiation-T/information-negotiation/propose/v1"
+      ]
+    },
+    {
+      "id": "recovery-stub",
+      "name": "业务抢通打桩 Agent",
+      "organization": "OpenAN-Stub",
+      "description": "业务抢通/严重故障通知打桩：Notification-T 服务恢复与故障订阅模板（与工作台实采报文场景对齐）",
+      "layer": "network",
+      "networkDomain": "transmission",
+      "port": 9006,
+      "workDir": "data/mock_agents/recovery-stub",
+      "autoStart": false,
+      "llm": {
+        "enabled": false
+      },
+      "stubVariants": [
+        {
+          "templateUri": "Notification-T/network-layer/service-recovery/v1",
+          "variantJson": {
+            "faultManagement.ServiceRecovery": {
+              "recoveryId": "STUB-REC-{{caseId}}",
+              "status": "recovered"
+            }
+          }
+        },
+        {
+          "templateUri": "Notification-T/network-layer/subscribe-incident/v1",
+          "variantJson": {
+            "faultManagement.Incident": {
+              "csn": "INC-{{timestamp}}",
+              "name": "ETH-LOS",
+              "priority": "critical",
+              "status": "open",
+              "topic": "{{slots.通知主题}}"
+            }
+          }
+        },
+        {
+          "templateUri": "Notification-T/network-layer/recovery-event-subscription/v1",
+          "variantJson": {
+            "Notification-T.recoveryEventSubscription": {
+              "订阅结果": "成功",
+              "提示": "订阅成功，启动业务抢通事件上报任务",
+              "source": "mock_agent_define.json"
+            }
+          }
+        }
+      ],
+      "datasetTemplates": [
+        "Notification-T/network-layer/service-recovery/v1",
+        "Notification-T/network-layer/recovery-event-subscription/v1",
+        "Notification-T/network-layer/subscribe-incident/v1"
+      ]
+    },
+    {
+      "id": "energy-saving-stub",
+      "name": "无线节能打桩 Agent",
+      "organization": "OpenAN-Stub",
+      "description": "基站节能打桩：Task-T 无线层节能模板，返回节能策略桩数据",
+      "layer": "network",
+      "networkDomain": "ran",
+      "port": 9007,
+      "workDir": "data/mock_agents/energy-saving-stub",
+      "autoStart": false,
+      "llm": {
+        "enabled": false
+      },
+      "stubVariants": [
+        {
+          "templateUri": "Task-T/network-layer/ran-energy-saving/v1",
+          "variantJson": {
+            "energyManagement.EnergySaving": {
+              "cellId": "CELL-STUB-{{caseId}}",
+              "action": "deep_sleep",
+              "expectedSaving": "12%",
+              "duration": "02:00-04:00"
+            }
+          }
+        },
+        {
+          "templateUri": "Task-T/network-layer/ran-energy-saving/v1",
+          "variantJson": {
+            "energyManagement.EnergySaving": {
+              "cellId": "CELL-STUB-{{caseId}}-B",
+              "action": "symbol_shutdown",
+              "expectedSaving": "7%",
+              "duration": "23:00-05:00"
+            }
+          }
+        }
+      ],
+      "datasetTemplates": [
+        "Task-T/network-layer/ran-energy-saving/v1"
+      ]
+    },
+    {
+      "id": "wireless-domain-stub",
+      "name": "无线域打桩 Agent",
+      "organization": "OpenAN-Stub",
+      "description": "无线域智能体打桩：无线小区故障诊断、无线节能与无线故障订阅；优先检索数据集返回最接近的成对响应",
+      "layer": "network",
+      "networkDomain": "ran",
+      "port": 9008,
+      "workDir": "data/mock_agents/wireless-domain-stub",
+      "autoStart": false,
+      "llm": {
+        "enabled": false
+      },
+      "stubVariants": [
+        {
+          "templateUri": "Task-T/network-layer/wireless-cell-diagnosis/v1",
+          "variantJson": {
+            "artifactName": "wireless-cell-diagnosis-result",
+            "artifactPrompt": "1. 诊断结果：成功\n2. 诊断结果详细信息：小区 CELL-46001（松山湖-大学城站）切换成功率突降，目标小区测量报告正常，疑似切换参数配置异常。\n3. 修复建议：核查切换参数（CIO/迟滞）配置并回退异常修改。\n4. 故障根因列表：\n   - 故障根因名称：切换参数配置异常，详细描述：切换参数配置异常导致切换失败率升高，修复建议：核查切换参数（CIO/迟滞）配置并回退异常修改，故障根因点位置：CELL {{caseId}}，故障对象类型：CELL"
+          }
+        },
+        {
+          "templateUri": "Task-T/network-layer/ran-energy-saving/v1",
+          "variantJson": {
+            "artifactName": "ran-energy-saving-task-result",
+            "artifactPrompt": "1. 任务执行结果：成功\n2. 意图执行结果基本信息：区域：松山湖管委会；意图目标达成情况：已达成（能耗目标 30%）\n3. 意图执行结果详情：节能增益达成情况：达标；实际节能增益百分比：18%；目标调整建议：无\n4. 速率目标达成情况：达标；实际速率：满足保障目标；目标调整建议：无\n5. 节能动作：深度休眠/符号关断（按NR小区分批执行）；生效时段：00:00:00~06:00:00，按天循环"
+          }
+        },
+        {
+          "templateUri": "Notification-T/network-layer/subscribe-incident/v1",
+          "variantJson": {
+            "artifactName": "incident-subscription-result",
+            "artifactPrompt": "1. 订阅结果：成功\n2. 订阅标识：SUB-RAN-{{caseId}}\n3. 订阅条件确认：故障优先级=高，故障名称=掉线率升高/切换失败\n4. 上报方式确认：通过DataPart上报Incident数据"
+          }
+        }
+      ],
+      "datasetTemplates": [
+        "Task-T/network-layer/wireless-cell-diagnosis/v1",
+        "Task-T/network-layer/ran-energy-saving/v1",
+        "Notification-T/network-layer/subscribe-incident/v1"
+      ]
+    },
+    {
+      "id": "livestream-stub",
+      "name": "直播打桩 Agent",
+      "organization": "OpenAN-Stub",
+      "description": "直播智能体打桩：直播业务质量诊断（卡顿/花屏/延迟/断流）；优先检索数据集返回最接近的成对响应",
+      "layer": "service",
+      "port": 9009,
+      "workDir": "data/mock_agents/livestream-stub",
+      "autoStart": false,
+      "llm": {
+        "enabled": true,
+        "provider": "openai",
+        "baseUrl": "http://127.0.0.1:8000/v1",
+        "model": "qwen2.5-7b-instruct",
+        "apiKeyEnv": "MOCK_AGENT_LLM_API_KEY",
+        "maxAttempts": 1,
+        "language": "zh-CN"
+      },
+      "stubVariants": [
+        {
+          "templateUri": "Task-T/network-layer/live-stream-quality/v1",
+          "variantJson": {
+            "artifactName": "live-stream-quality-result",
+            "artifactPrompt": "1. 诊断结果：成功\n2. 诊断结果详细信息：直播间 ROOM-73001（赛事直播）观众端卡顿率升至5.8%，下行码率波动明显。\n3. 修复建议：降低转码码率档位并检查CDN调度策略。\n4. 故障根因列表：\n   - 故障根因名称：CDN分发异常，详细描述：CDN边缘节点调度异常导致下行码率波动，修复建议：降低转码码率档位并检查CDN调度策略，故障根因点位置：CDN_NODE {{caseId}}，故障对象类型：CDN_NODE"
+          }
+        },
+        {
+          "templateUri": "Task-T/network-layer/live-stream-quality/v1",
+          "variantJson": {
+            "artifactName": "live-stream-quality-result",
+            "artifactPrompt": "1. 诊断结果：成功\n2. 诊断结果详细信息：直播间各项质量指标正常，未诊断到直播质量故障。\n3. 修复建议：未诊断到业务故障，请人工接管。"
+          }
+        }
+      ],
+      "datasetTemplates": [
+        "Task-T/network-layer/live-stream-quality/v1"
+      ]
+    },
+    {
+      "id": "service-assurance-stub",
+      "name": "业务保障打桩 Agent",
+      "organization": "OpenAN-Stub",
+      "description": "业务保障智能体打桩：专线投诉诊断、业务抢通事件与故障订阅；优先检索数据集返回最接近的成对响应",
+      "layer": "service",
+      "port": 9010,
+      "workDir": "data/mock_agents/service-assurance-stub",
+      "autoStart": false,
+      "llm": {
+        "enabled": false
+      },
+      "stubVariants": [
+        {
+          "templateUri": "Task-T/network-layer/private-line-complaint/v1",
+          "variantJson": {
+            "artifactName": "private-line-service-complain-diagnosis",
+            "artifactPrompt": "1. 诊断结果：成功\n2. 诊断结果详细信息：接入端口收光无光，发光正常，原因是光缆中断。\n3. 修复建议：前往故障点修复光缆，修复后核查端口告警是否消除。\n4. 故障根因列表：\n   - 故障根因名称：光缆中断，详细描述：接入段光缆中断导致专线业务信号丢失，修复建议：熔接修复或倒换至保护路由，故障根因点位置：LINK {{caseId}}，故障对象类型：LINK"
+          }
+        },
+        {
+          "templateUri": "Notification-T/network-layer/service-recovery/v1",
+          "variantJson": {
+            "artifactName": "recovery-execution-event",
+            "artifactPrompt": "### 业务抢通事件\n1. 业务抢通方案执行状态：已结束\n2. 投诉诊断任务流水号；{{caseId}}\n3. OSS侧事件流水号；SA-REC-{{timestamp}}\n4. 接入端口名称；P180-SZ-PTN7900-23-TPA1EG24-17\n5. 是否已授权OMC自动抢通：是\n6. 业务抢通方案名称；隧道调优\n7. 业务抢通方案详情；（场景: PROTECT_PATH_FAULT; 抢通方案已就绪，已自动下发执行）\n8. 业务抢通方案执行结束时间；2026-09-23 11:58:31\n9. 业务抢通方案执行结果：成功"
+          }
+        },
+        {
+          "templateUri": "Notification-T/network-layer/subscribe-incident/v1",
+          "variantJson": {
+            "faultManagement.Incident": {
+              "csn": "INC-{{timestamp}}",
+              "name": "ETH-LOS",
+              "priority": "critical",
+              "status": "open",
+              "topic": "{{slots.通知主题}}"
+            }
+          }
+        }
+      ],
+      "datasetTemplates": [
+        "Task-T/network-layer/private-line-complaint/v1",
+        "Notification-T/network-layer/service-recovery/v1",
+        "Notification-T/network-layer/subscribe-incident/v1"
+      ],
+      "workflow": {
+        "enabled": true,
+        "workflowId": "live-assurance-demo"
+      }
+    }
+  ]
+}

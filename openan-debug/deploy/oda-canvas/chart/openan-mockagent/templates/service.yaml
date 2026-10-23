@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "openan-mockagent.serviceName" . }}
+  labels:
+    {{- include "openan-mockagent.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    app.kubernetes.io/name: {{ include "openan-mockagent.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+    {{- range .Values.agents }}
+    - name: agent-{{ .name }}
+      port: {{ .port }}
+      targetPort: agent-{{ .name }}
+    {{- end }}

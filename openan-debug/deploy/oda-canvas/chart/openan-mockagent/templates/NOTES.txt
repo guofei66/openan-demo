@@ -1,0 +1,23 @@
+OpenAN A2A-T MockAgent（ODA Component）已部署到命名空间 {{ .Release.Namespace }}。
+
+组件状态（Canvas Component Operator 就绪后显示）:
+  kubectl get components.oda.tmforum.org -n {{ .Release.Namespace }} {{ include "openan-mockagent.fullname" . }}
+  kubectl get components.oda.tmforum.org -n {{ .Release.Namespace }} -o wide   # deployment_status 列
+
+集群内访问:
+  主服务(A2A-T + 控制台): {{ include "openan-mockagent.serviceName" . }}:{{ .Values.service.port }}
+    A2A-T 端点:        /debug/a2a/message:send   /debug/a2a/message:stream
+    Agent Card:        /debug/a2a/.well-known/agent-card.json
+    调测控制台:        /debug/
+    OpenAPI:           /openapi.json
+{{- range .Values.agents }}
+  打桩实例 {{ .id }}: {{ include "openan-mockagent.serviceName" $ }}:{{ .port }}  (Agent Card: /.well-known/agent-card.json)
+{{- end }}
+
+验证实例健康（端口转发示例）:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "openan-mockagent.serviceName" . }} 9000:{{ .Values.service.port }} {{ range .Values.agents }}{{ .port }}:{{ .port }} {{ end }}
+  curl http://127.0.0.1:9000/healthz
+
+说明:
+  - 打桩实例默认 autoStart=false，通过控制台「MockAgent 管理」页或 REST /debug/api/v1/mock-instances/{id}/start 启动。
+  - 数据集检索默认开启（env.datasetSearch=on）；数据库与实例工作目录在 PVC（/app/data）持久化。

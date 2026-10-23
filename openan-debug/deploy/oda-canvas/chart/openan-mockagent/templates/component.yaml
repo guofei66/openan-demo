@@ -1,0 +1,57 @@
+apiVersion: oda.tmforum.org/v1beta3
+kind: Component
+metadata:
+  name: {{ include "openan-mockagent.fullname" . }}
+  labels:
+    {{- include "openan-mockagent.labels" . | nindent 4 }}
+spec:
+  id: {{ .Values.component.id | quote }}
+  name: {{ .Values.component.name | quote }}
+  version: {{ .Values.component.version | quote }}
+  description: {{ .Values.component.description | quote }}
+  functionalBlock: {{ .Values.component.functionalBlock | quote }}
+  maintainers:
+    - name: OpenAN Debug Team
+      email: openan-debug@example.com
+  coreFunction:
+    exposedAPIs:
+      # 内嵌默认 Agent —— A2A-T 协议端点（/message:send、/message:stream、Agent Card）
+      - name: mockagent-a2a
+        specification:
+          - {{ include "openan-mockagent.publicBase" . }}/openapi.json
+        apiType: openapi
+        implementation: {{ include "openan-mockagent.serviceName" . }}
+        path: /debug/a2a
+        developerUI: {{ include "openan-mockagent.publicBase" . }}/docs
+        port: {{ .Values.service.port }}
+      # 打桩 Agent 实例 —— 每实例独立端口独立 A2A 应用（Agent Card 位于 /.well-known/agent-card.json）
+      {{- range .Values.agents }}
+      - name: mockagent-{{ .name }}
+        specification:
+          - http://{{ include "openan-mockagent.serviceName" $ }}:{{ .port }}/openapi.json
+        apiType: openapi
+        implementation: {{ include "openan-mockagent.serviceName" $ }}
+        path: /
+        developerUI: http://{{ include "openan-mockagent.serviceName" $ }}:{{ .port }}/docs
+        port: {{ .port }}
+      {{- end }}
+    dependentAPIs: []
+  managementFunction:
+    exposedAPIs:
+      # 调测控制台 + 管理 REST（JWT 鉴权）：打桩实例管理、变体、数据集、历史记录
+      - name: mockagent-console
+        specification:
+          - {{ include "openan-mockagent.publicBase" . }}/openapi.json
+        apiType: openapi
+        implementation: {{ include "openan-mockagent.serviceName" . }}
+        path: /debug
+        developerUI: {{ include "openan-mockagent.publicBase" . }}/docs
+        port: {{ .Values.service.port }}
+    dependentAPIs: []
+  securityFunction:
+    canvasSystemRole: {{ .Values.security.canvasSystemRole | quote }}
+    componentRole:
+      {{- range .Values.security.componentRole }}
+      - name: {{ .name }}
+        description: {{ .description | quote }}
+      {{- end }}

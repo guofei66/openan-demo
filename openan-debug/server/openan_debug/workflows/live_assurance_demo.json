@@ -1,0 +1,38 @@
+{
+  "id": "live-assurance-demo",
+  "name": "直播业务保障演示工作流",
+  "description": "业务保障智能体作为工作流宿主：意图解析(本地) → 无线小区保障(远端·无线域打桩 Agent) → 直播质量诊断(远端·直播打桩 Agent) → 结果聚合(本地)。远端步骤经 workflow-engine-sdk A2ATransport 派发，各打桩实例按数据集检索回包。",
+  "steps": [
+    {
+      "name": "意图解析",
+      "step_type": "SelfLoop",
+      "next": [ { "step": "无线小区保障" } ]
+    },
+    {
+      "name": "无线小区保障",
+      "subtasks": [
+        {
+          "agent": "无线域打桩 Agent",
+          "skill": "stub-responder",
+          "description": "对保障区域内无线小区执行故障诊断，返回根因与修复建议"
+        }
+      ],
+      "next": [ { "step": "直播质量诊断" } ]
+    },
+    {
+      "name": "直播质量诊断",
+      "subtasks": [
+        {
+          "agent": "直播打桩 Agent",
+          "skill": "stub-responder",
+          "description": "对直播业务执行质量诊断，返回根因与修复建议"
+        }
+      ],
+      "next": [ { "step": "结果聚合" } ]
+    },
+    {
+      "name": "结果聚合",
+      "step_type": "SelfLoop"
+    }
+  ]
+}

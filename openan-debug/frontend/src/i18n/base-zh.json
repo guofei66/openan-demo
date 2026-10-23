@@ -1,0 +1,649 @@
+{
+  "brand": {
+    "subtitle": "智能体开放联调体验平台"
+  },
+  "login": {
+    "title": "OpenAN Playground 登录",
+    "subtitle": "OpenAN 智能体开放联调体验平台",
+    "desc": "贯通智能体注册发现、任务编排、协议执行与知识本体，构建开放互联的智能体协作体验空间 —— 让每一个智能体在此互联、协作、生长。",
+    "username": "用户名",
+    "password": "密码",
+    "submit": "登录",
+    "failed": "登录失败"
+  },
+  "nav": {
+    "registry": "注册中心调测",
+    "orchestration": "编排中心调测",
+    "execution": "执行中心调测",
+    "a2at": "A2A-T SDK 调测",
+    "dataset": "数据集",
+    "ontology": "本体调测",
+    "mockagent": "MockAgent",
+    "settings": "设置",
+    "seeds": "种子/变体",
+    "urls": "服务地址",
+    "users": "用户管理"
+  },
+  "header": {
+    "notLoggedIn": "未登录",
+    "toLight": "切换浅色主题",
+    "toDark": "切换深色主题",
+    "logout": "退出登录",
+    "langTitle": "切换语言 / Language"
+  },
+  "common": {
+    "loading": "加载中…",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "close": "关闭",
+    "delete": "删除",
+    "edit": "编辑",
+    "refresh": "刷新",
+    "search": "搜索",
+    "none": "无",
+    "enabled": "已启用",
+    "disabled": "已停用",
+    "success": "成功",
+    "failed": "失败",
+    "error": "错误"
+  },
+  "registry": {
+    "title": "注册中心调测",
+    "subtitle": "Agent 卡片注册 / 查询 / 语义匹配 / JWKS",
+    "folders": {
+      "cards": "Agent 卡片管理",
+      "smart": "智能查询",
+      "publish": "发布管理",
+      "system": "系统"
+    },
+    "portalHint": "注册结果可在注册中心门户查看："
+  },
+  "orchestration": {
+    "title": "编排中心调测",
+    "subtitle": "PSOP 生成 / 搜索 / 执行（SSE） / 执行记录",
+    "folders": {
+      "browse": "工作流与卡片",
+      "intent": "意图与执行",
+      "records": "执行记录"
+    }
+  },
+  "execution": {
+    "title": "执行中心调测",
+    "subtitle": "宿主 Agent A2A 消息（含 SSE 流式） / 任务管理",
+    "folders": {
+      "message": "A2A 消息",
+      "tasks": "任务管理"
+    }
+  },
+  "ontology": {
+    "title": "本体服务调测",
+    "subtitle": "健康检查 / 本体推理（NDJSON 事件流）",
+    "folders": {
+      "service": "服务状态",
+      "reasoning": "本体推理"
+    }
+  },
+  "postman": {
+    "collections": "接口集合",
+    "history": "历史",
+    "newRequest": "新请求",
+    "recentRequests": "最近 100 条请求",
+    "noHistory": "暂无请求记录；发送请求后会自动记录（最多 100 条）",
+    "historyLoadFailed": "历史加载失败：{{error}}（点击「刷新」重试）",
+    "loadFailed": "加载失败",
+    "loadFailedHttp": "加载失败：HTTP {{status}}",
+    "targetService": "目标服务",
+    "targetAddress": "目标服务地址：{{url}}",
+    "unknown": "未知",
+    "viewingHistory": "正在查看历史记录 #{{id}}，可直接修改后重新发送",
+    "sending": "发送中…",
+    "send": "发送",
+    "sendFailed": "发送失败",
+    "transferFailed": "传输失败",
+    "forwardFailed": "转发失败：请求未能到达目标服务",
+    "dupCardPrefix": "注册中心已存在同名卡片：",
+    "dupCardSuffix": "（注册判重覆盖含待审批状态的全部卡片）。",
+    "switchToUpdate": "改为更新（PUT）",
+    "deregisterAndReregister": "注销并重新注册",
+    "deregisterFailed": "注销请求失败",
+    "ignore": "忽略",
+    "colDesc": "描述",
+    "toggleEnable": "启用/禁用",
+    "noEntries": "无条目，可在下方添加",
+    "add": "添加",
+    "value": "值",
+    "optionalDesc": "可选说明",
+    "headerHint": "Content-Type 由代理按请求体自动设置；此处启用的自定义头将随请求转发到目标服务。",
+    "headerKeyPlaceholder": "Header 名，如 X-Debug",
+    "formEdit": "界面编辑",
+    "loadSample": "加载样例",
+    "loadSampleOption": "加载样例…",
+    "orgPlaceholder": "组织，例如 MyOrg",
+    "namePlaceholder": "名称，例如 My Agent",
+    "loadCardTitle": "从注册中心按组织+名称查回卡片并回填表单",
+    "loadExistingCard": "载入已有卡片",
+    "edit": "编辑",
+    "highlightPreview": "高亮预览",
+    "bodyPlaceholder": "请求 body (JSON)",
+    "bodyPlaceholderOptional": "请求 body (JSON)，可留空",
+    "noBody": "{{method}} 请求不携带 body",
+    "response": "响应",
+    "rawResponse": "原始响应",
+    "copy": "复制",
+    "copied": "已复制 ✓",
+    "emptyResponseHint": "点击「发送」获取响应（快捷键 Ctrl+Enter）",
+    "jsonParseError": "JSON 解析失败，无法切换到界面编辑",
+    "enterOrgAndName": "请输入组织与名称",
+    "cardNotFound": "未找到该卡片",
+    "invalidBodyJson": "请求 body 不是合法 JSON: {{message}}",
+    "errorSeparator": "；"
+  },
+  "picker": {
+    "title": "从数据集生成请求",
+    "titleWithAgent": "从数据集生成请求（Agent#{{id}} 关联范围）",
+    "dataset": "数据集",
+    "expandedDataset": "扩写数据集",
+    "seedDataset": "种子数据集",
+    "template": "模板",
+    "all": "全部",
+    "keyword": "关键词",
+    "searchPlaceholder": "场景/端口/流水号…",
+    "pairCount": "{{total}} 对",
+    "expandHint": "点击展开查看请求报文",
+    "pickHint": "生成该对的请求报文并填入 Body",
+    "pick": "选用",
+    "requestMessage": "请求报文（metadata.prompt）",
+    "copy": "复制",
+    "showResponse": "查看配对响应",
+    "hideResponse": "隐藏配对响应",
+    "pairedResponse": "配对响应（选中后由 MockAgent 检索返回）",
+    "noPairs": "无符合条件的数据对",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageInfo": "第 {{page}} / {{total}} 页"
+  },
+  "oda": {
+    "title": "部署 MockAgent 到 ODA Canvas",
+    "tab": {
+      "deploy": "部署配置",
+      "status": "部署状态"
+    },
+    "scope": {
+      "title": "部署范围（来自表格勾选）",
+      "builtinAlways": "内嵌默认 Agent（必含）",
+      "builtinOnly": "仅内嵌默认 Agent（表格未勾选实例）",
+      "hint": "未勾选的实例不会出现在 Deployment 端口、Service 与 Component exposedAPIs 中；如需调整，关闭弹窗后在表格中重新勾选。",
+      "autoStart": "部署后 Pod 内自动启动勾选实例"
+    },
+    "field": {
+      "apiServer": "API Server 地址",
+      "token": "ServiceAccount Token",
+      "tokenSaved": "已保存（留空保持不变）",
+      "namespace": "命名空间",
+      "image": "MockAgent 镜像",
+      "publicUrl": "外部访问地址（可留空）",
+      "insecureTLS": "跳过 TLS 证书校验",
+      "jwtSecret": "JWT 密钥",
+      "jwtSecretDefault": "默认 dev-secret-change-me",
+      "adminPassword": "控制台 admin 密码（可选）",
+      "adminPasswordPlaceholder": "留空不启用",
+      "storageSize": "存储容量",
+      "componentId": "组件编号",
+      "apiVersion": "组件规范版本",
+      "datasetSearch": "数据集检索回包",
+      "stubFallback": "变体池兜底"
+    },
+    "apiVersion": {
+      "v1beta3": "v1beta3（Canvas ≥1.0，推荐）",
+      "v1beta2": "v1beta2（旧 Canvas）"
+    },
+    "advanced": "高级选项",
+    "saved": "已保存",
+    "action": {
+      "saveConfig": "保存配置",
+      "test": "测试连接",
+      "undeploy": "卸载",
+      "refreshStatus": "刷新状态",
+      "deployOneClick": "🚀 一键部署（{{num}} 个 Agent）"
+    },
+    "busy": {
+      "saving": "保存中…",
+      "testing": "测试中…",
+      "deploying": "部署中…",
+      "refreshing": "刷新中…",
+      "undeploying": "卸载中…"
+    },
+    "msg": {
+      "loadConfigFailed": "加载配置失败：{{name}}",
+      "deployFailed": "一键部署失败：{{name}}",
+      "saveFailed": "保存失败：{{name}}",
+      "configSaved": "配置已保存",
+      "actionFailed": "{{name}}失败：{{msg}}"
+    },
+    "testResult": {
+      "k8s": "测试结果：K8s",
+      "crdPresent": "存在（{{name}}）",
+      "crdMissing": "未安装",
+      "namespace": "命名空间",
+      "reachable": "可达",
+      "unreachable": "不可达"
+    },
+    "deployTargets": "部署对象：Secret、PVC、Deployment（内嵌默认 + 勾选 {{num}} 个实例端口 + 探针）、Service、Component（oda.tmforum.org，{{total}} 个 exposedAPIs）——幂等可重复执行；镜像需已推送到集群可拉取仓库（构建见 deploy/oda-canvas）。",
+    "status": {
+      "component": "Component：",
+      "service": "Service：",
+      "unknown": "未知",
+      "notCreated": "未创建",
+      "deployedAgents": "已部署实例：{{name}}",
+      "builtinAgentsOnly": "仅内嵌默认 Agent",
+      "restarts": "重启",
+      "image": "镜像",
+      "noPods": "未发现 MockAgent Pod（尚未部署或仍在调度）",
+      "portForwardHint": "Component complete 后：kubectl -n {{name}} port-forward svc/openan-mockagent-core 9000:9000 9005:9005 9008:9008 9009:9009 9010:9010 → 控制台 /debug/ → 启动打桩实例"
+    },
+    "listSep": "、"
+  },
+  "console": {
+    "title": "A2A-T SDK 调测",
+    "subtitle": "A2A 接口打桩自测（A2A-T prompt 经 SDK 渲染，可打内嵌 Agent 或打桩实例）",
+    "endpoint": {
+      "send": "A2A 消息发送（message:send）",
+      "sendNote": "A2A SendMessageRequest 经 A2A-T SDK 渲染后发送；SDK 自动携带 A2A-Version / A2A-Extensions 头，扩展由 body 内 metadata.templateUri 决定",
+      "templateNote": "A2A-T 模板示例：点击填充该模板的示例请求，body 内 metadata.templateUri 决定 SDK 渲染与扩展头"
+    },
+    "folder": {
+      "a2a": "A2A 接口",
+      "template": "{{name}} 模板示例"
+    },
+    "msg": {
+      "loadInstancesFailed": "打桩实例列表加载失败"
+    },
+    "dataset": {
+      "taskPrompt": "执行{{name}}任务",
+      "button": "数据集请求…",
+      "buttonTitle": "从（该智能体关联范围的）数据集中选择请求-响应对，自动生成请求报文"
+    },
+    "row": {
+      "inbound": "入站 · {{name}}"
+    },
+    "target": {
+      "builtinDefault": "内嵌 Mock Agent（默认）",
+      "builtinWithPath": "内嵌 Mock Agent（默认 · /openan-playground/a2a）"
+    },
+    "state": {
+      "running": "（运行中）",
+      "notRunning": "（未运行）"
+    },
+    "targetUnderTest": "被测智能体：",
+    "hint": {
+      "realTrafficOrDataset": "模板示例自动使用实采报文；或从数据集生成请求 →"
+    }
+  },
+  "settingsAgents": {
+    "title": "Mock Agent 管理",
+    "descPrefix": "当前不支持在页面创建 Mock Agent：Agent 由 ",
+    "descMiddle": " 打桩实例自动注册（管理员可启停）；默认 Agent 固定使用 /openan-playground/a2a 端点，打桩实例端点为 ",
+    "descSuffix": "，各自维护独立变体池",
+    "stubInstancesTitle": "打桩实例（mock_agent_define.json）",
+    "stubDescPrefix": "实例按 ",
+    "stubDescSuffix": " 声明启动为独立进程（各自端口/工作目录/模型连接方案），变体池与历史联调记录与主服务共用；llm.enabled=false 时为纯打桩模式。",
+    "selectedCount": "已勾选 {{selected}} / {{total}} 个实例",
+    "selectDeployFirst": "先在表格勾选要部署的 Agent",
+    "deployToOda": "🚀 部署到 ODA Canvas",
+    "deployHint": "在表格勾选要部署的 Agent 后，点此批量部署",
+    "selectAllAria": "全选",
+    "selectRowAria": "选择 {{name}}",
+    "colInstanceId": "实例 ID",
+    "colName": "名称",
+    "colEndpoint": "端点",
+    "colWorkDir": "工作目录",
+    "colModel": "模型方案",
+    "colAssoc": "数据集关联",
+    "colStatus": "状态",
+    "colActions": "操作",
+    "llmMode": "LLM 生成模式",
+    "datasetMode": "数据集匹配模式（纯打桩）",
+    "workflowMode": "工作流模式 · {{id}}",
+    "seedBadge": "种子 {{n}}",
+    "expandedBadge": "扩写 {{n}}",
+    "tplSummary": "{{tplCount}} 个模板 · 共 {{pairTotal}} 对",
+    "unscoped": "未限定范围",
+    "details": "明细",
+    "statusRunning": "运行中",
+    "statusAbnormal": "异常/启动中",
+    "statusStopped": "已停止",
+    "start": "启动",
+    "starting": "启动中…",
+    "stop": "停止",
+    "stopping": "停止中…",
+    "logsBtn": "日志",
+    "cardBtn": "卡片",
+    "noInstances": "未定义打桩实例（config/mock_agent_define.json）或定义文件不可达",
+    "listLoadFailed": "实例列表加载失败",
+    "actionFailed": "操作失败",
+    "instanceLogsTitle": "实例日志 · {{name}}",
+    "noLogs": "(暂无日志)",
+    "logsLoadFailed": "加载失败：{{message}}",
+    "cardLoadFailed": "加载失败",
+    "datasetAssocTitle": "数据集关联 · {{name}}",
+    "assocScopeDesc": "该 Agent 的数据集检索范围（MockAgent 按请求模板在本范围内检索最接近的请求-响应对；范围外的请求回落变体池基线桩）。",
+    "unscopedFull": "未限定范围：检索覆盖数据集全部模板",
+    "seedTotal": "种子合计 {{n}} 对",
+    "expandedTotal": "扩写合计 {{n}} 对",
+    "agentRowDisabled": "（Agent 行未启用）",
+    "colTemplate": "关联模板",
+    "colTotal": "合计",
+    "pairCount": "{{n}} 对",
+    "noAssocTemplates": "该实例未配置关联模板（datasetTemplates 为空）",
+    "pairBrowserTitle": "关联数据对浏览",
+    "notStartedHint": "该实例尚未启动（无 Agent 行），启动后可浏览其关联数据对。",
+    "datasetLabel": "数据集",
+    "expandedDataset": "扩写数据集",
+    "seedDataset": "种子数据集",
+    "templateFilterLabel": "模板",
+    "all": "全部",
+    "keywordLabel": "关键词",
+    "searchPlaceholder": "场景/端口/流水号…",
+    "noMatchingPairs": "无符合条件的数据对",
+    "prevPage": "上一页",
+    "nextPage": "下一页",
+    "pageInfo": "第 {{page}} / {{totalPages}} 页",
+    "templateLabel": "模板：",
+    "requestTitle": "请求",
+    "copy": "复制",
+    "responseTitle": "响应（配对）",
+    "sourceLabel": "来源："
+  },
+  "settingsUrls": {
+    "title": "服务地址",
+    "desc": "配置各目标服务的 Base URL，调测台将通过 /openan-playground/api/v1/debug-proxy 转发请求。默认地址直接写阿里云 IP（47.236.98.226:9004），经 nginx 短前缀转发到服务器内部服务：/rc/ → 注册中心(5000)，/oc/ → 编排中心(5001)，/a2a/ → 本系统 Mock Agent(9100)，/ot/ → 本体(8787)。",
+    "registry": "注册中心",
+    "orchestration": "编排中心",
+    "executionHost": "执行中心（宿主 Agent）",
+    "ontology": "本体",
+    "urlPlaceholder": "例如 http://127.0.0.1:8080",
+    "saveFailed": "保存失败",
+    "saveSuccess": "保存成功",
+    "saving": "保存中...",
+    "adminOnly": "仅管理员可修改服务地址"
+  },
+  "users": {
+    "title": "用户管理",
+    "createTitle": "新建用户",
+    "username": "用户名",
+    "password": "密码（>=8位）",
+    "create": "创建",
+    "role": "角色",
+    "enabledCol": "启用",
+    "actions": "操作",
+    "yes": "是",
+    "no": "否",
+    "enable": "启用",
+    "disable": "禁用"
+  },
+  "agentCard": {
+    "section": {
+      "basic": "基本信息",
+      "provider": "提供者",
+      "capabilities": "能力",
+      "extensions": "扩展 extensions",
+      "skills": "技能 skills",
+      "interfaces": "接口",
+      "modes": "模式"
+    },
+    "field": {
+      "name": "名称 *",
+      "nameHint": "仅字母/数字/-/_和单个空格，≤100 字符",
+      "namePlaceholder": "例如 RAN Energy Saving Agent",
+      "version": "版本 *",
+      "versionHint": "≤50 字符",
+      "versionPlaceholder": "例如 1.0.0",
+      "description": "描述 *",
+      "descriptionHint": "≤1000 字符，禁止控制字符",
+      "descriptionPlaceholder": "例如 负责RAN能效优化的自主闭环运行，包括意图探索、意图实现、效果评估与报告。",
+      "organization": "组织 *",
+      "organizationPlaceholder": "例如 Huawei",
+      "providerUrl": "提供者 URL",
+      "providerUrlPlaceholder": "例如 https://www.huawei.com"
+    },
+    "ext": {
+      "uri": "扩展 URI *",
+      "uriHint": "最多 10 条，每条需含 URI",
+      "description": "扩展描述",
+      "descriptionPlaceholder": "例如 Task-T 结构化提示请求",
+      "empty": "暂无扩展",
+      "add": "添加扩展"
+    },
+    "refExt": {
+      "taskT": "Task-T 结构化提示请求",
+      "notificationT": "Notification-T 结构化提示请求",
+      "authorizationT": "Authorization-T 结构化提示请求",
+      "negotiationT": "Negotiation-T 协商消息"
+    },
+    "skill": {
+      "remove": "删除技能",
+      "id": "技能 ID *",
+      "hint": "最多 100 条，每条 id/名称/描述必填",
+      "idPlaceholder": "例如 ran-es-intent-exploration",
+      "name": "技能名称 *",
+      "namePlaceholder": "例如 RAN ES Intent Exploration",
+      "description": "技能描述 *",
+      "descriptionPlaceholder": "例如 评估并确定指定RAN ES意图目标的最佳可能性",
+      "tags": "标签",
+      "tagsPlaceholder": "例如 wireless, energy-saving, intent",
+      "empty": "暂无技能，注册前至少需要一个技能",
+      "add": "添加技能"
+    },
+    "iface": {
+      "url": "URL",
+      "binding": "协议绑定",
+      "version": "协议版本",
+      "urlPlaceholder": "例如 http://127.0.0.1:8080/",
+      "versionPlaceholder": "例如 1.0.0",
+      "remove": "删除此接口",
+      "empty": "暂无接口，注册前至少需要一个接口",
+      "add": "+ 添加接口",
+      "hint": "1~3 条；每条 URL 必填，协议绑定与版本必填"
+    },
+    "mode": {
+      "input": "输入模式",
+      "output": "输出模式",
+      "hint": "逗号分隔，如 text, json",
+      "placeholder": "例如 text, json"
+    },
+    "error": {
+      "nameRequired": "name 必填",
+      "nameTooLong": "name 长度不能超过 {{max}} 字符",
+      "nameInvalid": "name 仅允许字母、数字、下划线、连字符，单词间可用空格",
+      "descriptionRequired": "description 必填",
+      "descriptionTooLong": "description 长度不能超过 {{max}} 字符",
+      "versionRequired": "version 必填",
+      "versionTooLong": "version 长度不能超过 {{max}} 字符",
+      "providerOrganizationRequired": "provider.organization 必填",
+      "skillsRequired": "至少需要一个技能 (skills)",
+      "skillFieldRequired": "技能 #{{index}}: {{field}} 必填",
+      "interfacesRequired": "至少需要一个接口 (supportedInterfaces)",
+      "interfacesTooMany": "接口数量不能超过 {{max}}",
+      "interfaceFieldRequired": "接口 #{{index}}: {{field}} 必填",
+      "extensionsTooMany": "扩展数量不能超过 {{max}}",
+      "extensionUriRequired": "扩展 #{{index}}: uri 必填"
+    }
+  },
+  "statusBadge": {
+    "transportFailed": "传输失败",
+    "yes": "是",
+    "no": "否"
+  },
+  "dataset": {
+    "templateUriLabel": "模板：",
+    "pairIdLabel": "· pairId：",
+    "request": "请求",
+    "responsePaired": "响应（配对，与请求同标识）",
+    "copy": "复制",
+    "source": "来源：{{source}}",
+    "loadFailed": "加载失败：{{error}}",
+    "all": "全部",
+    "workOrder": "工单",
+    "protocol": "协议",
+    "template": "模板",
+    "keyword": "关键词",
+    "keywordPlaceholder": "场景/端口/流水号…",
+    "pairCount": "共 {{total}} 对",
+    "pairCountShort": "（{{total}} 对）",
+    "agentScopeFiltered": "已按智能体关联范围过滤（{{num}} 个模板）",
+    "prevPage": "上一页",
+    "pageInfo": "第 {{page}} / {{totalPages}} 页",
+    "nextPage": "下一页",
+    "expandedHint": "每对请求-响应共享同一工单号/端口/流水号/时间，按预期输出合同对齐；MockAgent 按请求检索最接近的对返回。",
+    "subtitle": "请求-响应成对数据集：种子数据集（Demo 实采）+ 扩写数据集（全模板覆盖 5000+ 对），并与 Mock Agent 按模板职责关联",
+    "seedTab": "种子数据集",
+    "expandedTab": "扩写数据集",
+    "assocAgent": "关联智能体",
+    "allAgents": "全部智能体",
+    "allShort": "（全部）",
+    "assocDetail": "关联明细",
+    "hideAssocDetail": "收起关联明细",
+    "seedPairs": "种子 {{total}} 对",
+    "expandedPairs": "扩写 {{total}} 对",
+    "agentNotEnabled": "（未启动）",
+    "joiner": "；",
+    "noScopeHint": "未限定范围：检索时覆盖数据集全部模板",
+    "meta": {
+      "seed": {
+        "name": "A2A-T Demo 种子数据集",
+        "source": "A2A-T Demo.docx（两单协作日志：工单1 跨地市业务中断含协商；工单2 跨地市业务SLA劣化含抢通）",
+        "note": "请求-响应成对：请求样例可在 A2A-T SDK 调测台“Prompt 来源”选择发送；响应为 mock 桩变体按序轮转回包（与 Demo 真实响应逐字一致）。"
+      },
+      "expanded": {
+        "name": "A2A-T 扩写数据集",
+        "source": "程序化扩写：a2a-t SDK zh-CN 模板渲染 + A2A-T Demo 实采模板结构；响应与请求共享同一标识（工单号/端口/流水号/时间），按预期输出合同对齐",
+        "note": "请求-响应成对（同标识互证）：每个模板的全部取值组合 × 实例参数组；共覆盖 16 个模板。"
+      }
+    }
+  },
+  "seeds": {
+    "title": "种子数据管理",
+    "editSeed": "编辑种子 #{{id}}",
+    "newSeed": "新建种子",
+    "namePlaceholder": "名称",
+    "descriptionPlaceholder": "描述",
+    "invalidSeedJson": "种子 JSON 不合法",
+    "confirmDeleteSeed": "删除该种子？",
+    "selectVariantsFile": "请选择 variants.json 文件",
+    "importTitle": "导入泛化变体",
+    "importHint": "选择本地 tools/stub_generator 生成的 variants.json（格式：{{format}}）",
+    "targetAgent": "目标 Agent",
+    "noSeedBinding": "不绑定种子",
+    "import": "导入",
+    "importSuccess": "导入成功：{{imported}} 条，起始 seq={{firstSeq}}",
+    "importFailed": "导入失败",
+    "listTitle": "种子列表",
+    "colName": "名称",
+    "colTemplate": "模板",
+    "colVariants": "变体数",
+    "colDescription": "描述",
+    "colActions": "操作",
+    "variantsTitle": "变体池",
+    "colContent": "内容",
+    "colEnabled": "启用",
+    "colSource": "来源",
+    "enable": "启用",
+    "disable": "停用"
+  },
+  "endpoints": {
+    "registry": {
+      "list": {
+        "label": "查询 Agent 卡片列表",
+        "note": "支持 ?name=&organization= 过滤；返回全部卡片（含待审批）。includeStatus=true 时每张卡附 publishStatus（编排等严格 proto 客户端请勿开启）"
+      },
+      "get": {
+        "label": "查询单个 Agent 卡片",
+        "note": "按组织+名称精确查询，不区分发布状态；includeStatus=true 时附 publishStatus"
+      },
+      "register": {
+        "label": "注册 Agent 卡片",
+        "note": "生产开启签名校验时需携带 signatures；开发实例可关闭校验"
+      },
+      "update": {
+        "label": "更新 Agent 卡片",
+        "note": "路径为 {organization}/{name}，需与卡片内容一致；替换路径后发送"
+      },
+      "semantic": {
+        "label": "语义查询 Agent"
+      },
+      "delete": {
+        "label": "注销 Agent 卡片"
+      },
+      "manage": {
+        "label": "管理列表（含发布状态）",
+        "note": "返回全部卡片并附 publishStatus（与查询列表行为一致）"
+      },
+      "publish": {
+        "label": "发布审批（registered→published）",
+        "note": "替换路径中的 {organization}/{name}；body 必须含非空 remark 审批备注，成功后卡片才可被查询到"
+      },
+      "keys": {
+        "label": "查询 JWKS 公钥"
+      }
+    },
+    "orchestration": {
+      "workflows": {
+        "label": "工作流列表"
+      },
+      "cards": {
+        "label": "Agent 卡片列表（经注册中心）"
+      },
+      "intent": {
+        "label": "意图生成 PSOP"
+      },
+      "search": {
+        "label": "语义搜索工作流"
+      },
+      "execute": {
+        "label": "执行工作流（SSE 事件流）",
+        "note": "自动搜索或生成 PSOP 并执行，返回 SSE 事件流转写"
+      },
+      "executeById": {
+        "label": "按 PSOP ID 执行（SSE）",
+        "note": "替换路径中的 {psop_id}"
+      },
+      "dispatch": {
+        "label": "按意图派发宿主 Agent（SSE）"
+      },
+      "executions": {
+        "label": "执行记录列表"
+      },
+      "records": {
+        "label": "内部执行记录"
+      }
+    },
+    "execution": {
+      "send": {
+        "label": "A2A 消息发送（非流式）",
+        "note": "目标为宿主 Agent 的 A2A 端点（默认本系统 Mock Agent，可在设置→服务地址中改为其他宿主 Agent）；需携带 A2A-Version 头"
+      },
+      "stream": {
+        "label": "A2A 消息发送（SSE 流式）"
+      },
+      "tasks": {
+        "label": "任务列表"
+      },
+      "task": {
+        "label": "任务详情"
+      },
+      "cancel": {
+        "label": "取消任务"
+      }
+    },
+    "ontology": {
+      "health": {
+        "label": "健康检查"
+      },
+      "runs": {
+        "label": "运行本体推理（NDJSON 事件流）",
+        "note": "返回 NDJSON 事件流转写（run.started/ontology.focus/agent.message/a2at.request/a2at.response/run.completed）"
+      }
+    }
+  }
+}
