@@ -5,7 +5,15 @@
   "mockAgent": {
     "endpoint": "/mockagent",
     "caseKey": "net-optimize",
-    "turnDelayMs": 1600
+    "turnDelayMs": 1600,
+    "agentCalls": {
+      "endpoint": "/openan-playground/api/v1/mock-instances",
+      "roles": {
+        "insight": { "instance": "fault-diagnosis-stub", "template": "Task-T/network-layer/private-line-complaint/v1" },
+        "policy": { "instance": "energy-saving-stub", "template": "Task-T/network-layer/ran-energy-saving/v1" },
+        "executor": { "instance": "wireless-domain-stub", "template": "Task-T/network-layer/wireless-cell-diagnosis/v1" }
+      }
+    }
   },
   "title": {
     "zh": "城域网节能优化",

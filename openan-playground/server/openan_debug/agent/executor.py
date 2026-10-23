@@ -29,6 +29,14 @@ STATE_JSON = {
 
 TERMINAL_STATES = ("TASK_STATE_COMPLETED", "TASK_STATE_FAILED", "TASK_STATE_CANCELED", "TASK_STATE_REJECTED")
 
+REPLY_MODES = ("auto", "workflow", "llm", "dataset")
+
+
+def normalize_reply_mode(value) -> str:
+    """归一化答复模式：auto（优先级链）/ workflow / llm / dataset，其余按 auto。"""
+    mode = str(value or "").strip().lower()
+    return mode if mode in REPLY_MODES else "auto"
+
 
 def extract_request(context: RequestContext):
     exts = getattr(context, "requested_extensions", None)
@@ -38,14 +46,16 @@ def extract_request(context: RequestContext):
     exts = set(exts or ())
     message = context.message
     if message is None or not message.metadata:
-        return None, "", None, exts
+        return None, "", None, exts, None
     metadata = MessageToDict(message.metadata)
     template_uri = metadata.get("templateUri")
     ext_uri = ext_uri_for(template_uri)
     prompt_text = str(metadata.get(ext_uri, "")) if ext_uri else ""
     raw_context = metadata.get("negotiationContext")
     negotiation_context = raw_context if isinstance(raw_context, dict) else None
-    return template_uri, prompt_text, negotiation_context, exts
+    # 请求级答复模式（展厅卡片 / 调测台下拉随请求下发）：workflow|llm|dataset
+    reply_mode = str(metadata.get("replyMode") or "").strip().lower() or None
+    return template_uri, prompt_text, negotiation_context, exts, reply_mode
 
 
 def artifact_name(template_uri: str | None) -> str:
@@ -140,14 +150,53 @@ class MockAgentExecutor(AgentExecutor):
         ).strip()
         return {"artifactPrompt": artifact_text, "artifactName": "workflow-execution-report"}
 
-    def _select_stub(self, template_uri, prompt_text, info: dict):
-        """桩数据选择优先级：工作流编排模式 → LLM 生成模式 → 数据集匹配（标识回填）→ 变体池。"""
-        workflow_result = self._workflow_reply(template_uri, prompt_text, info)
-        if workflow_result is not None:
-            return workflow_result
-        llm_result = self._llm_reply(template_uri, prompt_text, info)
-        if llm_result is not None:
-            return llm_result
+    def _agent_default_mode(self) -> str:
+        """Agent 行级默认答复模式（调测台可改，存 agents.reply_mode）：
+        请求未显式携带 replyMode 元数据时生效；实例进程与主服务共用 SQLite，
+        改动即刻对运行中的实例生效。"""
+        engine = self._runtime.get("engine")
+        agent_id = self._runtime.get("agent_id")
+        if engine is None or agent_id is None:
+            return "auto"
+        try:
+            with Session(engine) as session:
+                agent = session.get(Agent, agent_id)
+            if agent is not None and getattr(agent, "reply_mode", None):
+                return normalize_reply_mode(agent.reply_mode)
+        except Exception:
+            logging.getLogger(__name__).exception("agent reply_mode lookup failed")
+        return "auto"
+
+    def _select_stub(self, template_uri, prompt_text, info: dict, reply_mode: str = "auto"):
+        """桩数据选择优先级：工作流编排模式 → LLM 生成模式 → 数据集匹配（标识回填）→ 变体池。
+
+        reply_mode 门控：'auto' 走完整优先级链；'workflow'/'llm'/'dataset' 只走指定
+        模式——指定模式不可用（实例未配置 / 执行失败）时降级数据集匹配，并在
+        info["replyMode"] 标注 fallback 原因（对调用方可见、落 RequestLog）。"""
+        mode = normalize_reply_mode(reply_mode)
+        info["replyMode"] = {"mode": mode}
+        if mode in ("auto", "workflow"):
+            workflow_result = self._workflow_reply(template_uri, prompt_text, info)
+            if workflow_result is not None:
+                info["replyMode"]["used"] = "workflow"
+                return workflow_result
+            if mode == "workflow":
+                info["replyMode"]["used"] = "dataset"
+                info["replyMode"]["fallback"] = (
+                    info.get("workflow", {}).get("error") or "workflow mode unavailable on this instance"
+                )
+        if mode in ("auto", "llm"):
+            llm_result = self._llm_reply(template_uri, prompt_text, info)
+            if llm_result is not None:
+                info["replyMode"]["used"] = "llm"
+                return llm_result
+            if mode == "llm":
+                info["replyMode"]["used"] = "dataset"
+                info["replyMode"]["fallback"] = (
+                    info.get("llm", {}).get("error") or "llm mode unavailable on this instance"
+                )
+        # 数据集匹配（标识回填）+ 变体池：auto 链尾 / 显式 dataset / 上方降级均落此处
+        info["replyMode"].setdefault("used", "dataset")
         scope = self._runtime.get("dataset_templates")
         if template_uri and prompt_text and self._runtime["settings"].dataset_search:
             if scope is not None and template_uri not in scope:
@@ -184,7 +233,14 @@ class MockAgentExecutor(AgentExecutor):
 
     async def execute(self, context: RequestContext, event_queue: EventQueue) -> None:
         started = time.monotonic()
-        template_uri, prompt_text, negotiation_context, exts = extract_request(context)
+        template_uri, prompt_text, negotiation_context, exts, request_mode = extract_request(context)
+        # 生效模式：请求级 replyMode 元数据 > Agent 行级默认（agents.reply_mode）> auto
+        if request_mode:
+            reply_mode = normalize_reply_mode(request_mode)
+            reply_mode_source = "request"
+        else:
+            reply_mode = self._agent_default_mode()
+            reply_mode_source = "agent"
         task_id = context.task_id or str(uuid.uuid4())
         context_id = context.context_id or str(uuid.uuid4())
         if self._agent_available():
@@ -200,7 +256,7 @@ class MockAgentExecutor(AgentExecutor):
                         negotiation_context=negotiation_context,
                         requested_extensions=exts,
                     ),
-                    lambda tpl: self._select_stub(tpl, prompt_text, retrieval_info),
+                    lambda tpl: self._select_stub(tpl, prompt_text, retrieval_info, reply_mode),
                     fallback_enabled=self._runtime["settings"].stub_fallback,
                 )
             except Exception as error:
@@ -220,7 +276,16 @@ class MockAgentExecutor(AgentExecutor):
                 artifact_data=None,
                 negotiated=False,
             )
-        await self._enqueue(context, event_queue, task_id, context_id, flow, template_uri, retrieval_info.get("datasetMatch"))
+        await self._enqueue(
+            context,
+            event_queue,
+            task_id,
+            context_id,
+            flow,
+            template_uri,
+            retrieval_info.get("datasetMatch"),
+            retrieval_info.get("replyMode"),
+        )
         if self._log_sink is not None:
             entry = {
                 "agent_id": self._runtime.get("agent_id"),
@@ -232,6 +297,8 @@ class MockAgentExecutor(AgentExecutor):
                     "promptText": prompt_text,
                     "negotiationContext": negotiation_context,
                     "requestedExtensions": sorted(exts),
+                    "replyMode": reply_mode,
+                    "replyModeSource": reply_mode_source,
                 },
                 "response_body": {
                     "state": flow.state,
@@ -242,6 +309,7 @@ class MockAgentExecutor(AgentExecutor):
                     "datasetMatch": retrieval_info.get("datasetMatch"),
                     "llm": retrieval_info.get("llm"),
                     "workflow": retrieval_info.get("workflow"),
+                    "replyMode": retrieval_info.get("replyMode"),
                 },
                 "task_state": STATE_JSON.get(flow.state, "TASK_STATE_FAILED"),
                 "negotiated": flow.negotiated,
@@ -265,7 +333,7 @@ class MockAgentExecutor(AgentExecutor):
             merged.update(trace_metadata)
             await self._update_status(context, event_queue, task_id, context_id, state_json, flow.message_text, merged)
 
-    async def _enqueue(self, context, event_queue, task_id, context_id, flow: FlowResult, template_uri, match_meta=None):
+    async def _enqueue(self, context, event_queue, task_id, context_id, flow: FlowResult, template_uri, match_meta=None, reply_mode_info=None):
         initial = ParseDict(
             {"id": task_id, "contextId": context_id, "status": {"state": "TASK_STATE_SUBMITTED"}}, Task()
         )
@@ -278,6 +346,12 @@ class MockAgentExecutor(AgentExecutor):
                     match_metadata = {"openan.datasetMatch": json.dumps(match_meta, ensure_ascii=False)}
                 except (TypeError, ValueError):
                     match_metadata = {}
+            # 答复模式回执：请求/生效模式 + 实际使用模式 + 降级原因（演示端据此展示降级标记）
+            if reply_mode_info:
+                try:
+                    match_metadata["openan.replyMode"] = json.dumps(reply_mode_info, ensure_ascii=False)
+                except (TypeError, ValueError):
+                    pass
             if flow.artifact_text is not None:
                 artifact_payload = {
                     "artifactId": str(uuid.uuid4()),

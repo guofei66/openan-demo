@@ -19,6 +19,7 @@ def _agent_view(agent: Agent, default_agent_id: int | None) -> dict:
         "enabled": agent.enabled,
         "layer": agent.layer,
         "networkDomain": agent.network_domain,
+        "replyMode": agent.reply_mode or "auto",
         "isDefault": agent.id == default_agent_id,
     }
 
@@ -64,6 +65,9 @@ def patch_agent(
         agent.description = body.description
     if body.enabled is not None:
         agent.enabled = body.enabled
+    if body.replyMode is not None:
+        # auto（或空）= 回落默认优先级链，落库为 NULL；实例进程按请求实时读取，即刻生效
+        agent.reply_mode = None if body.replyMode == "auto" else body.replyMode
     if body.layer is not None:
         agent.layer = body.layer
     if body.layer == "service":

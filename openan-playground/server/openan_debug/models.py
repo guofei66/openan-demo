@@ -44,6 +44,8 @@ class Agent(Base):
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)
     layer: Mapped[str] = mapped_column(String(16), default="service")
     network_domain: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # 行级默认答复模式：auto（优先级链）/ workflow / llm / dataset；NULL = auto
+    reply_mode: Mapped[str | None] = mapped_column(String(16), nullable=True)
     created_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
 
 

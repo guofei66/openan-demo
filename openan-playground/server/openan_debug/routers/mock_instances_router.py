@@ -16,7 +16,7 @@ from pathlib import Path
 
 import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import PlainTextResponse, Response
 from sqlalchemy import select
 
 from ..auth import get_current_user, require_admin
@@ -277,6 +277,37 @@ def instance_card(instance_id: str, _: dict = Depends(get_current_user)):
     if response.status_code != 200:
         raise HTTPException(status_code=502, detail=f"实例返回 HTTP {response.status_code}")
     return response.json()
+
+
+@router.post("/{instance_id}/a2a/{path:path}")
+async def instance_a2a_proxy(instance_id: str, path: str, request: Request):
+    """实例 A2A 公开反代（无鉴权——与 /debug/a2a 一致的 agent 公开面）。
+
+    供跨端页面（如独立场景演示框架 :9010）以同源方式调用打桩实例的 A2A
+    端点（message:send 等）：浏览器只需能达本服务，实例端口无需对外暴露。
+    报文原样透传；A2A-Version / A2A-Extensions 请求头一并转发。实例未
+    运行时返回 503，由调用方自行回退。
+    """
+    define = _load_define(resolve_define_path())
+    instance = _instance_by_id(define, instance_id)
+    port = int(instance.get("port", 9300))
+    if not _health_probe(port, timeout=1.0):
+        raise HTTPException(status_code=503, detail=f"实例 {instance_id} 未运行，请先在 设置>Mock Agent管理 启动")
+    body = await request.body()
+    headers = {"Content-Type": request.headers.get("content-type") or "application/json"}
+    a2a_version = request.headers.get("a2a-version")
+    if a2a_version:
+        headers["A2A-Version"] = a2a_version
+    extensions = request.headers.get("a2a-extensions")
+    if extensions:
+        headers["A2A-Extensions"] = extensions
+    try:
+        # 300s：冷实例首跑工作流（加载 workflow-engine SDK + PSOP 派发）可能超过 120s
+        async with httpx.AsyncClient(timeout=300) as client:
+            response = await client.post(f"http://127.0.0.1:{port}/{path}", content=body, headers=headers)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"实例请求失败：{exc}")
+    return Response(content=response.content, status_code=response.status_code, media_type="application/json")
 
 
 def autostart_instances() -> None:

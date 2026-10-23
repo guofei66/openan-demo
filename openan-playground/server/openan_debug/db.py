@@ -35,6 +35,7 @@ def init_db(engine, settings: Settings) -> None:
             text("ALTER TABLE request_logs ADD COLUMN feature VARCHAR(16) DEFAULT 'a2at'"),
             text("ALTER TABLE agents ADD COLUMN layer VARCHAR(16) DEFAULT 'service'"),
             text("ALTER TABLE agents ADD COLUMN network_domain VARCHAR(16)"),
+            text("ALTER TABLE agents ADD COLUMN reply_mode VARCHAR(16)"),
         ):
             try:
                 conn.execute(statement)

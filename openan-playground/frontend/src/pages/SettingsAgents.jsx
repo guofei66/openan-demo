@@ -131,6 +131,8 @@ export default function SettingsAgentsPage() {
   const [selectedIds, setSelectedIds] = useState([])
   const [odaModal, setOdaModal] = useState(false)
   const [assocs, setAssocs] = useState([])
+  // DB Agent 行（取 replyMode 默认答复模式；按 agentId 与实例行对齐）
+  const [agentRows, setAgentRows] = useState([])
   const isAdmin = readJwtPayload().role === 'admin'
 
   const loadInstances = useCallback(async () => {
@@ -149,11 +151,26 @@ export default function SettingsAgentsPage() {
     api.get('/debug/api/v1/console/datasets/agent-associations')
       .then((d) => setAssocs(d.associations || []))
       .catch(() => {})
+    api.get('/debug/api/v1/agents')
+      .then((d) => setAgentRows(Array.isArray(d) ? d : []))
+      .catch(() => setAgentRows([]))
     const timer = setInterval(loadInstances, 5000)
     return () => clearInterval(timer)
   }, [loadInstances])
 
   const assocByInstance = Object.fromEntries(assocs.map((a) => [a.instanceId, a]))
+  const agentRowById = Object.fromEntries(agentRows.map((a) => [a.id, a]))
+
+  // 修改 Agent 行级默认答复模式（auto=优先级链；实例按请求实时读库，即刻生效）
+  async function setAgentReplyMode(agentId, mode) {
+    setAgentRows((cur) => cur.map((a) => (a.id === agentId ? { ...a, replyMode: mode } : a)))
+    try {
+      await api.patch(`/debug/api/v1/agents/${agentId}`, { replyMode: mode })
+    } catch (err) {
+      setInstanceError(err.message || t('settingsAgents.actionFailed'))
+      api.get('/debug/api/v1/agents').then((d) => setAgentRows(Array.isArray(d) ? d : [])).catch(() => {})
+    }
+  }
 
   // 表格批量选择（按实例 id；列表自动刷新后保持已勾选）
   const allRowIds = instances.map((i) => i.id)
@@ -303,6 +320,31 @@ export default function SettingsAgentsPage() {
                     {instance.healthy ? t('settingsAgents.statusRunning') : (instance.running ? t('settingsAgents.statusAbnormal') : t('settingsAgents.statusStopped'))}
                   </span>
                   {instance.agentId && <span className="badge indigo" style={{ marginLeft: 6 }}>Agent#{instance.agentId}</span>}
+                  {(() => {
+                    const row = instance.agentId ? agentRowById[instance.agentId] : null
+                    if (!row) return null
+                    const mode = row.replyMode || 'auto'
+                    return (
+                      <div style={{ marginTop: 4 }} title={t('settingsAgents.replyModeHint')}>
+                        <span className="muted" style={{ fontSize: 12, marginRight: 4 }}>{t('settingsAgents.replyModeLabel')}</span>
+                        {isAdmin ? (
+                          <select
+                            className="agent-trigger"
+                            style={{ fontSize: 12, paddingTop: 2, paddingBottom: 2 }}
+                            value={mode}
+                            onChange={(e) => setAgentReplyMode(row.id, e.target.value)}
+                          >
+                            <option value="auto">{t('console.replyMode.auto')}</option>
+                            <option value="workflow">{t('console.replyMode.workflow')}</option>
+                            <option value="llm">{t('console.replyMode.llm')}</option>
+                            <option value="dataset">{t('console.replyMode.dataset')}</option>
+                          </select>
+                        ) : (
+                          <span className="mono-text" style={{ fontSize: 12 }}>{mode}</span>
+                        )}
+                      </div>
+                    )
+                  })()}
                 </td>
                 <td>
                   {isAdmin && !instance.running && (

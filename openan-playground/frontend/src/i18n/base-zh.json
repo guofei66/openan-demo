@@ -276,6 +276,14 @@
       "notRunning": "（未运行）"
     },
     "targetUnderTest": "被测智能体：",
+    "replyMode": {
+      "label": "答复模式：",
+      "auto": "自动（优先级链）",
+      "workflow": "工作流编排",
+      "llm": "LLM 生成",
+      "dataset": "数据集匹配",
+      "hint": "随请求下发的 replyMode 元数据：指定模式不可用（实例未配置/执行失败）时自动降级数据集匹配，降级原因记录在 RequestLog"
+    },
     "hint": {
       "realTrafficOrDataset": "模板示例自动使用实采报文；或从数据集生成请求 →"
     }
@@ -311,6 +319,8 @@
     "unscoped": "未限定范围",
     "details": "明细",
     "statusRunning": "运行中",
+    "replyModeLabel": "答复模式",
+    "replyModeHint": "Agent 行级默认答复模式：请求未显式携带 replyMode 时生效（实例按请求实时读库，改动即刻生效）",
     "statusAbnormal": "异常/启动中",
     "statusStopped": "已停止",
     "start": "启动",

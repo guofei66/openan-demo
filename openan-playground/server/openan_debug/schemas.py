@@ -72,6 +72,7 @@ class AgentPatch(BaseModel):
     enabled: bool | None = None
     layer: str | None = Field(default=None, pattern="^(service|network)$")
     networkDomain: str | None = Field(default=None, pattern="^(wireless|datacom|optical|cloudcore)$")
+    replyMode: str | None = Field(default=None, pattern="^(auto|workflow|llm|dataset)$")
 
     @model_validator(mode="after")
     def _check_group(self):

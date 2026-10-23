@@ -47,6 +47,10 @@ function A2aConsole() {
   const [target, setTarget] = useState('')
   const [instanceError, setInstanceError] = useState('')
   const [traceExamples, setTraceExamples] = useState([])
+  // 答复模式（随请求下发的 replyMode 元数据）：'' = auto（完整优先级链
+  // 工作流编排 → LLM 生成 → 数据集匹配）；指定模式不可用时 Agent 自动降级
+  // 数据集匹配并在响应/RequestLog 标注 fallback 原因
+  const [replyMode, setReplyMode] = useState('')
 
   const loadInstances = useCallback(async () => {
     try {
@@ -98,6 +102,7 @@ function A2aConsole() {
     const extUri = EXTENSION_URIS[pair.protocol] || ''
     const metadata = { templateUri: pair.templateUri }
     if (extUri) metadata[extUri] = pair.requestPrompt
+    if (replyMode) metadata.replyMode = replyMode
     return {
       message: {
         messageId: uuid(),
@@ -113,7 +118,11 @@ function A2aConsole() {
   }
 
   async function sendAdapter(payload) {
-    const payload2 = { request: payload.body, note: payload.body?.message?.metadata?.templateUri || payload.path }
+    const body = payload.body
+    if (replyMode && body?.message) {
+      body.message.metadata = { ...(body.message.metadata || {}), replyMode }
+    }
+    const payload2 = { request: body, note: body?.message?.metadata?.templateUri || payload.path }
     if (target) payload2.instanceId = target
     const result = await api.post('/debug/api/v1/console/send', payload2)
     return { status: 200, kind: 'json', body: result }
@@ -190,6 +199,19 @@ function A2aConsole() {
             {item.name} · :{item.port}{item.healthy ? t('console.state.running') : t('console.state.notRunning')}
           </option>
         ))}
+      </select>
+      <span style={{ fontSize: 12, color: 'var(--text-muted)', marginLeft: 10 }}>{t('console.replyMode.label')}</span>
+      <select
+        className="agent-trigger"
+        value={replyMode}
+        onChange={(e) => setReplyMode(e.target.value)}
+        style={{ paddingRight: 24 }}
+        title={t('console.replyMode.hint')}
+      >
+        <option value="">{t('console.replyMode.auto')}</option>
+        <option value="workflow">{t('console.replyMode.workflow')}</option>
+        <option value="llm">{t('console.replyMode.llm')}</option>
+        <option value="dataset">{t('console.replyMode.dataset')}</option>
       </select>
       {traceExamples.length > 0 && (
         <span className="muted" style={{ fontSize: 12, marginLeft: 10 }}>

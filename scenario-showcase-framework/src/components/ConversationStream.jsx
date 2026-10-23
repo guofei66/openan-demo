@@ -235,6 +235,9 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec }) => {
                     const isNewest = i === messages.length - 1;
                     const isA2AT = m.kind === 'a2at' && m.a2at;
                     const selfLoop = m.to && m.to === m.from;
+                    // Agent 答复模式回执（mockAgent 驱动 + ?mode= 激活时由驱动注入）
+                    const USED_MODES = { workflow: '工作流', llm: 'LLM', dataset: '数据集' };
+                    const degradedTo = m.degraded && m.modeInfo ? (USED_MODES[m.modeInfo.used] || m.modeInfo.used) : '';
                     return (
                         <div key={i} className={`ss-fade-up flex gap-2.5 ${isNewest ? 'opacity-100' : 'opacity-90'}`}>
                             <AgentAvatar agent={agent} />
@@ -245,6 +248,30 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec }) => {
                                         <Handshake size={11} />A2A-T
                                     </span>
                                     <span className={`px-2 py-0.5 rounded text-[12px] font-semibold border ${badge.cls}`}>{tr(`ss.kind_${m.kind}`, badge.zh, badge.en)}</span>
+                                    {m.generated && !m.degraded && (
+                                        <span
+                                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-300 border border-violet-200 dark:border-violet-800 font-mono"
+                                            title={tr('ss.msg_generated_hint', '本条应答由 Agent 实时生成（非剧本回放）', 'This reply was generated live by the agent (not scripted)')}
+                                        >
+                                            ✦ {tr('ss.msg_generated', 'Agent 生成', 'agent-generated')}
+                                        </span>
+                                    )}
+                                    {degradedTo && (
+                                        <span
+                                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 font-mono"
+                                            title={String((m.modeInfo && m.modeInfo.fallback) || '')}
+                                        >
+                                            ↓ {tr('ss.msg_degraded', '已降级', 'degraded')}·{degradedTo}
+                                        </span>
+                                    )}
+                                    {m.fallback && (
+                                        <span
+                                            className="px-1.5 py-0.5 rounded text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-500/30 font-mono"
+                                            title={tr('ss.msg_fallback_hint', '实时生成失败，本条为剧本文本回退', 'Live generation failed; scripted text fallback')}
+                                        >
+                                            ↩ {tr('ss.msg_fallback', '剧本回退', 'scripted fallback')}
+                                        </span>
+                                    )}
                                     {m.step && (
                                         <span className="px-2 py-0.5 rounded text-[12px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700 font-mono">
                                             {m.step}

@@ -98,7 +98,8 @@ async def console_send(
     started = time.monotonic()
     task_state = None
     try:
-        async with httpx.AsyncClient(timeout=120) as client:
+        # 300s：冷实例首跑工作流（加载 workflow-engine SDK + PSOP 派发）可能超过 120s
+        async with httpx.AsyncClient(timeout=300) as client:
             response = await client.post(target, json=body.request, headers=headers)
     except httpx.HTTPError as e:
         latency_ms = int((time.monotonic() - started) * 1000)

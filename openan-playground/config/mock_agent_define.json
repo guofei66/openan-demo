@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "comment": "Mock Agent 打桩实例定义。mock-instances 管理 API 读取本文件按实例拉起/停止独立进程；实例与主调试服务共用同一数据库（Agent 行 / 变体 / 历史联调记录）。defaults.stubVariants 为调测台全部 12 模板的基线桩（实例同模板条目优先覆盖），stubVariants 仅在该实例对应模板无任何变体时导入，不覆盖种子页手工维护的内容。llm.enabled=false 时实例以纯打桩模式运行（LLM 调用失败自动回落桩数据）。",
+  "comment": "Mock Agent 打桩实例定义。mock-instances 管理 API 读取本文件按实例拉起/停止独立进程；实例与主调试服务共用同一数据库（Agent 行 / 变体 / 历史联调记录）。defaults.stubVariants 为调测台全部 12 模板的基线桩（实例同模板条目优先覆盖），stubVariants 仅在该实例对应模板无任何变体时导入，不覆盖种子页手工维护的内容。llm.enabled=false 时实例以纯打桩模式运行（LLM 调用失败自动回落桩数据）。 内存策略（3.5GB 服务器）：仅自启 live-assurance 演示所需 4 实例（保障/无线/能耗/直播），fault-diagnosis 与 recovery 按需在调测台启动；livestream llm.enabled=false（llm 实例约 388MB vs 桩实例 88MB，未配 MOCK_AGENT_LLM_API_KEY 时 LLM 模式本就降级数据集匹配；配置 key 与可达 baseUrl 后改回 true 即启用真实 LLM 生成）。",
   "defaults": {
-    "host": "0.0.0.0",
+    "host": "127.0.0.1",
     "workDirRoot": "data/mock_agents",
     "publicUrlBase": "http://127.0.0.1",
     "llm": {
@@ -271,7 +271,7 @@
       "networkDomain": "ran",
       "port": 9007,
       "workDir": "data/mock_agents/energy-saving-stub",
-      "autoStart": false,
+      "autoStart": true,
       "llm": {
         "enabled": false
       },
@@ -312,7 +312,7 @@
       "networkDomain": "ran",
       "port": 9008,
       "workDir": "data/mock_agents/wireless-domain-stub",
-      "autoStart": false,
+      "autoStart": true,
       "llm": {
         "enabled": false
       },
@@ -353,9 +353,9 @@
       "layer": "service",
       "port": 9009,
       "workDir": "data/mock_agents/livestream-stub",
-      "autoStart": false,
+      "autoStart": true,
       "llm": {
-        "enabled": true,
+        "enabled": false,
         "provider": "openai",
         "baseUrl": "http://127.0.0.1:8000/v1",
         "model": "qwen2.5-7b-instruct",
@@ -389,9 +389,9 @@
       "organization": "OpenAN-Stub",
       "description": "业务保障智能体打桩：专线投诉诊断、业务抢通事件与故障订阅；优先检索数据集返回最接近的成对响应",
       "layer": "service",
-      "port": 9010,
+      "port": 9013,
       "workDir": "data/mock_agents/service-assurance-stub",
-      "autoStart": false,
+      "autoStart": true,
       "llm": {
         "enabled": false
       },

@@ -276,6 +276,14 @@
       "notRunning": " (not running)"
     },
     "targetUnderTest": "Agent under test:",
+    "replyMode": {
+      "label": "Reply mode:",
+      "auto": "Auto (priority chain)",
+      "workflow": "Workflow orchestration",
+      "llm": "LLM generation",
+      "dataset": "Dataset matching",
+      "hint": "Sent as replyMode metadata with each request: when the selected mode is unavailable (not configured / failed), the Agent degrades to dataset matching and records the reason in RequestLog"
+    },
     "hint": {
       "realTrafficOrDataset": "Template examples automatically use captured traffic; or generate a request from a dataset →"
     }
@@ -311,6 +319,8 @@
     "unscoped": "Unscoped",
     "details": "Details",
     "statusRunning": "Running",
+    "replyModeLabel": "Reply mode",
+    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately)",
     "statusAbnormal": "Abnormal/Starting",
     "statusStopped": "Stopped",
     "start": "Start",
