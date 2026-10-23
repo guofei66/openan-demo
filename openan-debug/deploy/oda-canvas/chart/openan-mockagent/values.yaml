@@ -1,0 +1,75 @@
+# OpenAN A2A-T MockAgent —— ODA-Canvas Component 配置
+# 镜像构建见 deploy/oda-canvas/build-image.(sh|ps1)
+
+image:
+  repository: openan-mockagent
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+nameOverride: ""
+fullnameOverride: ""
+
+# ODA Component 元数据（v1beta3）
+component:
+  id: "TMFC900"                # 自定义组件编号（Mock/联调域）
+  name: "A2A-T MockAgent"
+  version: "1.0.0"
+  description: "A2A-T 协议 MockAgent：内嵌默认 Agent + 6 个打桩 Agent 实例（故障诊断/业务抢通/无线节能/无线域/直播/业务保障），支持数据集检索回包"
+  functionalBlock: "CoreCommerce"
+
+service:
+  type: ClusterIP
+  port: 9000
+
+# 打桩实例（与 config/mock_agent_define.json 对齐；暴露为 coreFunction.exposedAPIs）
+agents:
+  - id: fault-diagnosis-stub
+    name: fault-diagnosis
+    port: 9005
+  - id: recovery-stub
+    name: recovery
+    port: 9006
+  - id: energy-saving-stub
+    name: energy-saving
+    port: 9007
+  - id: wireless-domain-stub
+    name: wireless-domain
+    port: 9008
+  - id: livestream-stub
+    name: livestream
+    port: 9009
+  - id: service-assurance-stub
+    name: service-assurance
+    port: 9010
+
+env:
+  jwtSecret: "UfSqbYG9VIYkQOjM4LeuuXpGTQJLqnSVfeEiJ_86Dd8"   # 生产环境务必覆盖（--set env.jwtSecret=...）
+  adminPassword: ""                                          # 设置后可用 admin/<密码> 登录控制台与 REST（留空则不启用）
+  datasetSearch: "on"
+  stubFallback: "on"
+  language: "zh-CN"
+
+# 公网地址（Agent Card 中回填；留空则用集群内 service 地址）
+publicUrl: ""
+
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClass: ""
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+# 安全域（securityFunction）
+security:
+  canvasSystemRole: "admin"
+  componentRole:
+    - name: admin
+      description: MockAgent 管理员（控制台/实例管理/变体管理）
+    - name: user
+      description: 联调用户（调测台/数据集查看）

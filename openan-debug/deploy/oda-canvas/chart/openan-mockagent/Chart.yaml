@@ -1,0 +1,14 @@
+apiVersion: v2
+name: openan-mockagent
+description: OpenAN A2A-T MockAgent —— 可部署于 ODA-Canvas 的 ODA Component（含内嵌默认 Agent 与多个打桩 Agent 实例）
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - oda
+  - canvas
+  - a2a-t
+  - mock-agent
+  - tmforum
+annotations:
+  oda.tmforum.org/component: "v1beta3"

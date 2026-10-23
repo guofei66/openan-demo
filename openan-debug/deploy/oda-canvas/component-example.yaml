@@ -1,0 +1,91 @@
+# OpenAN A2A-T MockAgent —— ODA Component（v1beta3）静态示例
+# 适用于已安装 ODA-Canvas（>=1.0，支持 v1beta3）的集群，可直接 kubectl apply
+# Helm 安装请使用 deploy/oda-canvas/chart/openan-mockagent
+apiVersion: oda.tmforum.org/v1beta3
+kind: Component
+metadata:
+  name: openan-mockagent
+  labels:
+    oda.tmforum.org/componentName: openan-mockagent
+spec:
+  id: "TMFC900"
+  name: "A2A-T MockAgent"
+  version: "1.0.0"
+  description: "A2A-T 协议 MockAgent：内嵌默认 Agent + 6 个打桩 Agent 实例（故障诊断/业务抢通/无线节能/无线域/直播/业务保障），支持数据集检索回包"
+  functionalBlock: "CoreCommerce"
+  maintainers:
+    - name: OpenAN Debug Team
+      email: openan-debug@example.com
+  coreFunction:
+    exposedAPIs:
+      # 内嵌默认 Agent —— A2A-T 协议端点
+      - name: mockagent-a2a
+        specification:
+          - http://openan-mockagent-core:9000/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /debug/a2a
+        developerUI: http://openan-mockagent-core:9000/docs
+        port: 9000
+      # 打桩 Agent 实例
+      - name: mockagent-fault-diagnosis
+        specification:
+          - http://openan-mockagent-core:9005/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /
+        port: 9005
+      - name: mockagent-recovery
+        specification:
+          - http://openan-mockagent-core:9006/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /
+        port: 9006
+      - name: mockagent-energy-saving
+        specification:
+          - http://openan-mockagent-core:9007/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /
+        port: 9007
+      - name: mockagent-wireless-domain
+        specification:
+          - http://openan-mockagent-core:9008/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /
+        port: 9008
+      - name: mockagent-livestream
+        specification:
+          - http://openan-mockagent-core:9009/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /
+        port: 9009
+      - name: mockagent-service-assurance
+        specification:
+          - http://openan-mockagent-core:9010/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /
+        port: 9010
+    dependentAPIs: []
+  managementFunction:
+    exposedAPIs:
+      - name: mockagent-console
+        specification:
+          - http://openan-mockagent-core:9000/openapi.json
+        apiType: openapi
+        implementation: openan-mockagent-core
+        path: /debug
+        developerUI: http://openan-mockagent-core:9000/docs
+        port: 9000
+    dependentAPIs: []
+  securityFunction:
+    canvasSystemRole: "admin"
+    componentRole:
+      - name: admin
+        description: "MockAgent 管理员（控制台/实例管理/变体管理）"
+      - name: user
+        description: "联调用户（调测台/数据集查看）"

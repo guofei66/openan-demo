@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "openan-mockagent.fullname" . }}
+  labels:
+    {{- include "openan-mockagent.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "openan-mockagent.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "openan-mockagent.labels" . | nindent 8 }}
+    spec:
+      containers:
+        - name: mockagent
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 9000
+            {{- range .Values.agents }}
+            - name: agent-{{ .name }}
+              containerPort: {{ .port }}
+            {{- end }}
+          env:
+            - name: OPENAN_DEBUG_HOST
+              value: "0.0.0.0"
+            - name: OPENAN_DEBUG_PORT
+              value: "9000"
+            - name: OPENAN_DEBUG_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "openan-mockagent.fullname" . }}
+                  key: jwt-secret
+            {{- if .Values.env.adminPassword }}
+            - name: OPENAN_DEBUG_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "openan-mockagent.fullname" . }}
+                  key: admin-password
+            {{- end }}
+            - name: OPENAN_DEBUG_DATASET_SEARCH
+              value: {{ .Values.env.datasetSearch | quote }}
+            - name: OPENAN_DEBUG_STUB_FALLBACK
+              value: {{ .Values.env.stubFallback | quote }}
+            - name: A2AT_LANGUAGE
+              value: {{ .Values.env.language | quote }}
+            - name: OPENAN_DEBUG_PUBLIC_URL
+              value: {{ include "openan-mockagent.publicBase" . }}/debug/a2a
+            - name: OPENAN_DEBUG_AGENT_INTERNAL_URL
+              value: http://localhost:9000/debug/a2a/message:send
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /app/data
+      volumes:
+        - name: data
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "openan-mockagent.fullname" . }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

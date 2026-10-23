@@ -1,0 +1,649 @@
+{
+  "brand": {
+    "subtitle": "The Open Playground for Connected Agents"
+  },
+  "login": {
+    "title": "Sign in · OpenAN Playground",
+    "subtitle": "OpenAN — an open agentic experience platform",
+    "desc": "Spanning agent discovery, task orchestration, protocol execution and knowledge ontology, OpenAN Playground is an open, connected space for agentic collaboration — where every agent connects, collaborates and grows.",
+    "username": "Username",
+    "password": "Password",
+    "submit": "Sign in",
+    "failed": "Sign-in failed"
+  },
+  "nav": {
+    "registry": "Registry",
+    "orchestration": "Orchestration",
+    "execution": "Execution",
+    "a2at": "A2A-T SDK",
+    "dataset": "Dataset",
+    "ontology": "Ontology",
+    "mockagent": "MockAgent",
+    "settings": "Settings",
+    "seeds": "Seeds & Variants",
+    "urls": "Service URLs",
+    "users": "Users"
+  },
+  "header": {
+    "notLoggedIn": "anonymous",
+    "toLight": "Switch to light theme",
+    "toDark": "Switch to dark theme",
+    "logout": "Sign out",
+    "langTitle": "切换语言 / Language"
+  },
+  "common": {
+    "loading": "Loading…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "refresh": "Refresh",
+    "search": "Search",
+    "none": "None",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "success": "Success",
+    "failed": "Failed",
+    "error": "Error"
+  },
+  "registry": {
+    "title": "Registry Console",
+    "subtitle": "Agent card registration / query / semantic match / JWKS",
+    "folders": {
+      "cards": "Agent Cards",
+      "smart": "Smart Query",
+      "publish": "Publishing",
+      "system": "System"
+    },
+    "portalHint": "Registered results are available in the Registry portal:"
+  },
+  "orchestration": {
+    "title": "Orchestration Console",
+    "subtitle": "PSOP generation / search / execution (SSE) / execution records",
+    "folders": {
+      "browse": "Workflows & Cards",
+      "intent": "Intent & Execution",
+      "records": "Execution Records"
+    }
+  },
+  "execution": {
+    "title": "Execution Console",
+    "subtitle": "Host agent A2A messaging (incl. SSE streaming) / task management",
+    "folders": {
+      "message": "A2A Messages",
+      "tasks": "Task Management"
+    }
+  },
+  "ontology": {
+    "title": "Ontology Console",
+    "subtitle": "Health check / ontology reasoning (NDJSON event stream)",
+    "folders": {
+      "service": "Service Status",
+      "reasoning": "Ontology Reasoning"
+    }
+  },
+  "postman": {
+    "collections": "Collections",
+    "history": "History",
+    "newRequest": "New request",
+    "recentRequests": "Last 100 requests",
+    "noHistory": "No requests yet. Requests are recorded automatically after sending (up to 100).",
+    "historyLoadFailed": "Failed to load history: {{error}} (click \"Refresh\" to retry)",
+    "loadFailed": "Load failed",
+    "loadFailedHttp": "Load failed: HTTP {{status}}",
+    "targetService": "Target service",
+    "targetAddress": "Target service URL: {{url}}",
+    "unknown": "Unknown",
+    "viewingHistory": "Viewing history #{{id}} — edit and resend directly",
+    "sending": "Sending…",
+    "send": "Send",
+    "sendFailed": "Send failed",
+    "transferFailed": "Transfer failed",
+    "forwardFailed": "Forward failed: the request did not reach the target service",
+    "dupCardPrefix": "A card with the same name already exists in the registry: ",
+    "dupCardSuffix": " (duplicate check covers all cards, including pending-approval ones).",
+    "switchToUpdate": "Switch to Update (PUT)",
+    "deregisterAndReregister": "Deregister & re-register",
+    "deregisterFailed": "Deregister request failed",
+    "ignore": "Ignore",
+    "colDesc": "Description",
+    "toggleEnable": "Enable/Disable",
+    "noEntries": "No entries. Add one below.",
+    "add": "Add",
+    "value": "Value",
+    "optionalDesc": "Optional description",
+    "headerHint": "Content-Type is set by the proxy based on the request body; enabled custom headers are forwarded to the target service.",
+    "headerKeyPlaceholder": "Header name, e.g. X-Debug",
+    "formEdit": "Form editor",
+    "loadSample": "Load sample",
+    "loadSampleOption": "Load sample…",
+    "orgPlaceholder": "Organization, e.g. MyOrg",
+    "namePlaceholder": "Name, e.g. My Agent",
+    "loadCardTitle": "Fetch a card from the registry by organization + name and fill the form",
+    "loadExistingCard": "Load existing card",
+    "edit": "Edit",
+    "highlightPreview": "Highlighted preview",
+    "bodyPlaceholder": "Request body (JSON)",
+    "bodyPlaceholderOptional": "Request body (JSON), optional",
+    "noBody": "{{method}} request carries no body",
+    "response": "Response",
+    "rawResponse": "Raw response",
+    "copy": "Copy",
+    "copied": "Copied ✓",
+    "emptyResponseHint": "Click \"Send\" to fetch a response (shortcut Ctrl+Enter)",
+    "jsonParseError": "Failed to parse JSON; cannot switch to the form editor",
+    "enterOrgAndName": "Enter an organization and a name",
+    "cardNotFound": "Card not found",
+    "invalidBodyJson": "Request body is not valid JSON: {{message}}",
+    "errorSeparator": "; "
+  },
+  "picker": {
+    "title": "Generate request from dataset",
+    "titleWithAgent": "Generate request from dataset (Agent#{{id}} scope)",
+    "dataset": "Dataset",
+    "expandedDataset": "Expanded dataset",
+    "seedDataset": "Seed dataset",
+    "template": "Template",
+    "all": "All",
+    "keyword": "Keyword",
+    "searchPlaceholder": "Scenario / port / serial no…",
+    "pairCount": "{{total}} pairs",
+    "expandHint": "Click to expand and view the request message",
+    "pickHint": "Generate the request message for this pair and fill it into Body",
+    "pick": "Use",
+    "requestMessage": "Request message (metadata.prompt)",
+    "copy": "Copy",
+    "showResponse": "Show paired response",
+    "hideResponse": "Hide paired response",
+    "pairedResponse": "Paired response (looked up and returned by MockAgent after selection)",
+    "noPairs": "No matching pairs",
+    "prevPage": "Prev",
+    "nextPage": "Next",
+    "pageInfo": "Page {{page}} / {{total}}"
+  },
+  "oda": {
+    "title": "Deploy MockAgent to ODA Canvas",
+    "tab": {
+      "deploy": "Deploy Config",
+      "status": "Deploy Status"
+    },
+    "scope": {
+      "title": "Deploy scope (from table selection)",
+      "builtinAlways": "Built-in default Agent (always included)",
+      "builtinOnly": "Built-in default Agent only (no instances selected in table)",
+      "hint": "Unselected instances will not appear in the Deployment ports, Service or Component exposedAPIs; to adjust, close this dialog and re-select in the table.",
+      "autoStart": "Auto-start selected instances in the Pod after deploy"
+    },
+    "field": {
+      "apiServer": "API Server URL",
+      "token": "ServiceAccount Token",
+      "tokenSaved": "Saved (leave blank to keep)",
+      "namespace": "Namespace",
+      "image": "MockAgent image",
+      "publicUrl": "Public URL (optional)",
+      "insecureTLS": "Skip TLS certificate verification",
+      "jwtSecret": "JWT secret",
+      "jwtSecretDefault": "Default dev-secret-change-me",
+      "adminPassword": "Console admin password (optional)",
+      "adminPasswordPlaceholder": "Leave blank to disable",
+      "storageSize": "Storage size",
+      "componentId": "Component ID",
+      "apiVersion": "Component spec version",
+      "datasetSearch": "Dataset search response",
+      "stubFallback": "Variant pool fallback"
+    },
+    "apiVersion": {
+      "v1beta3": "v1beta3 (Canvas ≥1.0, recommended)",
+      "v1beta2": "v1beta2 (legacy Canvas)"
+    },
+    "advanced": "Advanced options",
+    "saved": "Saved",
+    "action": {
+      "saveConfig": "Save Config",
+      "test": "Test Connection",
+      "undeploy": "Undeploy",
+      "refreshStatus": "Refresh Status",
+      "deployOneClick": "🚀 One-click Deploy ({{num}} Agents)"
+    },
+    "busy": {
+      "saving": "Saving…",
+      "testing": "Testing…",
+      "deploying": "Deploying…",
+      "refreshing": "Refreshing…",
+      "undeploying": "Undeploying…"
+    },
+    "msg": {
+      "loadConfigFailed": "Failed to load config: {{name}}",
+      "deployFailed": "One-click deploy failed: {{name}}",
+      "saveFailed": "Failed to save: {{name}}",
+      "configSaved": "Configuration saved",
+      "actionFailed": "{{name}} failed: {{msg}}"
+    },
+    "testResult": {
+      "k8s": "Test result: K8s",
+      "crdPresent": "Present ({{name}})",
+      "crdMissing": "Not installed",
+      "namespace": "Namespace",
+      "reachable": "Reachable",
+      "unreachable": "Unreachable"
+    },
+    "deployTargets": "Deploys: Secret, PVC, Deployment (built-in default + {{num}} selected instance ports + probes), Service, Component (oda.tmforum.org, {{total}} exposedAPIs) — idempotent and safe to re-run; the image must already be pushed to a registry reachable by the cluster (build it under deploy/oda-canvas).",
+    "status": {
+      "component": "Component:",
+      "service": "Service:",
+      "unknown": "Unknown",
+      "notCreated": "Not created",
+      "deployedAgents": "Deployed agents: {{name}}",
+      "builtinAgentsOnly": "Built-in default Agent only",
+      "restarts": "Restarts",
+      "image": "Image",
+      "noPods": "No MockAgent Pod found (not yet deployed or still scheduling)",
+      "portForwardHint": "After the Component is complete: kubectl -n {{name}} port-forward svc/openan-mockagent-core 9000:9000 9005:9005 9008:9008 9009:9009 9010:9010 → Console /debug/ → start stub instances"
+    },
+    "listSep": ", "
+  },
+  "console": {
+    "title": "A2A-T SDK Console",
+    "subtitle": "Stubbed self-test for the A2A interface (A2A-T prompts rendered by the SDK; target the built-in Agent or a stub instance)",
+    "endpoint": {
+      "send": "A2A message send (message:send)",
+      "sendNote": "Sends the A2A SendMessageRequest rendered by the A2A-T SDK; the SDK adds A2A-Version / A2A-Extensions headers automatically, extensions driven by metadata.templateUri in the body",
+      "templateNote": "A2A-T template example: click to fill the sample request for that template; metadata.templateUri in the body drives SDK rendering and extension headers"
+    },
+    "folder": {
+      "a2a": "A2A interface",
+      "template": "{{name}} template examples"
+    },
+    "msg": {
+      "loadInstancesFailed": "Failed to load stub instances"
+    },
+    "dataset": {
+      "taskPrompt": "Execute {{name}} task",
+      "button": "Dataset request…",
+      "buttonTitle": "Pick a request-response pair from the dataset (within this agent's associated scope) to auto-generate the request message"
+    },
+    "row": {
+      "inbound": "Inbound · {{name}}"
+    },
+    "target": {
+      "builtinDefault": "Built-in Mock Agent (default)",
+      "builtinWithPath": "Built-in Mock Agent (default · /openan-playground/a2a)"
+    },
+    "state": {
+      "running": " (running)",
+      "notRunning": " (not running)"
+    },
+    "targetUnderTest": "Agent under test:",
+    "hint": {
+      "realTrafficOrDataset": "Template examples automatically use captured traffic; or generate a request from a dataset →"
+    }
+  },
+  "settingsAgents": {
+    "title": "Mock Agent Management",
+    "descPrefix": "Creating Mock Agents from the UI is not supported yet: Agents are auto-registered by stub instances from ",
+    "descMiddle": " (admins can start/stop them); the default Agent uses the fixed /openan-playground/a2a endpoint, while stub instance endpoints are ",
+    "descSuffix": ", each with its own variant pool",
+    "stubInstancesTitle": "Stub Instances (mock_agent_define.json)",
+    "stubDescPrefix": "Instances start as separate processes as declared in ",
+    "stubDescSuffix": " (own port / working dir / model connection); variant pools and past debug records are shared with the main service; pure stub mode when llm.enabled=false.",
+    "selectedCount": "{{selected}} / {{total}} instances selected",
+    "selectDeployFirst": "Select the Agents to deploy in the table first",
+    "deployToOda": "🚀 Deploy to ODA Canvas",
+    "deployHint": "Tick the Agents to deploy in the table, then click here to deploy in batch",
+    "selectAllAria": "Select all",
+    "selectRowAria": "Select {{name}}",
+    "colInstanceId": "Instance ID",
+    "colName": "Name",
+    "colEndpoint": "Endpoint",
+    "colWorkDir": "Working Dir",
+    "colModel": "Model",
+    "colAssoc": "Dataset Association",
+    "colStatus": "Status",
+    "colActions": "Actions",
+    "llmMode": "LLM Generation Mode",
+    "datasetMode": "Dataset Matching Mode (pure stub)",
+    "workflowMode": "Workflow · {{id}}",
+    "seedBadge": "Seed {{n}}",
+    "expandedBadge": "Expanded {{n}}",
+    "tplSummary": "{{tplCount}} templates · {{pairTotal}} pairs in total",
+    "unscoped": "Unscoped",
+    "details": "Details",
+    "statusRunning": "Running",
+    "statusAbnormal": "Abnormal/Starting",
+    "statusStopped": "Stopped",
+    "start": "Start",
+    "starting": "Starting…",
+    "stop": "Stop",
+    "stopping": "Stopping…",
+    "logsBtn": "Logs",
+    "cardBtn": "Card",
+    "noInstances": "No stub instances defined (config/mock_agent_define.json) or the definition file is unreachable",
+    "listLoadFailed": "Failed to load instance list",
+    "actionFailed": "Operation failed",
+    "instanceLogsTitle": "Instance Logs · {{name}}",
+    "noLogs": "(no logs yet)",
+    "logsLoadFailed": "Load failed: {{message}}",
+    "cardLoadFailed": "Load failed",
+    "datasetAssocTitle": "Dataset Association · {{name}}",
+    "assocScopeDesc": "Dataset retrieval scope for this Agent (MockAgent retrieves the closest request-response pairs by request template within this scope; out-of-scope requests fall back to the variant pool baseline stub).",
+    "unscopedFull": "Unscoped: retrieval covers all templates in the datasets",
+    "seedTotal": "Seed total: {{n}} pairs",
+    "expandedTotal": "Expanded total: {{n}} pairs",
+    "agentRowDisabled": " (Agent row disabled)",
+    "colTemplate": "Associated Templates",
+    "colTotal": "Total",
+    "pairCount": "{{n}} pairs",
+    "noAssocTemplates": "No associated templates configured for this instance (datasetTemplates is empty)",
+    "pairBrowserTitle": "Associated Pair Browser",
+    "notStartedHint": "This instance has not started yet (no Agent row); start it to browse its associated pairs.",
+    "datasetLabel": "Dataset",
+    "expandedDataset": "Expanded Dataset",
+    "seedDataset": "Seed Dataset",
+    "templateFilterLabel": "Template",
+    "all": "All",
+    "keywordLabel": "Keyword",
+    "searchPlaceholder": "scenario / port / serial no.…",
+    "noMatchingPairs": "No matching pairs",
+    "prevPage": "Previous",
+    "nextPage": "Next",
+    "pageInfo": "Page {{page}} / {{totalPages}}",
+    "templateLabel": "Template: ",
+    "requestTitle": "Request",
+    "copy": "Copy",
+    "responseTitle": "Response (paired)",
+    "sourceLabel": "Source: "
+  },
+  "settingsUrls": {
+    "title": "Service URLs",
+    "desc": "Configure the Base URL of each target service; the console forwards requests through /openan-playground/api/v1/debug-proxy. Default addresses point directly to the Aliyun IP (47.236.98.226:9004) and are forwarded by nginx short prefixes to the server's internal services: /rc/ → Registry (5000), /oc/ → Orchestration (5001), /a2a/ → this system's Mock Agent (9100), /ot/ → Ontology (8787).",
+    "registry": "Registry",
+    "orchestration": "Orchestration",
+    "executionHost": "Execution (Host Agent)",
+    "ontology": "Ontology",
+    "urlPlaceholder": "e.g. http://127.0.0.1:8080",
+    "saveFailed": "Save failed",
+    "saveSuccess": "Saved successfully",
+    "saving": "Saving...",
+    "adminOnly": "Only admins can modify service URLs"
+  },
+  "users": {
+    "title": "Users",
+    "createTitle": "Create User",
+    "username": "Username",
+    "password": "Password (min 8 chars)",
+    "create": "Create",
+    "role": "Role",
+    "enabledCol": "Enabled",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No",
+    "enable": "Enable",
+    "disable": "Disable"
+  },
+  "agentCard": {
+    "section": {
+      "basic": "Basic Info",
+      "provider": "Provider",
+      "capabilities": "Capabilities",
+      "extensions": "Extensions",
+      "skills": "Skills",
+      "interfaces": "Interfaces",
+      "modes": "Modes"
+    },
+    "field": {
+      "name": "Name *",
+      "nameHint": "Letters, digits, -/_ and single spaces only, ≤100 characters",
+      "namePlaceholder": "e.g. RAN Energy Saving Agent",
+      "version": "Version *",
+      "versionHint": "≤50 characters",
+      "versionPlaceholder": "e.g. 1.0.0",
+      "description": "Description *",
+      "descriptionHint": "≤1000 characters, control characters not allowed",
+      "descriptionPlaceholder": "e.g. Autonomous closed loop for RAN energy-efficiency optimization, covering intent exploration, intent fulfillment, evaluation and reporting.",
+      "organization": "Organization *",
+      "organizationPlaceholder": "e.g. Huawei",
+      "providerUrl": "Provider URL",
+      "providerUrlPlaceholder": "e.g. https://www.huawei.com"
+    },
+    "ext": {
+      "uri": "Extension URI *",
+      "uriHint": "Up to 10 items, each must include a URI",
+      "description": "Extension Description",
+      "descriptionPlaceholder": "e.g. Task-T structured prompt request",
+      "empty": "No extensions yet",
+      "add": "Add Extension"
+    },
+    "refExt": {
+      "taskT": "Task-T structured prompt request",
+      "notificationT": "Notification-T structured prompt request",
+      "authorizationT": "Authorization-T structured prompt request",
+      "negotiationT": "Negotiation-T negotiation message"
+    },
+    "skill": {
+      "remove": "Remove Skill",
+      "id": "Skill ID *",
+      "hint": "Up to 100 items; id, name and description required for each",
+      "idPlaceholder": "e.g. ran-es-intent-exploration",
+      "name": "Skill Name *",
+      "namePlaceholder": "e.g. RAN ES Intent Exploration",
+      "description": "Skill Description *",
+      "descriptionPlaceholder": "e.g. Evaluate and determine the best likelihood of achieving the specified RAN ES intent target",
+      "tags": "Tags",
+      "tagsPlaceholder": "e.g. wireless, energy-saving, intent",
+      "empty": "No skills yet — at least one skill is required before registration",
+      "add": "Add Skill"
+    },
+    "iface": {
+      "url": "URL",
+      "binding": "Protocol Binding",
+      "version": "Protocol Version",
+      "urlPlaceholder": "e.g. http://127.0.0.1:8080/",
+      "versionPlaceholder": "e.g. 1.0.0",
+      "remove": "Remove this interface",
+      "empty": "No interfaces yet — at least one interface is required before registration",
+      "add": "+ Add Interface",
+      "hint": "1–3 entries; URL, protocol binding and version are required for each"
+    },
+    "mode": {
+      "input": "Input Modes",
+      "output": "Output Modes",
+      "hint": "Comma-separated, e.g. text, json",
+      "placeholder": "e.g. text, json"
+    },
+    "error": {
+      "nameRequired": "name is required",
+      "nameTooLong": "name must not exceed {{max}} characters",
+      "nameInvalid": "name allows only letters, digits, underscores and hyphens, with single spaces between words",
+      "descriptionRequired": "description is required",
+      "descriptionTooLong": "description must not exceed {{max}} characters",
+      "versionRequired": "version is required",
+      "versionTooLong": "version must not exceed {{max}} characters",
+      "providerOrganizationRequired": "provider.organization is required",
+      "skillsRequired": "At least one skill (skills) is required",
+      "skillFieldRequired": "Skill #{{index}}: {{field}} is required",
+      "interfacesRequired": "At least one interface (supportedInterfaces) is required",
+      "interfacesTooMany": "Number of interfaces must not exceed {{max}}",
+      "interfaceFieldRequired": "Interface #{{index}}: {{field}} is required",
+      "extensionsTooMany": "Number of extensions must not exceed {{max}}",
+      "extensionUriRequired": "Extension #{{index}}: uri is required"
+    }
+  },
+  "statusBadge": {
+    "transportFailed": "Transport failed",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "dataset": {
+    "templateUriLabel": "Template: ",
+    "pairIdLabel": "· pairId: ",
+    "request": "Request",
+    "responsePaired": "Response (paired, same ID as request)",
+    "copy": "Copy",
+    "source": "Source: {{source}}",
+    "loadFailed": "Load failed: {{error}}",
+    "all": "All",
+    "workOrder": "Work Order",
+    "protocol": "Protocol",
+    "template": "Template",
+    "keyword": "Keyword",
+    "keywordPlaceholder": "Scenario / port / seq no…",
+    "pairCount": "{{total}} pairs in total",
+    "pairCountShort": "({{total}} pairs)",
+    "agentScopeFiltered": "Filtered by agent-linked scope ({{num}} templates)",
+    "prevPage": "Previous",
+    "pageInfo": "Page {{page}} / {{totalPages}}",
+    "nextPage": "Next",
+    "expandedHint": "Each request-response pair shares the same work order, port, sequence number and timestamp, aligned with the expected output contract; MockAgent returns the closest matching pair per request.",
+    "subtitle": "Request-response pair datasets: seed dataset (Demo live-captured) + expanded dataset (full template coverage, 5000+ pairs), associated with Mock Agents by template role",
+    "seedTab": "Seed Dataset",
+    "expandedTab": "Expanded Dataset",
+    "assocAgent": "Linked Agent",
+    "allAgents": "All agents",
+    "allShort": "(all)",
+    "assocDetail": "Association details",
+    "hideAssocDetail": "Hide association details",
+    "seedPairs": "Seed: {{total}} pairs",
+    "expandedPairs": "Expanded: {{total}} pairs",
+    "agentNotEnabled": "(not started)",
+    "joiner": "; ",
+    "noScopeHint": "Unscoped: retrieval covers all templates in the dataset",
+    "meta": {
+      "seed": {
+        "name": "A2A-T Demo Seed Dataset",
+        "source": "A2A-T Demo.docx (two ticket collaboration logs: Ticket 1 — cross-region service outage with negotiation; Ticket 2 — cross-region SLA degradation with expedited restoration)",
+        "note": "Paired request-response: request samples can be sent from \"Prompt source\" in the A2A-T SDK Console; responses are stub-variant round-robin replies (verbatim identical to the real Demo responses)."
+      },
+      "expanded": {
+        "name": "A2A-T Expanded Dataset",
+        "source": "Programmatic expansion: a2a-t SDK zh-CN template rendering + A2A-T Demo captured template structure; responses share the same identifiers (ticket no. / port / seq no. / time) with requests, aligned to the expected-output contract",
+        "note": "Paired request-response (cross-verified by shared identifiers): all value combinations per template × instance parameter groups; 16 templates covered in total."
+      }
+    }
+  },
+  "seeds": {
+    "title": "Seed Management",
+    "editSeed": "Edit Seed #{{id}}",
+    "newSeed": "New Seed",
+    "namePlaceholder": "Name",
+    "descriptionPlaceholder": "Description",
+    "invalidSeedJson": "Invalid seed JSON",
+    "confirmDeleteSeed": "Delete this seed?",
+    "selectVariantsFile": "Please select a variants.json file",
+    "importTitle": "Import Variants",
+    "importHint": "Select the variants.json generated by local tools/stub_generator (format: {{format}})",
+    "targetAgent": "Target Agent",
+    "noSeedBinding": "No seed binding",
+    "import": "Import",
+    "importSuccess": "Imported {{imported}} items, starting seq={{firstSeq}}",
+    "importFailed": "Import failed",
+    "listTitle": "Seed List",
+    "colName": "Name",
+    "colTemplate": "Template",
+    "colVariants": "Variants",
+    "colDescription": "Description",
+    "colActions": "Actions",
+    "variantsTitle": "Variant Pool",
+    "colContent": "Content",
+    "colEnabled": "Enabled",
+    "colSource": "Source",
+    "enable": "Enable",
+    "disable": "Disable"
+  },
+  "endpoints": {
+    "registry": {
+      "list": {
+        "label": "List Agent Cards",
+        "note": "Supports ?name=&organization= filters; returns all cards (including pending). includeStatus=true attaches publishStatus to each card (strict proto clients such as orchestration should not enable it)"
+      },
+      "get": {
+        "label": "Get Agent Card",
+        "note": "Exact lookup by organization + name, regardless of publish status; includeStatus=true attaches publishStatus"
+      },
+      "register": {
+        "label": "Register Agent Card",
+        "note": "With signature validation enabled in production, include signatures; the dev instance may disable validation"
+      },
+      "update": {
+        "label": "Update Agent Card",
+        "note": "Path is {organization}/{name} and must match the card content; edit the path before sending"
+      },
+      "semantic": {
+        "label": "Semantic Agent Query"
+      },
+      "delete": {
+        "label": "Deregister Agent Card"
+      },
+      "manage": {
+        "label": "Manage List (with publish status)",
+        "note": "Returns all cards with publishStatus (same behavior as the list query)"
+      },
+      "publish": {
+        "label": "Publish Approval (registered→published)",
+        "note": "Replace {organization}/{name} in the path; body must contain a non-empty remark, otherwise the card stays unlisted"
+      },
+      "keys": {
+        "label": "Query JWKS Public Keys"
+      }
+    },
+    "orchestration": {
+      "workflows": {
+        "label": "Workflow List"
+      },
+      "cards": {
+        "label": "Agent Card List (via Registry)"
+      },
+      "intent": {
+        "label": "Generate PSOP from Intent"
+      },
+      "search": {
+        "label": "Semantic Workflow Search"
+      },
+      "execute": {
+        "label": "Execute Workflow (SSE stream)",
+        "note": "Auto-searches or generates a PSOP and executes it, returning a relayed SSE event stream"
+      },
+      "executeById": {
+        "label": "Execute by PSOP ID (SSE)",
+        "note": "Replace {psop_id} in the path"
+      },
+      "dispatch": {
+        "label": "Dispatch Host Agent by Intent (SSE)"
+      },
+      "executions": {
+        "label": "Execution List"
+      },
+      "records": {
+        "label": "Internal Execution Records"
+      }
+    },
+    "execution": {
+      "send": {
+        "label": "A2A Message Send (non-streaming)",
+        "note": "Targets the host agent's A2A endpoint (defaults to this system's Mock Agent; change it in Settings → Service URLs); requires the A2A-Version header"
+      },
+      "stream": {
+        "label": "A2A Message Send (SSE streaming)"
+      },
+      "tasks": {
+        "label": "Task List"
+      },
+      "task": {
+        "label": "Task Details"
+      },
+      "cancel": {
+        "label": "Cancel Task"
+      }
+    },
+    "ontology": {
+      "health": {
+        "label": "Health Check"
+      },
+      "runs": {
+        "label": "Run Ontology Reasoning (NDJSON stream)",
+        "note": "Returns a relayed NDJSON event stream (run.started/ontology.focus/agent.message/a2at.request/a2at.response/run.completed)"
+      }
+    }
+  }
+}
