@@ -278,11 +278,11 @@
     "targetUnderTest": "被测智能体：",
     "replyMode": {
       "label": "答复模式：",
-      "auto": "自动（编排→LLM→数据集 依次回退）",
-      "workflow": "工作流编排（多 Agent 协作）",
+      "auto": "自动（Agent 默认链）",
+      "workflow": "工作流编排（组织方式）",
       "llm": "LLM 生成（未配 key 降级数据集）",
       "dataset": "数据集匹配（模板检索）",
-      "hint": "随请求下发的 replyMode：内容源 = 数据集匹配 / LLM 生成（固定文本为兜底）；工作流编排为组织方式（多 Agent 协作，内容由子 Agent 的内容来源决定）。指定模式不可用时自动降级数据集匹配，降级原因记录在 RequestLog"
+      "hint": "随请求下发的 replyMode（内容源）：数据集匹配 / LLM 生成，固定文本变体池为兜底；自动 = Agent 默认链（启用工作流的 Agent 优先多 Agent 编排，内容由子 Agent 的内容来源决定）。指定模式不可用时自动降级数据集匹配，降级原因记录在 RequestLog"
     },
     "hint": {
       "realTrafficOrDataset": "模板示例自动使用实采报文；或从数据集生成请求 →"
@@ -320,7 +320,7 @@
     "details": "明细",
     "statusRunning": "运行中",
     "replyModeLabel": "答复模式",
-    "replyModeHint": "Agent 行级默认答复模式：请求未显式携带 replyMode 时生效（实例按请求实时读库，改动即刻生效）。内容源 = 数据集 / LLM；工作流编排为组织方式，其子 Agent 按各自默认决定内容",
+    "replyModeHint": "Agent 行级默认答复模式：请求未显式携带 replyMode 时生效（实例按请求实时读库，改动即刻生效）。内容源 = 数据集 / LLM；工作流为组织方式，由实例 workflow.enabled 启用（自动链优先编排，不作为可选模式）",
     "statusAbnormal": "异常/启动中",
     "statusStopped": "已停止",
     "start": "启动",

@@ -341,14 +341,14 @@
     background: rgba(255, 255, 255, 0.05);
 }
 
-/* 答复模式 4 项：2×2 胶囊网格，双行（主标签 + 内容源/组织方式副标签） */
+/* 答复模式 3 项：单行三列胶囊（主标签 + 内容源副标签） */
 .vs-launch-modes-reply {
     flex-wrap: wrap;
     border-radius: 12px;
 }
 .vs-launch-modes-reply .vs-launch-mode {
-    flex: 1 1 calc(50% - 6px);
-    padding: 6px 6px;
+    flex: 1 1 calc(33.333% - 6px);
+    padding: 6px 4px;
     font-size: 12px;
     border-radius: 8px;
     white-space: nowrap;

@@ -209,7 +209,6 @@ function A2aConsole() {
         title={t('console.replyMode.hint')}
       >
         <option value="">{t('console.replyMode.auto')}</option>
-        <option value="workflow">{t('console.replyMode.workflow')}</option>
         <option value="llm">{t('console.replyMode.llm')}</option>
         <option value="dataset">{t('console.replyMode.dataset')}</option>
       </select>

@@ -480,7 +480,8 @@ export default function VirtualShowroomPlugin() {
 
                                         {/* 答复模式 only applies to Agent 执行 — Demo 回放
                                             replays the scripted bank as-is。
-                                            口径：内容源三分类（固定文本/数据集/LLM）+ 组织方式（工作流编排） */}
+                                            口径：3 种内容源（固定文本/数据集/LLM）；
+                                            工作流编排为组织方式（实例 workflow.enabled 启用，自动链优先），不作为可选模式 */}
                                         {launchSel.driver === 'mockAgent' && (
                                             <>
                                                 <div className="vs-launch-label">
@@ -501,7 +502,7 @@ export default function VirtualShowroomPlugin() {
                                                         onClick={() => setLaunchSel((s) => ({ ...s, mode: 'dataset' }))}
                                                     >
                                                         <span>{tr('virtual-showroom.replyModeDataset', '数据集匹配', 'Dataset matching')}</span>
-                                                        <em className="vs-launch-mode-sub">{tr('virtual-showroom.subDataset', '内容源 · 模板检索', 'content · template retrieval')}</em>
+                                                        <em className="vs-launch-mode-sub">{tr('virtual-showroom.subDataset', '模板检索 · 变量填充', 'template retrieval')}</em>
                                                     </button>
                                                     <button
                                                         type="button"
@@ -509,25 +510,15 @@ export default function VirtualShowroomPlugin() {
                                                         onClick={() => setLaunchSel((s) => ({ ...s, mode: 'llm' }))}
                                                     >
                                                         <span>{tr('virtual-showroom.replyModeLlm', 'LLM 生成', 'LLM generation')}</span>
-                                                        <em className="vs-launch-mode-sub">{tr('virtual-showroom.subLlm', '内容源 · 未配 key 自动降级', 'content · degrades without key')}</em>
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={`vs-launch-mode${launchSel.mode === 'workflow' ? ' on agent' : ''}`}
-                                                        onClick={() => setLaunchSel((s) => ({ ...s, mode: 'workflow' }))}
-                                                    >
-                                                        <span>{tr('virtual-showroom.replyModeWorkflow', '工作流编排', 'Workflow orchestration')}</span>
-                                                        <em className="vs-launch-mode-sub">{tr('virtual-showroom.subWorkflow', '组织方式 · 多 Agent 协作', 'orchestration · multi-agent')}</em>
+                                                        <em className="vs-launch-mode-sub">{tr('virtual-showroom.subLlm', '未配 key · 自动降级', 'degrades without key')}</em>
                                                     </button>
                                                 </div>
                                                 <p className="vs-launch-note">
                                                     {!launchSel.mode
                                                         ? tr('virtual-showroom.noteReplyModeBank', '应答为剧本库预置的固定文本（不实时生成）', 'Replies are pre-authored fixed text from the bank (no live generation)')
-                                                        : launchSel.mode === 'workflow'
-                                                            ? tr('virtual-showroom.noteReplyModeWorkflow', '组织方式：保障 Agent 编排派发子任务并汇总执行报告；内容由子 Agent 的内容来源决定（当前为数据集），不可用时自动回退剧本', 'Organization: the assurance agent orchestrates subtasks and aggregates an execution report; content comes from the sub-agents (currently dataset), auto-falls back to the bank')
-                                                            : launchSel.mode === 'llm'
-                                                                ? tr('virtual-showroom.noteReplyModeLlm', '内容源：打桩实例调用大模型生成应答；未配置 key 时自动降级为数据集匹配（演示页会标注降级）', 'Content source: the stub instance calls an LLM; without a key it degrades to dataset matching (marked in the showcase)')
-                                                                : tr('virtual-showroom.noteReplyModeDataset', '内容源：打桩实例按请求模板检索数据集生成应答（模板 + 变量填充）', 'Content source: the stub instance retrieves the dataset by request template (template + variable filling)')}
+                                                        : launchSel.mode === 'llm'
+                                                            ? tr('virtual-showroom.noteReplyModeLlm', '内容源：打桩实例调用大模型生成应答；未配置 key 时自动降级为数据集匹配（演示页会标注降级）', 'Content source: the stub instance calls an LLM; without a key it degrades to dataset matching (marked in the showcase)')
+                                                            : tr('virtual-showroom.noteReplyModeDataset', '内容源：打桩实例按请求模板检索数据集生成应答（模板 + 变量填充）', 'Content source: the stub instance retrieves the dataset by request template (template + variable filling)')}
                                                 </p>
                                             </>
                                         )}

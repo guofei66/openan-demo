@@ -335,9 +335,11 @@ export default function SettingsAgentsPage() {
                             onChange={(e) => setAgentReplyMode(row.id, e.target.value)}
                           >
                             <option value="auto">{t('console.replyMode.auto')}</option>
-                            <option value="workflow">{t('console.replyMode.workflow')}</option>
                             <option value="llm">{t('console.replyMode.llm')}</option>
                             <option value="dataset">{t('console.replyMode.dataset')}</option>
+                            {mode === 'workflow' && (
+                              <option value="workflow">{t('console.replyMode.workflow')}</option>
+                            )}
                           </select>
                         ) : (
                           <span className="mono-text" style={{ fontSize: 12 }}>{mode}</span>

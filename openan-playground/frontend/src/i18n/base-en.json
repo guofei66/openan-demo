@@ -278,11 +278,11 @@
     "targetUnderTest": "Agent under test:",
     "replyMode": {
       "label": "Reply mode:",
-      "auto": "Auto (workflow → LLM → dataset)",
-      "workflow": "Workflow orchestration (multi-agent)",
+      "auto": "Auto (agent default chain)",
+      "workflow": "Workflow orchestration (organization)",
       "llm": "LLM generation (degrades without key)",
       "dataset": "Dataset matching (template retrieval)",
-      "hint": "replyMode sent with each request: content sources = dataset matching / LLM generation (fixed text as last resort); workflow orchestration is an organization pattern (multi-agent; content decided by the sub-agents). Unavailable modes degrade to dataset matching; reasons recorded in RequestLog"
+      "hint": "replyMode sent with each request (content source): dataset matching / LLM generation, with the fixed-text variant pool as last resort; Auto = the agent's default chain (workflow-enabled agents orchestrate first, content decided by the sub-agents). Unavailable modes degrade to dataset matching; reasons recorded in RequestLog"
     },
     "hint": {
       "realTrafficOrDataset": "Template examples automatically use captured traffic; or generate a request from a dataset →"
@@ -320,7 +320,7 @@
     "details": "Details",
     "statusRunning": "Running",
     "replyModeLabel": "Reply mode",
-    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately). Content sources = dataset / LLM; workflow orchestration is an organization pattern whose sub-agents decide content by their own defaults",
+    "replyModeHint": "Row-level default reply mode: applies when a request carries no explicit replyMode (instances read the DB per request; changes take effect immediately). Content sources = dataset / LLM; workflow is an organization pattern enabled per instance via workflow.enabled (tried first by the auto chain, not a selectable mode)",
     "statusAbnormal": "Abnormal/Starting",
     "statusStopped": "Stopped",
     "start": "Start",
