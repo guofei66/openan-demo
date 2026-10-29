@@ -12,14 +12,14 @@ from pathlib import Path
 
 import paramiko
 
-HOST = "47.236.98.226"
+HOST = "203.0.113.10"
 USER = "root"
 PROJECT = Path(__file__).resolve().parent.parent
 FRONTEND_DIST = PROJECT / "frontend" / "dist"
 REMOTE_BASE = "/OpenA2A-T/openan-debug"
 # 前端挂载点：与 openan-master 共用 nginx 9002 端口，路径 /openan-playground/
 REMOTE_FRONTEND = "/OpenA2A-T/openan-playground-frontend"
-PUBLIC_URL = "http://47.236.98.226:9002/openan-playground/"
+PUBLIC_URL = "http://203.0.113.10:9002/openan-playground/"
 
 
 def run(ssh, command, check=True):

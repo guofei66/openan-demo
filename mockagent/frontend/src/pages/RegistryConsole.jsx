@@ -24,8 +24,8 @@ export default function RegistryConsolePage() {
         footer={(
           <div className="pm-footer">
             <span>注册结果可在注册中心门户查看：</span>
-            <a href="http://47.236.98.226:9003/registry" target="_blank" rel="noreferrer">
-              http://47.236.98.226:9003/registry ↗
+            <a href="http://203.0.113.10:9003/registry" target="_blank" rel="noreferrer">
+              http://203.0.113.10:9003/registry ↗
             </a>
           </div>
         )}

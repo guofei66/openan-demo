@@ -1,9 +1,9 @@
 const now = () => new Date().toISOString()
 const serviceUrls = {
-  registryUrl: 'http://47.236.98.226:9004/rc',
-  orchestrationUrl: 'http://47.236.98.226:9004/oc',
-  executionHostUrl: 'http://47.236.98.226:9004/a2a',
-  ontologyUrl: 'http://47.236.98.226:9004/ot',
+  registryUrl: 'http://203.0.113.10:9004/rc',
+  orchestrationUrl: 'http://203.0.113.10:9004/oc',
+  executionHostUrl: 'http://203.0.113.10:9004/a2a',
+  ontologyUrl: 'http://203.0.113.10:9004/ot',
 }
 const mockProxyResult = () => ({ status: 200, contentType: 'application/json', kind: 'json', body: { mock: true }, latencyMs: 5 })
 const seed = {

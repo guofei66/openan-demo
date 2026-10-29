@@ -6,7 +6,7 @@
 
 **Architecture:** 单体 FastAPI 应用（监听 127.0.0.1:9000）同时承载 Debug API（`/api/v1/*`）与挂载在 `/debug/a2a` 的 A2A Starlette 子应用（官方 a2a-sdk REST handler + a2a-t-sdk-python 校验）。SQLite 存储，React+Vite 前端由 Nginx 托管。设计文档：`docs/superpowers/specs/2026-09-28-openan-debug-design.md`。
 
-**Tech Stack:** Python 3.12+ / FastAPI / a2a-sdk==1.1.0 / a2a-t-sdk（本地路径依赖，wheel 化部署）/ SQLAlchemy 2 / PyJWT / React 18 + Vite / SQLite / systemd + Nginx（阿里云 47.120.10.111）
+**Tech Stack:** Python 3.12+ / FastAPI / a2a-sdk==1.1.0 / a2a-t-sdk（本地路径依赖，wheel 化部署）/ SQLAlchemy 2 / PyJWT / React 18 + Vite / SQLite / systemd + Nginx（阿里云 203.0.113.20）
 
 ---
 
@@ -54,7 +54,7 @@
 3. **服务器不配 LLM 时的行为（本设计的明确决策）**：SDK 的 check/validate 内部含 LLM 步骤（场景识别/slot 抽取）。服务器 .env 配了 `A2AT_LLM_*` → 完整协议（含协商）；没配或 LLM 不可用（code 属于 `llm.not_configured/llm.invocation_failed/llm.response_invalid`）且 `OPENAN_DEBUG_STUB_FALLBACK=on` → **降级直接打桩**（跳过校验抽取，按 templateUri 路由变体返回），日志 `fallback_used=true`。因此**所有离线测试必须用 `A2ATClient.generate_task_prompt_from_data_with_schema` 生成真实 prompt**（确定性、零 LLM），不能用任意文本。
 4. **与规格的一处澄清**：泛化打桩数据在本地生成后上传（服务器不调 LLM 做泛化）不变；但 Mock Agent 的 SDK 校验/抽取步骤需要服务器配置 LLM 端点才能启用协商分支——这是部署配置项（DashScope/DeepSeek 等 OpenAI 兼容端点均可），未配置时自动降级直接打桩，联调不中断。
 5. **前端走 fetch 封装 + DEV 环境 mock 兜底**（frontend-mock-fallback 规范）：`api.js` 捕获网络错误返回内置 fixture，API 正常时直连。
-6. 部署目标：root@47.120.10.111（密码见 openan-aliyun-deploy 技能），Nginx 已托管现有网站，只动 `/debug/` 前缀，不动 80 端口其他路径。
+6. 部署目标：root@203.0.113.20（密码见 openan-aliyun-deploy 技能），Nginx 已托管现有网站，只动 `/debug/` 前缀，不动 80 端口其他路径。
 
 ## 文件结构
 
@@ -177,7 +177,7 @@ OPENAN_DEBUG_PORT=9000
 OPENAN_DEBUG_DB_PATH=data/openan-debug.db
 OPENAN_DEBUG_JWT_SECRET=change-me-to-random
 OPENAN_DEBUG_ADMIN_PASSWORD=
-OPENAN_DEBUG_PUBLIC_URL=http://47.120.10.111/debug/a2a
+OPENAN_DEBUG_PUBLIC_URL=http://203.0.113.20/debug/a2a
 OPENAN_DEBUG_AGENT_INTERNAL_URL=http://127.0.0.1:9000/debug/a2a/message:send
 OPENAN_DEBUG_STUB_FALLBACK=on
 ```
@@ -3942,7 +3942,7 @@ OPENAN_DEBUG_PORT=9000
 OPENAN_DEBUG_DB_PATH=data/openan-debug.db
 OPENAN_DEBUG_JWT_SECRET=请替换为随机串
 OPENAN_DEBUG_ADMIN_PASSWORD=
-OPENAN_DEBUG_PUBLIC_URL=http://47.120.10.111/debug/a2a
+OPENAN_DEBUG_PUBLIC_URL=http://203.0.113.20/debug/a2a
 OPENAN_DEBUG_AGENT_INTERNAL_URL=http://127.0.0.1:9000/debug/a2a/message:send
 OPENAN_DEBUG_STUB_FALLBACK=on
 ```
@@ -3960,7 +3960,7 @@ from pathlib import Path
 
 import paramiko
 
-HOST = "47.120.10.111"
+HOST = "203.0.113.20"
 USER = "root"
 PROJECT = Path(__file__).resolve().parent.parent
 SERVER_DIR = PROJECT / "server"
@@ -4049,7 +4049,7 @@ def main():
     run(ssh, "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/debug/a2a/.well-known/agent-card.json")
     run(ssh, "journalctl -u openan-debug -n 5 --no-pager | grep -o 'password: .*' || true")
     ssh.close()
-    print("deploy done: http://47.120.10.111/debug/")
+    print("deploy done: http://203.0.113.20/debug/")
 
 
 def _ensure_remote_dir(sftp, remote_dir):
@@ -4093,7 +4093,7 @@ from a2a_t.core.metadata import NOTIFICATION_T_EXTENSION_URI
 from a2a_t.core.standard_templates import SUBSCRIBE_INCIDENT_URI
 from google.protobuf.json_format import MessageToDict, ParseDict
 
-BASE_URL = "http://47.120.10.111/debug/a2a"
+BASE_URL = "http://203.0.113.20/debug/a2a"
 ENV_PATH = Path(__file__).resolve().parent.parent / "server" / ".env"
 
 
@@ -4163,7 +4163,7 @@ OpenAN 对接联调系统：A2A-T Mock Agent（完整协议流程 + 打桩数据
 - `server/`：FastAPI 单体（Debug API `/api/v1/*` + Mock Agent `/debug/a2a/*`），SQLite。
 - `frontend/`：React + Vite，构建后部署 `/OpenA2A-T/openan-debug-frontend`，访问路径 `/debug/`。
 - `tools/stub_generator/`：本地 LLM 泛化 CLI（种子 → 变体 JSON）。
-- `deploy/`：阿里云 47.120.10.111 部署脚本与配置。
+- `deploy/`：阿里云 203.0.113.20 部署脚本与配置。
 
 ## 本地开发
 
@@ -4179,8 +4179,8 @@ cd frontend && npm install && npm run dev    # http://localhost:5180/debug/
 
 ## 联调
 
-- Mock Agent 卡片：`http://47.120.10.111/debug/a2a/.well-known/agent-card.json`
-- 请求端点：`POST http://47.120.10.111/debug/a2a/message:send`（HTTP+JSON binding）
+- Mock Agent 卡片：`http://203.0.113.20/debug/a2a/.well-known/agent-card.json`
+- 请求端点：`POST http://203.0.113.20/debug/a2a/message:send`（HTTP+JSON binding）
 - OpenAN 侧把 AgentCard `supportedInterfaces[0].url` 指向上址，或注册进 registry-center。
 - 服务器 `.env` 配好 `A2AT_LLM_*` 后启用完整协议（协商分支）；未配置时自动降级直接打桩。
 
@@ -4231,7 +4231,7 @@ Expected: 输出事件流且末尾 `STUB ARTIFACT RECEIVED`（若服务器未配
 
 - [ ] **Step 5: 浏览器验收**
 
-打开 `http://47.120.10.111/debug/`：
+打开 `http://203.0.113.20/debug/`：
 - 登录（bootstrap admin 密码）
 - 调试台"填充示例请求"→ 发送 → 看到 Response
 - 种子页导入一份 variants.json、启停变体

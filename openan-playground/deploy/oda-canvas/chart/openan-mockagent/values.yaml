@@ -43,7 +43,7 @@ agents:
     port: 9010
 
 env:
-  jwtSecret: "UfSqbYG9VIYkQOjM4LeuuXpGTQJLqnSVfeEiJ_86Dd8"   # 生产环境务必覆盖（--set env.jwtSecret=...）
+  jwtSecret: "change-me-to-random-jwt-secret"   # 生产环境务必覆盖（--set env.jwtSecret=...）
   adminPassword: ""                                          # 设置后可用 admin/<密码> 登录控制台与 REST（留空则不启用）
   datasetSearch: "on"
   stubFallback: "on"

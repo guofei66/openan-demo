@@ -9,15 +9,15 @@ from .auth import hash_password
 from .config import Settings
 from .models import Agent, Base, ServiceSettings, User
 
-# 调试代理默认经 47.236.98.226:9004 的短前缀转发到阿里云上各服务（上游只监听 127.0.0.1，
+# 调试代理默认经 203.0.113.10:9004 的短前缀转发到阿里云上各服务（上游只监听 127.0.0.1，
 # 由 nginx 9004 剥离前缀后转回本机端口）：
 # /rc/  -> Registry Center(5000)     /oc/ -> Orchestration Center(5001)
 # /a2a/ -> Mock Agent A2A(9100)      /ot/ -> Ontology(8787)
 SERVICE_URL_DEFAULTS = {
-    "registry_url": "http://47.236.98.226:9004/rc",
-    "orchestration_url": "http://47.236.98.226:9004/oc",
-    "execution_host_url": "http://47.236.98.226:9004/a2a",
-    "ontology_url": "http://47.236.98.226:9004/ot",
+    "registry_url": "http://203.0.113.10:9004/rc",
+    "orchestration_url": "http://203.0.113.10:9004/oc",
+    "execution_host_url": "http://203.0.113.10:9004/a2a",
+    "ontology_url": "http://203.0.113.10:9004/ot",
 }
 
 

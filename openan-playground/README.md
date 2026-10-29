@@ -7,7 +7,7 @@ OpenAN 对接联调系统：A2A-T Mock Agent（完整协议流程 + 打桩数据
 - `server/`：FastAPI 单体（Debug API `/api/v1/*` + Mock Agent `/debug/a2a/*`），SQLite。
 - `frontend/`：React + Vite，构建后部署 `/OpenA2A-T/openan-debug-frontend`，访问路径 `/debug/`。
 - `tools/stub_generator/`：本地 LLM 泛化 CLI（种子 → 变体 JSON）。
-- `deploy/`：阿里云 47.236.98.226 部署脚本与配置（nginx 独立 server 块，端口 9004）。
+- `deploy/`：阿里云 203.0.113.10 部署脚本与配置（nginx 独立 server 块，端口 9004）。
 
 ## 本地开发
 
@@ -23,8 +23,8 @@ cd frontend && npm install && npm run dev    # http://localhost:5180/debug/
 
 ## 联调
 
-- Mock Agent 卡片：http://47.236.98.226:9004/debug/a2a/.well-known/agent-card.json
-- 请求端点：POST http://47.236.98.226:9004/debug/a2a/message:send（HTTP+JSON binding），流式 /message:stream
+- Mock Agent 卡片：http://203.0.113.10:9004/debug/a2a/.well-known/agent-card.json
+- 请求端点：POST http://203.0.113.10:9004/debug/a2a/message:send（HTTP+JSON binding），流式 /message:stream
 - OpenAN 侧把 AgentCard supportedInterfaces[0].url 指向上址，或注册进 registry-center。
 - 服务器 .env 配好 A2AT_LLM_* 后启用完整协议（协商分支）；未配置时自动降级直接打桩。
 

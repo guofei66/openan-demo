@@ -10,7 +10,7 @@ OpenAN 对接联调需要一个独立于真实业务 Agent 的调试环境。Ope
 1. **A2A-T Mock Agent**：一个真实可访问的 A2A-T 服务端点，接收 OpenAN 侧（orchestration-center / 业务系统）发出的 A2A-T 请求，完整走协议流程，返回打桩（stub）业务数据。
 2. **打桩数据生成**：用户提供种子数据（真实业务样本 JSON），在本地用大模型泛化为多条变体，再上传到服务器变体池。
 3. **OpenAN-Debug Web 系统**：支持用户登录，提供种子/变体管理、联调请求调试台（输入请求 body → 查看 Response）、请求历史。
-4. **部署**：部署到阿里云服务器 47.120.10.111，与现有 OpenAN 网站共存。
+4. **部署**：部署到阿里云服务器 203.0.113.20，与现有 OpenAN 网站共存。
 
 **明确不做（YAGNI）**：服务器端 LLM 调用、Mock Agent 集群、性能压测、多租户。
 
@@ -33,7 +33,7 @@ OpenAN 侧（orchestration-center / 联调业务系统）
     │  A2A-T 请求（HTTP+JSON binding，SendMessageRequest，
     │  Message.metadata 携带 extension URI + prompt_text + templateUri + negotiationContext）
     ▼
-阿里云 47.120.10.111（只开放 80 端口，不影响现有网站）
+阿里云 203.0.113.20（只开放 80 端口，不影响现有网站）
     ├─ Nginx
     │   ├─ /debug/            → React 前端静态文件
     │   ├─ /debug/api/v1/...  → 反代 127.0.0.1:9000（登录/种子/变体/调试台/历史）
@@ -44,7 +44,7 @@ OpenAN 侧（orchestration-center / 联调业务系统）
         └─ SQLite（users / agents / seeds / variants / request_logs）
 ```
 
-- 联调接入方式一：OpenAN 侧将 AgentCard 的 `supportedInterfaces[0].url` 直接配置为 `http://47.120.10.111/debug/a2a/`。
+- 联调接入方式一：OpenAN 侧将 AgentCard 的 `supportedInterfaces[0].url` 直接配置为 `http://203.0.113.20/debug/a2a/`。
 - 联调接入方式二：将 Mock Agent 的 AgentCard 注册进 registry-center，走正常发现流程。
 - Mock Agent 暴露标准 AgentCard 端点 `GET /debug/a2a/agent-card`，与官方 A2A SDK 客户端兼容。
 
@@ -114,7 +114,7 @@ OpenAN 侧（orchestration-center / 联调业务系统）
 | `GET /api/v1/history`、`GET /api/v1/history/{id}` | 历史分页筛选与详情 |
 | `CRUD /api/v1/users`（admin） | 用户管理 |
 
-## 8. 部署方案（阿里云 47.120.10.111）
+## 8. 部署方案（阿里云 203.0.113.20）
 
 - 代码目录：`/OpenA2A-T/openan-debug/`（代码 + venv + SQLite 数据库文件）。
 - 前端静态文件：`/OpenA2A-T/openan-debug-frontend/`，上传方式沿用现有 paramiko SFTP 脚本模式。
