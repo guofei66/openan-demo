@@ -3,7 +3,7 @@
 
 - 实例配置 `"workflow": {"enabled": true, "workflowId": "..."}` 后作为工作流宿主：
   收到请求（运行时意图）→ 按内置 PSOP 工作流执行；
-- SELF_LOOP 步骤本地执行（意图解析 / 结果聚合）；
+- SELF_LOOP 步骤本地执行（赛事/意图解析、KQI 监控、结果聚合）；
 - 普通步骤经 SDK A2ATransport 派发为 A2A-T Task-T 请求到目标打桩实例
   （agent 名 → 实例端口 → 数据集样例请求作为模板 prompt），远端实例按数据集检索回包；
 - 执行事件全程收集，回包 artifact 汇总各步骤输出；失败自动回落 LLM/数据集/变体池。
@@ -42,6 +42,14 @@ AGENT_TEMPLATE_MAP = {
     "业务保障打桩 Agent": "Task-T/network-layer/private-line-complaint/v1",
     "故障诊断打桩 Agent": "Task-T/network-layer/private-line-complaint/v1",
     "业务抢通打桩 Agent": "Notification-T/network-layer/service-recovery/v1",
+    # 正式 PSOP（psop_live_event_assurance_en）角色
+    "Assurance Agent": "Task-T/network-layer/private-line-complaint/v1",
+    "RAN Agent": "Task-T/network-layer/ran-energy-saving/v1",
+}
+
+# (Agent, Skill) 级覆盖：同一 Agent 的不同技能可对应不同模板（优先于 AGENT_TEMPLATE_MAP）
+AGENT_SKILL_TEMPLATE_MAP = {
+    ("Assurance Agent", "Recovery Policy Dispatch"): "Notification-T/network-layer/service-recovery/v1",
 }
 
 _WF_CACHE: dict[str, dict] = {}
@@ -175,8 +183,10 @@ class MockWorkflowControlPoint(ControlPoint):
         self._lang = language
 
     async def on_task(self, request) -> MessageContent:
-        """远端步骤：按目标 Agent 的模板构造 A2A-T prompt（数据集样例请求保证远端命中）。"""
-        template_uri = AGENT_TEMPLATE_MAP.get(request.agent_name)
+        """远端步骤：按目标 Agent（可细化到技能）的模板构造 A2A-T prompt（数据集样例请求保证远端命中）。"""
+        template_uri = AGENT_SKILL_TEMPLATE_MAP.get(
+            (request.agent_name, request.skill)
+        ) or AGENT_TEMPLATE_MAP.get(request.agent_name)
         metadata: dict = {}
         extensions: set[str] = set()
         instruction = request.instruction or request.input.text or self._intent
@@ -193,17 +203,36 @@ class MockWorkflowControlPoint(ControlPoint):
         return MessageContent(parts=(Part(text=instruction),), metadata=metadata, extensions=frozenset(extensions))
 
     async def on_self_task(self, request) -> TaskResult:
-        """本地步骤：意图解析 / 结果聚合（确定性生成，无需模型）。"""
+        """本地步骤：赛事/意图解析、KQI 监控与结果聚合（确定性生成，无需模型）。
+
+        正式 PSOP（psop_live_event_assurance_en）的自环步骤按技能分支：
+        Event Info Parsing → 赛事信息解析；KQI Monitoring → KQI 监控（按任务描述
+        区分"发现劣化"与"复核恢复"）；其余自环步骤走通用聚合分支。
+        """
         name = request.step_name or ""
-        upstream = _summarize_upstream(request.workflow_input)
-        if "意图" in name:
+        skill = str(getattr(request, "skill", "") or "")
+        instruction = str(getattr(request, "instruction", "") or "")
+        if skill == "Event Info Parsing" or "意图" in name:
             text = (
-                f"1. 意图解析结果：成功\n"
+                f"1. 赛事信息解析结果：成功\n"
                 f"2. 运行时意图：{self._intent[:200]}\n"
-                f"3. 保障计划：按工作流依次执行 无线小区保障 → 直播质量诊断 → 结果聚合\n"
-                f"4. 上下文确认：任务输入合法，进入执行。"
+                f"3. 赛事要素：本月底城市马拉松；路线：起点→终点（含关键路段）；预计现场直播观众规模较大\n"
+                f"4. 带宽需求：上行（直播回传）与下行（观众观看）带宽均需保障，沿线小区保障于开赛前 1 小时启动\n"
+                f"5. 下一步：已向运营商保障智能体（Assurance Agent）下发赛事通信保障订阅任务。"
             )
             return TaskResult.succeeded([text])
+        if skill == "KQI Monitoring" or "KQI" in name:
+            if any(marker in instruction for marker in ("re-check", "improved", "复核", "再次确认")):
+                return TaskResult.succeeded([
+                    "1. KQI 复核结论：劣化已改善\n"
+                    "2. 各路段直播 KQI 恢复正常，直播恢复流畅\n"
+                    "3. 赛事结束确认：直播保障任务正常完成。"
+                ])
+            return TaskResult.succeeded([
+                "1. KQI 监控结论：发现劣化\n"
+                "2. 人群密集路段部分小区直播 KQI 下降，直播出现卡顿\n"
+                "3. 已将劣化事件（劣化小区、KQI 指标、时间窗）上报运营商保障智能体（Assurance Agent）。"
+            ])
         outputs = getattr(request.workflow_input, "upstream_results", ()) or ()
         lines = []
         for u in outputs:

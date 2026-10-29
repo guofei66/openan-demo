@@ -1,55 +1,94 @@
 {
   "id": "live-assurance-demo",
-  "name": "大型赛事直播业务保障演示",
-  "nameEn": "Major-event Live-stream Service Assurance Demo",
-  "version": "1",
-  "description": "某大型体育赛事直播期间，承载直播业务的专线出现质量劣化，观众反馈画面卡顿。业务保障智能体受理投诉后解析保障意图，并行调度无线域与直播域打桩智能体执行小区保障与直播质量诊断，最终聚合诊断结果形成保障结论。",
-  "descriptionEn": "During a major sports event live-stream, the dedicated line carrying the broadcast degrades and viewers report buffering. The service-assurance agent parses the intent and orchestrates the wireless-domain and live-stream stub agents for cell assurance and stream quality diagnosis, then aggregates results into an assurance conclusion.",
+  "name": "大型赛事直播业务保障演示（正式 PSOP）",
+  "nameEn": "Major-event Live Broadcast Emergency Assurance Demo (Formal PSOP)",
+  "version": "2",
+  "description": "城市马拉松赛事直播期间，直播智能体解析赛事保障需求并订阅运营商保障服务：保障智能体将赛事路线转化为覆盖站点与上下行带宽需求并制定保障策略，RAN 智能体执行功率提升时发现与在网节能任务的 SLA 冲突，经 A2A-T 协商关闭一半节能任务完成保障配置；赛事期间人群密集小区 KQI 劣化，保障智能体决策关闭全部节能措施并启动跨站协同优化，KQI 恢复后赛事结束恢复初始配置。",
+  "descriptionEn": "During the city marathon live broadcast, the Live Streaming Agent parses the event assurance requirements and subscribes to the operator's assurance service: the Assurance Agent converts the event route into covered sites and uplink/downlink bandwidth requirements, the RAN Agent discovers an energy-saving SLA conflict while boosting power and closes half of the energy-saving tasks after A2A-T negotiation; KQI degrades in crowd-dense cells during the event, the Assurance Agent decides to shut down all energy-saving measures and launch inter-site coordinated optimization, and the initial configuration is restored after the event.",
   "storyline": {
-    "background": "赛事保障期间，直播专线承载码率升档，无线小区负荷升高，部分用户出现直播卡顿投诉。",
-    "trigger": "投诉工单：观众反馈直播画面卡顿，疑似承载专线或无线小区异常。",
+    "background": "本月底城市马拉松开赛，赛事直播是核心业务：沿线站点承载直播上行带宽，网络侧同时运行着节能降碳任务，保障与节能存在资源冲突。",
+    "trigger": "赛事保障需求：直播智能体解析本月城市马拉松赛事信息（时间 / 路线 / 观众规模 / 上下行带宽需求），向运营商保障智能体发起赛事通信保障订阅。",
     "actors": [
-      { "agentId": "service-assurance-stub", "role": "workflow-host", "description": "业务保障宿主：解析意图、编排保障工作流、聚合结论" },
-      { "agentId": "wireless-domain-stub", "role": "participant", "description": "无线域：执行无线小区故障诊断与保障动作" },
-      { "agentId": "livestream-stub", "role": "participant", "description": "直播域：执行直播业务质量诊断" }
+      { "agentId": "an-l4-live-streaming-agent", "role": "workflow-host", "description": "直播智能体：工作流宿主，解析赛事信息、实时监控直播 KQI（step1/step4/step7 本地自环执行）" },
+      { "agentId": "an-l4-assurance-agent", "role": "participant", "description": "运营商保障智能体：资源清单转换、保障策略生成与恢复策略下发（Policy Generation / Recovery Policy Dispatch）" },
+      { "agentId": "an-l4-ran-agent", "role": "participant", "description": "厂商 RAN 智能体：功率提升、节能任务关闭、跨站协同优化与配置恢复（Network Policy Execution），节能 SLA 冲突经 A2A-T 协商解决" }
     ],
     "phases": [
       {
         "order": 1,
-        "title": "意图解析",
-        "stepRef": "意图解析",
+        "title": "赛事信息解析与保障订阅",
+        "stepRef": "step1",
         "type": "self-loop",
-        "description": "保障宿主本地解析投诉工单，识别保障对象（赛事直播业务）与保障动作（端到端质量保障）。"
+        "description": "直播智能体（宿主）解析本月城市马拉松赛事需求，输出结构化赛事信息（时间 / 路线 / 观众规模 / 带宽需求），并向运营商保障智能体下发赛事通信保障订阅任务（Event Info Parsing）。"
       },
       {
         "order": 2,
-        "title": "无线小区保障",
-        "stepRef": "无线小区保障",
+        "title": "保障策略生成",
+        "stepRef": "step2",
         "type": "agent-task",
-        "agentId": "wireless-domain-stub",
-        "description": "经 A2A-T 协议向无线域智能体下发无线小区诊断任务（Task-T 无线小区诊断模板），返回小区级诊断与保障结果。"
+        "agentId": "an-l4-assurance-agent",
+        "description": "保障智能体调用资源清单系统将赛事路线转化为沿线覆盖站点与各路段上下行带宽需求；制定赛前 1 小时启动保障、对沿线小区开始带宽保障的方案；同时向 RAN 智能体派发沿线基站功率提升与覆盖增强任务（Policy Generation）。"
       },
       {
         "order": 3,
-        "title": "直播质量诊断",
-        "stepRef": "直播质量诊断",
+        "title": "功率提升与节能 SLA 冲突协商",
+        "stepRef": "step3",
         "type": "agent-task",
-        "agentId": "livestream-stub",
-        "description": "向直播智能体下发直播质量诊断任务（Task-T 直播质量模板），返回卡顿归因与质量指标。"
+        "agentId": "an-l4-ran-agent",
+        "description": "RAN 智能体执行功率提升时发现在网节能任务 SLA 冲突，向保障智能体发起 A2A-T 协商（协商在引擎协商机制内于本步骤完成，经 SSE 实时推送，不作为独立工作流步骤）：获得 SLA 授权方案后自行关闭一半节能任务，完成功率提升与覆盖增强配置下发，保障直播上行带宽（Network Policy Execution）。"
       },
       {
         "order": 4,
-        "title": "结果聚合与保障结论",
-        "stepRef": "结果聚合",
+        "title": "KQI 监控与劣化上报",
+        "stepRef": "step4",
         "type": "self-loop",
-        "description": "汇聚无线域与直播域诊断结果，输出端到端保障结论与后续抢通建议。"
+        "description": "赛事期间直播智能体实时展示各路段直播 KQI，发现人群密集小区 KQI 指标下降、直播卡顿，将劣化事件（劣化小区 / 指标 / 时间窗）上报保障智能体（KQI Monitoring）。"
+      },
+      {
+        "order": 5,
+        "title": "劣化分析与保障决策",
+        "stepRef": "step5",
+        "type": "agent-task",
+        "agentId": "an-l4-assurance-agent",
+        "description": "保障智能体分析劣化事件：接入用户数超出预期，现有措施不足；决策要求 RAN 智能体关闭全部节能措施，并对劣化小区及其邻区启动跨站协同优化（Policy Generation）。"
+      },
+      {
+        "order": 6,
+        "title": "全网保障动作执行",
+        "stepRef": "step6",
+        "type": "agent-task",
+        "agentId": "an-l4-ran-agent",
+        "description": "RAN 智能体执行保障决策：关闭全部节能措施，对劣化小区及邻区开展全局跨站协同优化（功率 / 频段 / 邻区切换参数），恢复直播体验（Network Policy Execution）。"
+      },
+      {
+        "order": 7,
+        "title": "KQI 复核确认",
+        "stepRef": "step7",
+        "type": "self-loop",
+        "description": "直播智能体复核各路段直播 KQI，确认劣化改善、直播恢复流畅；赛事结束后确认直播保障任务正常完成（KQI Monitoring）。"
+      },
+      {
+        "order": 8,
+        "title": "保障结果汇总与恢复下发",
+        "stepRef": "step8",
+        "type": "agent-task",
+        "agentId": "an-l4-assurance-agent",
+        "description": "保障智能体汇总全过程执行结果，确认赛事通信保障任务完成；通知 RAN 智能体恢复初始配置（恢复原功率与覆盖参数、重新启用此前关闭的节能任务）（Recovery Policy Dispatch）。"
+      },
+      {
+        "order": 9,
+        "title": "初始配置恢复",
+        "stepRef": "step9",
+        "type": "agent-task",
+        "agentId": "an-l4-ran-agent",
+        "description": "RAN 智能体接收恢复通知，恢复基站初始配置（功率与覆盖参数），重新启用此前关闭的节能任务并恢复节能 SLA，输出恢复完成确认（Network Policy Execution）。"
       }
     ],
-    "expectedOutcome": "输出保障结论：卡顿根因（无线小区高负荷 + 直播链路质量劣化）、已执行的保障动作、是否需要人工介入抢通。"
+    "expectedOutcome": "输出保障闭环结论：赛事信息与带宽需求、保障策略与功率提升执行结果、节能 SLA 冲突协商结论（关闭一半节能任务）、KQI 劣化与全网保障动作（关闭全部节能 + 跨站协同优化）、KQI 恢复确认、赛事后初始配置与节能任务恢复确认。"
   },
   "entry": {
-    "workflowId": "live-assurance-demo",
-    "hostAgentId": "service-assurance-stub",
-    "sampleIntent": "保障某大型赛事的直播业务，观众反馈直播画面卡顿"
+    "workflowId": "psop_live_event_assurance_en",
+    "hostAgentId": "an-l4-live-streaming-agent",
+    "sampleIntent": "保障本月底城市马拉松赛事的直播业务，沿线站点提供上行带宽与覆盖增强，并在赛事期间持续监控直播 KQI"
   }
 }

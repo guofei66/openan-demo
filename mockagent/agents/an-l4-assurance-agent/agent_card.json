@@ -32,6 +32,25 @@
         "assurance",
         "recovery"
       ]
+    },
+    {
+      "id": "policy-generation",
+      "name": "Policy Generation",
+      "description": "生成赛事保障策略：资源清单转换、带宽保障方案与网络优化任务派发",
+      "tags": [
+        "assurance",
+        "policy"
+      ]
+    },
+    {
+      "id": "recovery-policy-dispatch",
+      "name": "Recovery Policy Dispatch",
+      "description": "汇总保障结果并下发初始配置恢复策略",
+      "tags": [
+        "assurance",
+        "recovery",
+        "policy"
+      ]
     }
   ],
   "capabilities": {

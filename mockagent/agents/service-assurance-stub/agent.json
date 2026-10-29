@@ -43,9 +43,5 @@
     "Notification-T/network-layer/service-recovery/v1",
     "Notification-T/network-layer/subscribe-incident/v1"
   ],
-  "workflow": {
-    "enabled": true,
-    "workflowId": "live-assurance-demo"
-  },
   "cardName": "mockagent_service-assurance-stub"
 }

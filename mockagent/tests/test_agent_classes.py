@@ -18,16 +18,23 @@ EXPECTED_TYPES = {
 }
 
 
-def test_every_agent_dir_has_own_subclass():
+def test_every_agent_dir_loads_against_registry():
+    """6 个 SPN 打桩实例带 agent.py 子类；20 个 AN L4 实例为纯配置（回落基类）。"""
     for d in agent_registry.list_agent_dirs():
         cls = load_agent_class(d)
-        assert issubclass(cls, StubAgentBase) and cls is not StubAgentBase, f"{d.name} 缺少 agent.py 子类"
+        assert issubclass(cls, StubAgentBase)
+        if d.name in EXPECTED_TYPES:
+            assert cls is not StubAgentBase, f"{d.name} 应有 agent.py 子类"
+        else:
+            assert d.name.startswith("an-l4-"), f"意外的实例目录：{d.name}"
+            assert cls is StubAgentBase, f"{d.name} 为纯配置实例，应回落基类"
 
 
 def test_agent_types_per_domain():
     for d in agent_registry.list_agent_dirs():
         cls = load_agent_class(d)
-        assert cls.agent_type == EXPECTED_TYPES[d.name], d.name
+        expected = EXPECTED_TYPES.get(d.name, "generic")
+        assert cls.agent_type == expected, d.name
 
 
 def test_missing_agent_py_falls_back_to_base(tmp_path):

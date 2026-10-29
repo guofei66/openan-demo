@@ -131,6 +131,8 @@ def test_load_config_merges_defaults_and_resolves_paths():
     assert entry["registryPort"] == 9100 and entry["orchPort"] == 9101 and entry["portalPort"] == 9103
     assert Path(entry["portalDist"]).is_absolute()
     assert (Path(entry["orchestrationCenterRepo"]) / "orchestrate" / "start.py").is_file()
+    if not (Path(entry["registryCenterRepo"]) / "agent_registry").is_dir():
+        pytest.skip(f"registry-center 仓库不在本机：{entry['registryCenterRepo']}")
     assert (Path(entry["registryCenterRepo"]) / "agent_registry").is_dir()
     # 网关路由模板完整（orch + registry）
     targets = {r["target"] for r in entry["gateway"]["routes"]}
@@ -141,13 +143,16 @@ def test_build_agent_cards_schema():
     from mockagent_engine import agent_registry
 
     cards = dsp.build_agent_cards(agent_registry.load_define())
-    assert len(cards) == 6
+    assert len(cards) == 26  # 6 个 SPN 打桩实例 + 20 个 AN L4 打桩实例
     by_name = {c["name"]: c for c in cards}
     card = by_name["无线域打桩 Agent"]
     assert card["supportedInterfaces"][0]["url"].endswith(":9008/")
     assert card["supportedInterfaces"][0]["protocolBinding"] == "HTTP+JSON"
     assert card["capabilities"] == {"streaming": False}
     assert "templateUri" not in json.dumps(card)
+    # AN L4 车队卡片同样生成（正式 PSOP 参与方）
+    ran = by_name["RAN Agent"]
+    assert ran["supportedInterfaces"][0]["url"].endswith(":9115/")
 
 
 def test_write_agent_cards(tmp_path):

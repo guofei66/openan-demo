@@ -2,7 +2,7 @@
 """场景初始化测试：PSOP 工作流写入 / 智能体拉起 / 状态 / 停止。
 
 - 单测部分 mock 进程拉起（ensure_instance_running），聚焦工作流落位与汇总逻辑
-- e2e 部分真实拉起 live-assurance-demo 的 3 个实例（宿主 9010 + 参与方 9008/9009），
+- e2e 部分真实拉起 live-assurance-demo 的 3 个实例（宿主 9110 + 参与方 9102/9115），
   验证 init → status → 幂等 init → stop 全生命周期
 """
 import json
@@ -42,10 +42,10 @@ def test_init_writes_psop_workflow_and_spawns(client, auth_headers, fake_workflo
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["status"] == "ready"
-    assert body["workflow"]["workflowId"] == "live-assurance-demo"
+    assert body["workflow"]["workflowId"] == "psop_live_event_assurance_en"
     # ① 全局注册表 + ② 宿主 workDir 副本，共两处落位
     assert len(body["workflow"]["written"]) == 2
-    registry_file = fake_workflow_dir / "live_assurance_demo.json"
+    registry_file = fake_workflow_dir / "psop_live_event_assurance_en.json"
     assert registry_file.is_file()
     scenario_wf = scenario_registry.load_scenario_workflow(
         scenario_registry.resolve_scenario_dir("live-assurance-demo")
@@ -53,29 +53,29 @@ def test_init_writes_psop_workflow_and_spawns(client, auth_headers, fake_workflo
     assert json.loads(registry_file.read_text(encoding="utf-8")) == scenario_wf
     # 三个智能体全部 running
     assert {a["id"] for a in body["agents"]} == {
-        "service-assurance-stub", "wireless-domain-stub", "livestream-stub"
+        "an-l4-live-streaming-agent", "an-l4-assurance-agent", "an-l4-ran-agent"
     }
     assert all(a["status"] == "running" for a in body["agents"])
 
 
 def test_init_partial_when_one_agent_fails(client, auth_headers, fake_workflow_dir, monkeypatch):
     def _ensure(instance, timeout=15.0):
-        if instance["id"] == "livestream-stub":
+        if instance["id"] == "an-l4-ran-agent":
             return {"id": instance["id"], "port": instance["port"], "status": "failed", "error": "boom"}
         return {"id": instance["id"], "port": instance["port"], "status": "running", "pid": 1}
 
     monkeypatch.setattr(scenarios_router, "ensure_instance_running", _ensure)
     body = client.post("/api/v1/scenarios/live-assurance-demo/init", headers=auth_headers).json()
     assert body["status"] == "partial"
-    failed = next(a for a in body["agents"] if a["id"] == "livestream-stub")
+    failed = next(a for a in body["agents"] if a["id"] == "an-l4-ran-agent")
     assert failed["status"] == "failed" and failed["error"] == "boom"
 
 
 def test_init_clears_workflow_cache(client, auth_headers, fake_workflow_dir, monkeypatch):
     monkeypatch.setattr(scenarios_router, "ensure_instance_running", _fake_spawn_results())
-    workflow_mode._WF_CACHE["live-assurance-demo"] = {"id": "stale"}
+    workflow_mode._WF_CACHE["psop_live_event_assurance_en"] = {"id": "stale"}
     client.post("/api/v1/scenarios/live-assurance-demo/init", headers=auth_headers)
-    assert workflow_mode._WF_CACHE.get("live-assurance-demo") != {"id": "stale"}
+    assert workflow_mode._WF_CACHE.get("psop_live_event_assurance_en") != {"id": "stale"}
 
 
 def test_status_endpoint_reports_stopped_when_nothing_runs(client, auth_headers):
@@ -83,7 +83,7 @@ def test_status_endpoint_reports_stopped_when_nothing_runs(client, auth_headers)
     assert body["scenarioId"] == "live-assurance-demo"
     assert body["status"] in ("stopped", "partial")
     assert {a["id"] for a in body["agents"]} == {
-        "service-assurance-stub", "wireless-domain-stub", "livestream-stub"
+        "an-l4-live-streaming-agent", "an-l4-assurance-agent", "an-l4-ran-agent"
     }
 
 
