@@ -29,11 +29,12 @@ def test_mock_instances_list_from_agents_dir(client, auth_headers):
     data = client.get("/api/v1/mock-instances", headers=auth_headers).json()
     assert data["definePath"].endswith("agents")
     ids = {i["id"] for i in data["instances"]}
-    assert len(ids) == 6
-    assert {"fault-diagnosis-stub", "wireless-domain-stub", "service-assurance-stub"} <= ids
+    assert len(ids) == 26  # 6 个 SPN 打桩实例 + 20 个 AN L4 打桩实例
+    assert {"fault-diagnosis-stub", "wireless-domain-stub", "service-assurance-stub",
+            "an-l4-live-streaming-agent", "an-l4-assurance-agent", "an-l4-ran-agent"} <= ids
     for inst in data["instances"]:
         assert inst["endpoint"] == f"http://127.0.0.1:{inst['port']}"
-        assert inst["workflow"]["enabled"] == (inst["id"] == "service-assurance-stub")
+        assert inst["workflow"]["enabled"] == (inst["id"] == "an-l4-live-streaming-agent")
 
 
 def test_mock_instances_expose_agent_type(client, auth_headers):
@@ -49,12 +50,12 @@ def test_agent_associations_returns_list(client, auth_headers):
     data = client.get("/api/v1/console/datasets/agent-associations", headers=auth_headers).json()
     assoc = data["associations"]
     assert isinstance(assoc, list)
-    # 内嵌默认 Agent（未限定模板范围）+ 6 个打桩实例（各绑定 datasetTemplates）
+    # 内嵌默认 Agent（未限定模板范围）+ 26 个打桩实例（AN L4 实例为空范围但仍是限定模式）
     names = {a["name"] for a in assoc}
-    assert "内嵌默认 Agent" in names and len(assoc) == 7
+    assert "内嵌默认 Agent" in names and len(assoc) == 27
     scoped = {a["name"]: a["scoped"] for a in assoc}
     assert scoped["内嵌默认 Agent"] is False
-    assert sum(1 for v in scoped.values() if v) == 6
+    assert sum(1 for v in scoped.values() if v) == 26
 
 
 def test_expanded_pairs_pagination(client, auth_headers):
@@ -82,5 +83,5 @@ def test_expanded_pair_detail(client, auth_headers):
 def test_workflow_builtin_via_api_definition_not_exposed(client, auth_headers):
     """回归保护：实例视图必须暴露 workflow 开关（前端徽章依赖）。"""
     data = client.get("/api/v1/mock-instances", headers=auth_headers).json()
-    assurance = next(i for i in data["instances"] if i["id"] == "service-assurance-stub")
-    assert assurance["workflow"]["workflowId"] == "live-assurance-demo"
+    host = next(i for i in data["instances"] if i["id"] == "an-l4-live-streaming-agent")
+    assert host["workflow"]["workflowId"] == "psop_live_event_assurance_en"

@@ -1,5 +1,5 @@
 @echo off
-REM One-shot deploy for openan-debug -> root@47.236.98.226
+REM One-shot deploy for openan-debug -> root@203.0.113.10
 REM Usage:  run-deploy.cmd [password]
 REM   If password omitted, deploy.py will prompt interactively.
 
@@ -28,6 +28,6 @@ if errorlevel 1 (
 )
 popd
 
-echo [2/2] deploying to 47.236.98.226 ...
+echo [2/2] deploying to 203.0.113.10 ...
 if not "%~1"=="" set "DEPLOY_PASSWORD=%~1"
 "%PY%" deploy\deploy.py

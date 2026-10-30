@@ -8,7 +8,7 @@ from pathlib import Path
 
 import paramiko
 
-HOST = "47.236.98.226"
+HOST = "203.0.113.10"
 USER = "root"
 PROJECT = Path(__file__).resolve().parent.parent
 SERVER_DIR = PROJECT / "server"

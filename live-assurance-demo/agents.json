@@ -4,22 +4,22 @@
   "descriptionEn": "Agents required by this scenario: references to agents/<id>/ definitions with optional scenario-level overrides.",
   "agents": [
     {
-      "id": "service-assurance-stub",
+      "id": "an-l4-live-streaming-agent",
       "role": "workflow-host",
       "required": true,
-      "description": "业务保障宿主，执行本场景 PSOP 工作流"
+      "description": "直播智能体（正式 PSOP 工作流宿主）：解析赛事信息、监控直播 KQI，本地执行 step1/step4/step7 自环步骤"
     },
     {
-      "id": "wireless-domain-stub",
+      "id": "an-l4-assurance-agent",
       "role": "participant",
       "required": true,
-      "description": "无线域打桩：无线小区保障步骤的执行方"
+      "description": "运营商保障智能体：保障策略生成（Policy Generation）与恢复策略下发（Recovery Policy Dispatch）"
     },
     {
-      "id": "livestream-stub",
+      "id": "an-l4-ran-agent",
       "role": "participant",
       "required": true,
-      "description": "直播打桩：直播质量诊断步骤的执行方"
+      "description": "厂商 RAN 智能体：网络策略执行（功率提升 / 节能关闭 / 跨站协同优化 / 配置恢复），含节能 SLA 冲突协商"
     }
   ],
   "overrides": {}

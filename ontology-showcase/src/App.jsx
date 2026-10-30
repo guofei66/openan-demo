@@ -91,7 +91,7 @@ function App() {
   return (
     <div className={`app-shell ${theme === 'light' ? 'light-theme' : ''}`} style={canvasStyle}>
       <header className="topbar">
-        <div className="brand" aria-label={language === 'EN' ? 'Open-AN Telecom Operator Ontology Demo' : 'Open-AN 某运营商 Ontology联创样机'}><img className="brand-logo" src="/OpenAN.png" alt="Open-AN" /><span>{language === 'EN' ? 'Open-AN Telecom Operator Ontology Demo' : 'Open-AN 某运营商 Ontology联创样机'}</span></div>
+        <div className="brand" aria-label={language === 'EN' ? 'OpenAN Telecom Operator Ontology Demo' : 'OpenAN 某运营商 Ontology联创样机'}><img className="brand-logo" src="/OpenAN.png" alt="OpenAN" /><span>{language === 'EN' ? 'OpenAN Telecom Operator Ontology Demo' : 'OpenAN 某运营商 Ontology联创样机'}</span></div>
         <nav className={`primary-nav ${activeTab === 'tbox' ? 'tbox-active' : 'abox-active'}`} aria-label={language === 'EN' ? 'Primary navigation' : '主导航'}>
           <button className={activeTab === 'tbox' ? 'active' : ''} onClick={() => switchTab('tbox')}><span className="nav-icon" aria-hidden="true">⌕</span>{language === 'EN' ? 'Ontology T-Box' : '本体T-Box'}</button>
           <button className={activeTab === 'abox' ? 'active' : ''} onClick={() => switchTab('abox')}><span className="nav-icon" aria-hidden="true">◌</span>{language === 'EN' ? 'Ontology A-Box' : '本体A-Box'}</button>

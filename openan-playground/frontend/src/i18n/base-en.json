@@ -357,7 +357,7 @@
   },
   "settingsUrls": {
     "title": "Service URLs",
-    "desc": "Configure the Base URL of each target service; the console forwards requests through /openan-playground/api/v1/debug-proxy. Default addresses point directly to the Aliyun IP (47.236.98.226:9004) and are forwarded by nginx short prefixes to the server's internal services: /rc/ → Registry (5000), /oc/ → Orchestration (5001), /a2a/ → this system's Mock Agent (9100), /ot/ → Ontology (8787).",
+    "desc": "Configure the Base URL of each target service; the console forwards requests through /openan-playground/api/v1/debug-proxy. Default addresses point directly to the Aliyun IP (203.0.113.10:9004) and are forwarded by nginx short prefixes to the server's internal services: /rc/ → Registry (5000), /oc/ → Orchestration (5001), /a2a/ → this system's Mock Agent (9100), /ot/ → Ontology (8787).",
     "registry": "Registry",
     "orchestration": "Orchestration",
     "executionHost": "Execution (Host Agent)",

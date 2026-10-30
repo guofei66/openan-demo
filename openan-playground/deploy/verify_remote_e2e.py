@@ -15,7 +15,7 @@ from a2a_t.core.metadata import NOTIFICATION_T_EXTENSION_URI, MetadataContent
 from a2a_t.core.standard_templates import SUBSCRIBE_INCIDENT_URI
 from google.protobuf.json_format import MessageToDict, ParseDict
 
-BASE_URL = "http://47.236.98.226:9004/debug/a2a"
+BASE_URL = "http://203.0.113.10:9004/debug/a2a"
 SERVER_DIR = Path(__file__).resolve().parent.parent / "server"
 
 

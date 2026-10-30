@@ -39,7 +39,7 @@
       "category": "…", "categoryEn": "…",        // 按语言二选一展示
       "description": "…", "descriptionEn": "…",  // 按语言二选一展示
       "image": "images/observation-demo.svg",   // 相对本插件目录
-      "url": "http://47.236.98.226:9010/observation-demo/",
+      "url": "http://203.0.113.10:9010/observation-demo/",
       "openIn": "new-tab"          // new-tab | same-tab
     }
   ]
@@ -59,7 +59,7 @@ npm install
 npm run build:plugin     # 产物 dist-plugin/（index.js + index.css + plugin.manifest.json + cards.json + images/）
 ```
 
-## 部署（门户服务器 47.236.98.226）
+## 部署（门户服务器 203.0.113.10）
 
 1. 上传 `dist-plugin/` → `/OpenA2A-T/openan-portal-frontend/plugins/virtual-showroom/`
 2. 门户主包 `assets/index-*.js` 的插件注册数组（`zu=[...]`）中已追加：

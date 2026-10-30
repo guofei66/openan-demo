@@ -5,16 +5,16 @@ import pytest
 from mockagent_engine import agent_registry
 
 
-def test_list_agent_dirs_returns_six():
+def test_list_agent_dirs_returns_full_fleet():
     dirs = agent_registry.list_agent_dirs()
-    assert len(dirs) == 6
+    assert len(dirs) == 26  # 6 个 SPN 打桩实例 + 20 个 AN L4 打桩实例
     assert all((d / "agent.json").is_file() for d in dirs)
 
 
 def test_load_define_shape():
     define = agent_registry.load_define()
     assert define["version"] == 1
-    assert len(define["instances"]) == 6
+    assert len(define["instances"]) == 26
     # 共享基线：调测台 12 模板变体池
     assert len(define["defaults"]["stubVariants"]) == 12
 
@@ -31,6 +31,7 @@ def test_every_agent_json_has_core_fields():
 
 def test_expected_agent_ids_present():
     ids = {a["id"] for a in agent_registry.load_define()["instances"]}
+    # 6 个 SPN 打桩实例 + 20 个 AN L4 打桩实例（覆盖 19 个 PSOP 的全部 (agent, skill) 组合）
     assert {
         "fault-diagnosis-stub",
         "recovery-stub",
@@ -38,7 +39,12 @@ def test_expected_agent_ids_present():
         "wireless-domain-stub",
         "livestream-stub",
         "service-assurance-stub",
-    } == ids
+        "an-l4-live-streaming-agent",
+        "an-l4-assurance-agent",
+        "an-l4-ran-agent",
+        "an-l4-ran-energy-saving-agent",
+    } <= ids
+    assert len(ids) == 26
 
 
 def test_resolve_agent_dir_by_id():

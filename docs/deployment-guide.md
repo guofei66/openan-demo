@@ -8,12 +8,12 @@
 
 | 椤圭洰 | 鍊?|
 |---|---|
-| 鏈嶅姟鍣?| 47.236.98.226锛堥樋閲屼簯 ap-southeast-1锛孶buntu 24.04锛宔cs.e-c1m2.large 2C8G锛?|
+| 鏈嶅姟鍣?| 203.0.113.10锛堥樋閲屼簯 ap-southeast-1锛孶buntu 24.04锛宔cs.e-c1m2.large 2C8G锛?|
 | 瀵瑰绔彛 | **9010**锛堝崟绔彛锛屾墍鏈?Demo 閫氳繃 URL 璺緞鍖哄垎锛?|
-| 鍏ュ彛瀵艰埅椤?| http://47.236.98.226:9010/ |
-| Observation Demo锛圓2A-T 灞曞睆锛?| http://47.236.98.226:9010/observation-demo/ |
-| Ontology Showcase锛堟湰浣撳簲鐢ㄦ紨绀猴級 | http://47.236.98.226:9010/ontology-showcase/ |
-| 鍚庣 API 鍋ュ悍妫€鏌?| http://47.236.98.226:9010/api/health |
+| 鍏ュ彛瀵艰埅椤?| http://203.0.113.10:9010/ |
+| Observation Demo锛圓2A-T 灞曞睆锛?| http://203.0.113.10:9010/observation-demo/ |
+| Ontology Showcase锛堟湰浣撳簲鐢ㄦ紨绀猴級 | http://203.0.113.10:9010/ontology-showcase/ |
+| 鍚庣 API 鍋ュ悍妫€鏌?| http://203.0.113.10:9010/api/health |
 | 閮ㄧ讲鏂瑰紡 | nginx 鎵樼闈欐€佷骇鐗?+ systemd 甯搁┗ Node 鍚庣锛?*鍏ㄧ▼鏈娇鐢?Docker**锛?|
 
 ## 2. 鍓嶇疆鏉′欢
@@ -39,7 +39,7 @@
 ## 3. 鏋舵瀯
 
 ```
-娴忚鍣?  鈹? http://47.236.98.226:9010/{path}
+娴忚鍣?  鈹? http://203.0.113.10:9010/{path}
   鈻?闃块噷浜戝畨鍏ㄧ粍锛圱CP 9010锛?  鈻?nginx :9010                鈫?/etc/nginx/sites-available/openan-demos.conf
   鈹溾攢 /                     鈫?/var/www/openan-demos/index.html        锛堝鑸〉锛?  鈹溾攢 /observation-demo/    鈫?.../observation-demo/dist/               锛堢函闈欐€侊紝Vite singlefile锛?  鈹溾攢 /ontology-showcase/   鈫?.../ontology-showcase/dist/              锛堢函闈欐€侊級
   鈹溾攢 /api/                 鈫?http://127.0.0.1:9022  锛坧roxy_buffering off锛屾敮鎸?NDJSON 娴佸紡锛?  鈹斺攢 /ontology-showcase/api/ 鈫?http://127.0.0.1:9022/api/ 锛堝吋瀹圭浉瀵硅矾寰勮皟鐢級
@@ -57,7 +57,7 @@
 鎺у埗鍙版坊鍔犲叆鏂瑰悜瑙勫垯锛歍CP 9010锛屾簮 `0.0.0.0/0`銆?
 ### 姝ラ 1锛氭湇鍔″櫒鍒濆鍖?
 ```bash
-ssh root@47.236.98.226
+ssh root@203.0.113.10
 
 # 1.1 鍏嬮殕浠撳簱锛堟繁搴?1 鍗冲彲锛?mkdir -p /opt/openan-demo && cd /opt/openan-demo
 git clone --depth 1 https://github.com/project-openan/openan-demo.git
@@ -83,7 +83,7 @@ npx vite build --base=/ontology-showcase/   # base 蹇呴』涓庣嚎涓婅�
 ```powershell
 # 鐢?tar 鎵撳寘锛圵indows 鑷甫 bsdtar锛?tar -czf obs-dist.tar.gz  -C ..\observation-demo\dist .
 tar -czf onto-dist.tar.gz -C ..\ontology-showcase\dist .
-scp obs-dist.tar.gz onto-dist.tar.gz root@47.236.98.226:/tmp/
+scp obs-dist.tar.gz onto-dist.tar.gz root@203.0.113.10:/tmp/
 ```
 
 > 鈿狅笍 **涓嶈鐢?PowerShell 鐨?`Compress-Archive`**锛氬叾 zip 鏉＄洰浣跨敤鍙嶆枩鏉犲垎闅旇矾寰勶紝
@@ -225,8 +225,8 @@ curl http://127.0.0.1:9010/api/health
 ```
 
 ```bash
-# 澶栫綉锛堜换涓€鏈哄櫒锛?curl http://47.236.98.226:9010/observation-demo/                      # 200
-curl http://47.236.98.226:9010/ontology-showcase/assets/index-*.js    # 200锛堣祫婧愯兘鍔犺浇锛?curl -N -X POST http://47.236.98.226:9010/api/runs \
+# 澶栫綉锛堜换涓€鏈哄櫒锛?curl http://203.0.113.10:9010/observation-demo/                      # 200
+curl http://203.0.113.10:9010/ontology-showcase/assets/index-*.js    # 200锛堣祫婧愯兘鍔犺浇锛?curl -N -X POST http://203.0.113.10:9010/api/runs \
      -H "Content-Type: application/json" -d '{"input":"鍐掔儫娴嬭瘯"}'      # NDJSON 浜嬩欢娴?```
 
 娴忚鍣ㄩ€愰」纭锛氬鑸〉涓ゅ崱鐗囧彲璺宠浆锛涗袱涓?Demo 鍙墦寮€銆佹棤鐧藉睆锛?Ontology Showcase 杈撳叆浠诲姟鍚庤兘瀹炴椂鐪嬪埌鎵ц浜嬩欢娴併€?

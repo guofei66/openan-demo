@@ -50,7 +50,7 @@ export default function SettingsUrlsPage() {
       <div className="card">
         <p className="muted" style={{ marginBottom: 12 }}>
           配置各目标服务的 Base URL，调测台将通过 /debug/api/v1/debug-proxy 转发请求。
-          默认地址直接写阿里云 IP（47.236.98.226:9004），经 nginx 短前缀转发到服务器内部服务：
+          默认地址直接写阿里云 IP（203.0.113.10:9004），经 nginx 短前缀转发到服务器内部服务：
           /rc/ → 注册中心(5000)，/oc/ → 编排中心(5001)，/a2a/ → 本系统 Mock Agent(9100)，/ot/ → 本体(8787)。
         </p>
         <form onSubmit={save}>
