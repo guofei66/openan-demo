@@ -1130,6 +1130,27 @@
   "mockAgent": {
     "endpoint": "/mockagent",
     "caseKey": "live-assurance",
-    "turnDelayMs": 1500
+    "turnDelayMs": 1500,
+    "agentCalls": {
+      "endpoint": "/openan-playground/api/v1/mock-instances",
+      "roles": {
+        "live-streaming": {
+          "instance": "an-l4-live-streaming-agent",
+          "template": "Task-T/network-layer/live-stream-quality/v1"
+        },
+        "assurance": {
+          "instance": "an-l4-assurance-agent",
+          "template": "Task-T/network-layer/private-line-complaint/v1"
+        },
+        "ran": {
+          "instance": "an-l4-ran-agent",
+          "template": "Task-T/network-layer/ran-energy-saving/v1"
+        }
+      }
+    }
+  },
+  "layout": {
+    "teamBar": false,
+    "conversation": "byAgent"
   }
 }

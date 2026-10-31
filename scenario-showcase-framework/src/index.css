@@ -89,6 +89,23 @@
 }
 .ss-glow-breathe { animation: ss-glow-breathe 2s ease-in-out infinite; }
 
+/* breathing glow on the agent panel currently executing a task —
+   color is driven by the per-agent --ss-glow / --ss-glow-strong vars;
+   two layers: outer halo + inset wash so the whole panel reads as lit */
+@keyframes ss-panel-glow {
+    0%, 100% {
+        box-shadow:
+            0 0 18px 2px var(--ss-glow, rgba(59, 130, 246, 0.55)),
+            inset 0 0 14px var(--ss-glow-inset, rgba(59, 130, 246, 0.14));
+    }
+    50% {
+        box-shadow:
+            0 0 36px 7px var(--ss-glow-strong, rgba(59, 130, 246, 0.85)),
+            inset 0 0 24px var(--ss-glow-inset-strong, rgba(59, 130, 246, 0.22));
+    }
+}
+.ss-panel-glow { animation: ss-panel-glow 1.6s ease-in-out infinite; }
+
 /* gradient text helper — retired in the simplified style (kept for reference) */
 
 /* status LED blink — retired in the simplified style */

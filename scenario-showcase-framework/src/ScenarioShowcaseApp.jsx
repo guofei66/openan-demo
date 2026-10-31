@@ -23,7 +23,7 @@
  * runs at 1×. Theme is pinned to the dark conference look.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, MessagesSquare, Route } from 'lucide-react';
+import { AlertTriangle, Bot, MessagesSquare, Route } from 'lucide-react';
 import { absoluteUrl, detectLang, ensureI18n, pickLang, resolvePluginBase } from './env.js';
 import { I18N_RES } from './i18n.js';
 import { createDriver } from './drivers/index.js';
@@ -38,6 +38,13 @@ import CustomPanelsArea from './components/panels/index.jsx';
 
 const PLUGIN_BASE = resolvePluginBase();
 ensureI18n(I18N_RES);
+
+// ?mode= 答复模式标签（与 Playground 三种 Agent 答复方式一致）
+const MODE_LABELS = {
+    workflow: { zh: '工作流编排', en: 'Workflow orchestration' },
+    llm: { zh: 'LLM 生成', en: 'LLM generation' },
+    dataset: { zh: '数据集匹配', en: 'Dataset matching' },
+};
 
 const initialStepStatus = (steps) => {
     const map = {};
@@ -127,6 +134,9 @@ const ScenarioShowcaseApp = () => {
     //   ?driver=mockAgent|script — override the case's default driver (every
     //                      case supports BOTH: pure demo timeline + mockAgent
     //                      service); omitted = case default
+    //   ?mode=workflow|llm|dataset — Agent 答复模式（仅 mockAgent 驱动生效）：
+    //                      剧本为脊柱，应答消息由 Playground 打桩实例按所选
+    //                      模式实时生成；省略 = 剧本回放
     //   ?autostart=0     — do not auto-start the interaction driver
     //   ?src=showroom    — provenance chip in the header
     //   ?hist=0          — start with the history sidebar EXPANDED (default: collapsed)
@@ -134,14 +144,16 @@ const ScenarioShowcaseApp = () => {
         try {
             const p = new URLSearchParams(window.location.search);
             const dv = p.get('driver');
+            const mv = p.get('mode');
             return {
                 agents: (p.get('agents') || '').split(',').map((s) => s.trim()).filter(Boolean),
                 driver: (dv === 'mockAgent' || dv === 'script') ? dv : '',
+                mode: (mv === 'workflow' || mv === 'llm' || mv === 'dataset') ? mv : '',
                 autostart: p.get('autostart') !== '0',
                 src: p.get('src') || '',
             };
         } catch (e) {
-            return { agents: [], driver: '', autostart: true, src: '' };
+            return { agents: [], driver: '', mode: '', autostart: true, src: '' };
         }
     }, []);
 
@@ -321,10 +333,17 @@ const ScenarioShowcaseApp = () => {
     // (real execution: events pulled from the mockAgent service). Page entry
     // defaults to Agent 执行; explicit overrides: URL ?driver= / header
     // toggle / showroom launch options. Switching recreates the driver.
+    // ?mode= 同时注入 mockAgent.mode：应答消息由 Playground 打桩实例按所选
+    // 模式（工作流编排 / LLM 生成 / 数据集匹配）实时生成。
     const effDriver = driverMode || 'mockAgent';
+    const [modeStats, setModeStats] = useState(null);
     useEffect(() => {
         if (!caseData) return undefined;
-        const driver = createDriver({ ...caseData, driver: effDriver }, {
+        const driver = createDriver({
+            ...caseData,
+            driver: effDriver,
+            mockAgent: { ...(caseData.mockAgent || {}), mode: effDriver === 'mockAgent' ? startup.mode : '' },
+        }, {
             onEvent: applyEvent,
             onProgress: ({ tSec: t, endAt }) => {
                 tSecRef.current = t;
@@ -334,6 +353,7 @@ const ScenarioShowcaseApp = () => {
             onSession: (sid) => setSvcSession(sid || ''),
             onDone: () => { setDriverDone(true); setIsPlaying(false); },
             onError: (msg) => setDriverError(String(msg || 'driver error')),
+            onNotice: (stats) => setModeStats(stats || null),
         });
         driverRef.current = driver;
         if (startup.autostart) driver.start();
@@ -379,6 +399,20 @@ const ScenarioShowcaseApp = () => {
     // the agent currently speaking = author of the newest message
     const speakingAgent = messages.length ? messages[messages.length - 1].from : null;
 
+    // the agent currently executing a task = owner of the step whose status is
+    // 'active'; between steps fall back to the newest message's author
+    const activeAgent = useMemo(() => {
+        const executing = (caseData?.steps || []).find((s) => stepStatus[s.id] === 'active');
+        return executing?.agent || speakingAgent;
+    }, [caseData, stepStatus, speakingAgent]);
+
+    // Case-level layout overrides (case JSON `layout`): `teamBar:false` hides
+    // the 智能体团队 strip above the interaction area; `conversation:'byAgent'`
+    // splits the 智能体交互 box into one row per agent (stacked vertically).
+    // Unset = classic layout (team bar + single conversation stream), so other
+    // cases are unaffected.
+    const layout = caseData?.layout || {};
+
     const doneCount = useMemo(
         () => Object.values(stepStatus).filter((s) => s === 'done').length,
         [stepStatus],
@@ -408,11 +442,11 @@ const ScenarioShowcaseApp = () => {
         >
             {/* ── Tech backdrop (dark only): faint blueprint grid + aurora glows ── */}
                                                             
-            {/* ── Header — ONE line only: 场景演示 · <case title>. Driver
-                selection stays available via the showroom launch options and
-                the ?driver= URL param; the history sidebar labels each run's
-                mode. Nothing else lives in the header. ── */}
-            <header className="relative z-10 shrink-0 h-[48px] px-5 flex items-center border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/95">
+            {/* ── Header — ONE line only: 场景演示 · <case title> + 答复模式
+                胶囊（?mode= 激活时）。Driver selection stays available via the
+                showroom launch options and the ?driver= URL param; the history
+                sidebar labels each run's mode. ── */}
+            <header className="relative z-10 shrink-0 h-[48px] px-5 flex items-center gap-3 border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/95">
                 <h1 className="text-[16px] font-bold tracking-tight text-zinc-900 dark:text-white truncate">
                     {tr('ss.title', '场景演示', 'Scenario Showcase')}
                     {caseData && (
@@ -422,6 +456,28 @@ const ScenarioShowcaseApp = () => {
                         </span>
                     )}
                 </h1>
+                {/* 答复模式胶囊：所选模式 + 生成/降级/回退计数（服务端降级或回退>0 转琥珀色警示） */}
+                {startup.mode && effDriver === 'mockAgent' && (() => {
+                    const fb = (modeStats && modeStats.fallback) || 0;
+                    const dg = (modeStats && modeStats.degraded) || 0;
+                    const ok = (modeStats && modeStats.ok) || 0;
+                    const total = ok + fb;
+                    return (
+                        <span
+                            className={`ml-auto shrink-0 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${(fb || dg)
+                                ? 'bg-amber-50 dark:bg-amber-500/10 border-amber-200 dark:border-amber-500/30 text-amber-700 dark:text-amber-300'
+                                : 'bg-violet-50 dark:bg-violet-900/30 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300'}`}
+                            title={(fb || dg)
+                                ? tr('ss.mode_fallback_hint', '存在降级或回退：回退 = 实时生成失败改用剧本文本；降级 = 所选模式在实例上不可用（如未配置 LLM key），已由服务端降级为数据集匹配', 'Degraded or fallback present: fallback = live generation failed, scripted text used; degraded = selected mode unavailable on the instance (e.g. no LLM key), server degraded to dataset matching')
+                                : tr('ss.mode_hint', '应答消息由 Playground 打桩实例按所选模式实时生成', 'Replies generated live by the Playground stub instance in the selected mode')}
+                        >
+                            <Bot size={11} className="shrink-0" />
+                            {tr('ss.reply_mode', '答复模式', 'Reply mode')} · {pick(MODE_LABELS[startup.mode])}
+                            {total > 0 && <span className="font-mono opacity-75">{ok}/{total}</span>}
+                            {dg > 0 && <span className="font-mono opacity-75">↓{dg}</span>}
+                        </span>
+                    );
+                })()}
             </header>
 
             {/* driver error banner (mockAgent unreachable etc.) */}
@@ -489,15 +545,17 @@ const ScenarioShowcaseApp = () => {
 
                     {mainTab === 'chat' ? (
                         <>
-                            {/* Top: agent team */}
-                            <AgentTeamBar
-                                tr={tr}
-                                pick={pick}
-                                agents={caseData?.agents || []}
-                                speakingAgent={speakingAgent}
-                                doneCount={doneCount}
-                                totalSteps={totalSteps}
-                            />
+                            {/* Top: agent team (hidden when the case sets layout.teamBar=false) */}
+                            {layout.teamBar !== false && (
+                                <AgentTeamBar
+                                    tr={tr}
+                                    pick={pick}
+                                    agents={caseData?.agents || []}
+                                    speakingAgent={speakingAgent}
+                                    doneCount={doneCount}
+                                    totalSteps={totalSteps}
+                                />
+                            )}
 
                             {/* Bottom: interaction area (left flow+panels | right conversation) */}
                             <div className="flex-1 min-h-0 flex gap-3">
@@ -525,6 +583,8 @@ const ScenarioShowcaseApp = () => {
                                         agents={caseData?.agents || []}
                                         messages={messages}
                                         tSec={tSec}
+                                        layout={layout}
+                                        activeAgent={activeAgent}
                                     />
                                 </section>
                             </div>

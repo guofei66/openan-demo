@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 Huawei Technologies Co., Ltd.
+// Copyright (c) 2026 Huawei Technologies Co., Ltd.
 // All Rights Reserved.
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -16,6 +16,7 @@ export const AGENT_COLORS = {
         chip: 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 border-blue-200 dark:border-blue-800',
         ring: 'ring-blue-500/50',
         dot: 'bg-blue-500',
+        glow: '59, 130, 246',
         bubble: 'bg-blue-50 border-blue-200 dark:bg-blue-500/[0.16] dark:border-blue-500/35',
         lane: 'bg-blue-500/[0.05]',
         edge: 'border-blue-400/60',
@@ -27,6 +28,7 @@ export const AGENT_COLORS = {
         chip: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800',
         ring: 'ring-indigo-500/50',
         dot: 'bg-indigo-500',
+        glow: '99, 102, 241',
         bubble: 'bg-indigo-50 border-indigo-200 dark:bg-indigo-500/[0.16] dark:border-indigo-500/35',
         lane: 'bg-indigo-500/[0.05]',
         edge: 'border-indigo-400/60',
@@ -38,6 +40,7 @@ export const AGENT_COLORS = {
         chip: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800',
         ring: 'ring-emerald-500/50',
         dot: 'bg-emerald-500',
+        glow: '16, 185, 129',
         bubble: 'bg-emerald-50 border-emerald-200 dark:bg-emerald-500/[0.16] dark:border-emerald-500/35',
         lane: 'bg-emerald-500/[0.05]',
         edge: 'border-emerald-400/60',
@@ -49,6 +52,7 @@ export const AGENT_COLORS = {
         chip: 'bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border-amber-200 dark:border-amber-800',
         ring: 'ring-amber-500/50',
         dot: 'bg-amber-500',
+        glow: '245, 158, 11',
         bubble: 'bg-amber-50 border-amber-200 dark:bg-amber-500/[0.16] dark:border-amber-500/35',
         lane: 'bg-amber-500/[0.05]',
         edge: 'border-amber-400/60',
@@ -60,6 +64,7 @@ export const AGENT_COLORS = {
         chip: 'bg-violet-50 text-violet-700 dark:bg-violet-900/20 dark:text-violet-400 border-violet-200 dark:border-violet-800',
         ring: 'ring-violet-500/50',
         dot: 'bg-violet-500',
+        glow: '139, 92, 246',
         bubble: 'bg-violet-50 border-violet-200 dark:bg-violet-500/[0.16] dark:border-violet-500/35',
         lane: 'bg-violet-500/[0.05]',
         edge: 'border-violet-400/60',
@@ -71,6 +76,7 @@ export const AGENT_COLORS = {
         chip: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-900/20 dark:text-cyan-400 border-cyan-200 dark:border-cyan-800',
         ring: 'ring-cyan-500/50',
         dot: 'bg-cyan-500',
+        glow: '6, 182, 212',
         bubble: 'bg-cyan-50 border-cyan-200 dark:bg-cyan-500/[0.16] dark:border-cyan-500/35',
         lane: 'bg-cyan-500/[0.05]',
         edge: 'border-cyan-400/60',
@@ -82,6 +88,7 @@ export const AGENT_COLORS = {
         chip: 'bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-400 border-rose-200 dark:border-rose-800',
         ring: 'ring-rose-500/50',
         dot: 'bg-rose-500',
+        glow: '244, 63, 94',
         bubble: 'bg-rose-50 border-rose-200 dark:bg-rose-500/[0.16] dark:border-rose-500/35',
         lane: 'bg-rose-500/[0.05]',
         edge: 'border-rose-400/60',
