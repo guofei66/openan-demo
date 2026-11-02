@@ -35,6 +35,25 @@ const WorkflowGraph = ({ pick, steps, agents, stepStatus }) => {
         return { from, to, target };
     });
 
+    // assembly fan-out edges (CRM 与其他智能体的流程串联): a step may declare
+    // `next: [agentId…]` — when it completes, control hands off to the FIRST
+    // workflow step of each listed agent (e.g. CRM 组建保障团队 fans out to
+    // the three domain agents). The agent whose first step is already the
+    // sequential next step is skipped (the chain edge covers it).
+    for (let i = 0; i < steps.length; i++) {
+        for (const ag of (steps[i].next || [])) {
+            const j = steps.findIndex((t) => t.agent === ag);
+            if (j > i + 1) {
+                edges.push({
+                    from: { x: xc(i), y: yc(steps[i].agent) },
+                    to: { x: xc(j), y: yc(steps[j].agent) },
+                    target: statusOf(j),
+                    fanout: true,
+                });
+            }
+        }
+    }
+
     return (
         <div className="h-full min-h-0 flex">
             {/* lane rail */}
@@ -84,7 +103,8 @@ const WorkflowGraph = ({ pick, steps, agents, stepStatus }) => {
                                     fill="none"
                                     className={cls}
                                     strokeWidth={e.target === 'active' ? 2 : 1.25}
-                                    strokeDasharray={e.target === 'pending' ? '3 2' : undefined}
+                                    strokeDasharray={e.target === 'pending' ? '3 2' : (e.fanout ? '5 3' : undefined)}
+                                    opacity={e.fanout ? 0.85 : undefined}
                                     vectorEffect="non-scaling-stroke"
                                 />
                             );

@@ -15,11 +15,12 @@
  *      panel stacks VERTICALLY: the agent description strip (avatar, name,
  *      live indicator, count) sits on TOP and the messages that agent sent
  *      are listed BELOW it (vertical list, stick-to-bottom scroller). */
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Bot, Users, Clock, RadioTower, Gauge, CheckCircle2,
     AlertTriangle, Zap, Wifi, BatteryCharging, Video, TrendingUp, FileText,
     Handshake, MoveRight, Repeat, Quote, ShieldAlert, ShieldCheck, UserPlus,
+    PenLine, Send,
 } from 'lucide-react';
 import { agentColor, KIND_BADGES } from '../colors.js';
 
@@ -183,6 +184,45 @@ const A2ATCard = ({ pick, m }) => {
     );
 };
 
+/** Customer input box — the customer's requirement is TYPED here (需求①):
+ *  the replay stays gated until the request is submitted; the typed text
+ *  becomes the CRM agent's customer-intent card verbatim. */
+const EXAMPLE_INTENT = '客户要求对马拉松赛事进行体验保障，保证赛事期间直播连续流畅、公专网协同联动。';
+const CustomerInputCard = ({ onSubmit, tr }) => {
+    const [val, setVal] = useState(EXAMPLE_INTENT);
+    const send = () => { const t = val.trim(); if (t) onSubmit(t); };
+    return (
+        <div className="rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50/70 dark:bg-rose-500/[0.08] p-2.5">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-300">
+                <PenLine size={11} className="shrink-0" />
+                {tr('ss.cust_in', '客户输入', 'Customer Input')}
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400">
+                {tr('ss.cust_in_hint', '请输入客户的保障需求，CRM智能体将解析意图并组建保障团队：', 'Type the customer requirement — the CRM agent will parse the intent and assemble the team:')}
+            </p>
+            <textarea
+                value={val}
+                onChange={(e) => setVal(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); send(); } }}
+                rows={3}
+                placeholder={EXAMPLE_INTENT}
+                className="mt-1.5 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-[12px] leading-relaxed text-zinc-800 dark:text-zinc-100 resize-none focus:outline-none focus:ring-2 focus:ring-rose-400/60"
+            />
+            <div className="mt-1.5 flex items-center justify-end gap-2">
+                <span className="text-[10px] font-mono text-zinc-400 dark:text-zinc-600">Ctrl+↵</span>
+                <button
+                    onClick={send}
+                    disabled={!val.trim()}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-[12px] font-bold text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                >
+                    <Send size={11} />
+                    {tr('ss.cust_send', '发送需求', 'Send request')}
+                </button>
+            </div>
+        </div>
+    );
+};
+
 /** Customer-intent envelope — the CRM agent renders the customer's verbatim
  *  requirement it received (CRM Agent 接收客户的意图). */
 const IntentBlock = ({ m, pick, tr }) => (
@@ -321,7 +361,7 @@ const MessageCard = ({ m, index, isLatest, agentById, pick, tr, compact = false,
  *  one agent per row. Boundaries stay unmistakable: a solid agent-colored
  *  edge bar on the left, an agent-tinted header strip and a darker panel
  *  well separate the three lanes at a glance. */
-const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, inactive, registerRef, onScrollRow, authDecisions }) => {
+const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, inactive, registerRef, onScrollRow, authDecisions, awaitingCustomer, onSubmitCustomer }) => {
     const color = agentColor(col.agent?.color);
     return (
         <div
@@ -373,7 +413,12 @@ const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, inactive, reg
                     onScroll={(e) => onScrollRow(col.key, e.currentTarget)}
                     className="flex-1 min-h-0 overflow-y-auto ss-scroll px-2.5 py-2 space-y-2.5"
                 >
-                    {col.items.length === 0 && (
+                    {/* customer input box: the CRM panel hosts the typed
+                        requirement while the replay is gated on it */}
+                    {awaitingCustomer && col.agent?.id === 'crm' && (
+                        <CustomerInputCard onSubmit={onSubmitCustomer} tr={tr} />
+                    )}
+                    {col.items.length === 0 && !(awaitingCustomer && col.agent?.id === 'crm') && (
                         <div className="h-full min-h-[40px] flex items-center justify-center text-[11px] font-mono text-zinc-300 dark:text-zinc-600">
                             {inactive
                                 ? tr('ss.col_assembling_wait', '等待 CRM 组建接入…', 'waiting for CRM team assembly…')
@@ -399,7 +444,7 @@ const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, inactive, reg
     );
 };
 
-const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAgent, authDecisions = {} }) => {
+const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAgent, authDecisions = {}, awaitingCustomer = false, onSubmitCustomer }) => {
     const scrollRef = useRef(null);
     const stickRef = useRef(true);
     const byAgent = layout?.conversation === 'byAgent';
@@ -470,38 +515,49 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAg
             </div>
 
             {!byAgent ? (
-                <div
-                    ref={scrollRef}
-                    onScroll={(e) => {
-                        const el = e.currentTarget;
-                        stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
-                    }}
-                    className="flex-1 overflow-y-auto ss-scroll px-4 py-3 space-y-3"
-                >
-                    {messages.length === 0 && (
-                        <div className="h-full flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-500">
-                            <Bot size={30} strokeWidth={1.5} />
-                            <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
-                                {tr('ss.waiting', '回放即将开始…', 'Replay starting…')}
-                            </p>
+                <>
+                    {/* stream layout: the customer input strip stays pinned
+                        above the stream while the replay is gated on it */}
+                    {awaitingCustomer && crmPresent && (
+                        <div className="shrink-0 px-4 py-2 border-b border-zinc-100 dark:border-zinc-800">
+                            <CustomerInputCard onSubmit={onSubmitCustomer} tr={tr} />
                         </div>
                     )}
-                    {messages.map((m, i) => (
-                        <MessageCard
-                            key={i}
-                            m={m}
-                            index={i}
-                            isLatest={i === messages.length - 1}
-                            agentById={agentById}
-                            pick={pick}
-                            tr={tr}
-                            authDecision={authDecisions[i]}
-                        />
-                    ))}
-                </div>
+                    <div
+                        ref={scrollRef}
+                        onScroll={(e) => {
+                            const el = e.currentTarget;
+                            stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+                        }}
+                        className="flex-1 overflow-y-auto ss-scroll px-4 py-3 space-y-3"
+                    >
+                        {messages.length === 0 && (
+                            <div className="h-full flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-500">
+                                <Bot size={30} strokeWidth={1.5} />
+                                <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
+                                    {awaitingCustomer && crmPresent
+                                        ? tr('ss.waiting_customer', '等待客户输入保障需求…', 'Waiting for the customer request…')
+                                        : tr('ss.waiting', '回放即将开始…', 'Replay starting…')}
+                                </p>
+                            </div>
+                        )}
+                        {messages.map((m, i) => (
+                            <MessageCard
+                                key={i}
+                                m={m}
+                                index={i}
+                                isLatest={i === messages.length - 1}
+                                agentById={agentById}
+                                pick={pick}
+                                tr={tr}
+                                authDecision={authDecisions[i]}
+                            />
+                        ))}
+                    </div>
+                </>
             ) : (
                 <div className="flex-1 min-h-0 flex flex-col gap-2.5 p-2">
-                    {messages.length === 0 ? (
+                    {messages.length === 0 && !(awaitingCustomer && crmPresent) ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-500">
                             <Bot size={30} strokeWidth={1.5} />
                             <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
@@ -522,6 +578,8 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAg
                                 registerRef={registerRef}
                                 onScrollRow={onScrollRow}
                                 authDecisions={authDecisions}
+                                awaitingCustomer={awaitingCustomer}
+                                onSubmitCustomer={onSubmitCustomer}
                             />
                         ))
                     )}

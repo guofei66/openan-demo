@@ -208,6 +208,9 @@ const ScenarioShowcaseApp = () => {
         setAuthDecisions({});
         setAuthIdx(-1);
         authPausedRef.current = false;
+        customerTextRef.current = '';
+        customerReqRef.current = '';
+        setAwaitingCustomer(false);
     }, []);
 
     /** Normalized driver-event application (shared by both drivers). Messages
@@ -217,7 +220,21 @@ const ScenarioShowcaseApp = () => {
     const applyEvent = useCallback((ev) => {
         if (!ev || !ev.type) return;
         if (ev.type === 'message') {
-            setMessages((prev) => [...prev, (typeof ev.at === 'number') ? ev : { ...ev, at: tSecRef.current }]);
+            let out = ev;
+            // Customer input injection: the typed requirement REPLACES the
+            // baked intent card text and rewrites REQ ids in the CRM agent's
+            // messages, so the whole story follows what the customer typed.
+            if (ev.from === 'crm' && customerTextRef.current) {
+                const rid = customerReqRef.current || 'REQ-CUSTOMER';
+                const subst = (v) => (typeof v === 'string' ? v.replace(/REQ-\d{4}-\d{3,6}/g, rid) : v);
+                if (ev.intent) {
+                    out = { ...ev, intent: { ...ev.intent, reqId: rid, text: { zh: customerTextRef.current, en: customerTextRef.current } } };
+                }
+                if (out.text && typeof out.text === 'object') {
+                    out = { ...out, text: { zh: subst(out.text.zh), en: subst(out.text.en) } };
+                }
+            }
+            setMessages((prev) => [...prev, (typeof out.at === 'number') ? out : { ...out, at: tSecRef.current }]);
         } else if (ev.type === 'step') {
             const st = ev.status || 'done';
             setStepStatus((prev) => ({ ...prev, [ev.id]: st }));
@@ -344,6 +361,25 @@ const ScenarioShowcaseApp = () => {
     const [authDecisions, setAuthDecisions] = useState({});   // message index -> 'approved' | 'rejected'
     const [authIdx, setAuthIdx] = useState(-1);               // message currently awaiting authorization
     const authPausedRef = useRef(false);
+
+    // ── Customer input gate (客户输入在输入框输入) ──
+    // When the case carries a CRM agent, the replay does NOT start on page
+    // load: the customer's requirement must be typed into the input box in
+    // the CRM panel first. Starting the driver and pausing it right away
+    // would race the mockAgent pull loop (burning bank events), so the
+    // driver is simply not started until the request is submitted.
+    const [awaitingCustomer, setAwaitingCustomer] = useState(false);
+    const customerTextRef = useRef('');   // submitted requirement (for applyEvent)
+    const customerReqRef = useRef('');    // generated REQ id for this run
+
+    const submitCustomerInput = useCallback((text) => {
+        const t = String(text || '').trim();
+        if (!t || !driverRef.current) return;
+        customerReqRef.current = `REQ-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
+        customerTextRef.current = t;
+        setAwaitingCustomer(false);
+        try { driverRef.current.start(); } catch (e) { /* driver handles errors via onError */ }
+    }, []);
     useEffect(() => {
         if (!caseData) return undefined;
         const driver = createDriver({
@@ -363,7 +399,12 @@ const ScenarioShowcaseApp = () => {
             onNotice: (stats) => setModeStats(stats || null),
         });
         driverRef.current = driver;
-        if (startup.autostart) driver.start();
+        // CRM-gated cases wait for the customer's typed request in the input
+        // box before the replay starts (see submitCustomerInput); everything
+        // else auto-starts as before.
+        const gateOnCustomer = startup.autostart && (caseData.agents || []).some((a) => a.id === 'crm');
+        if (startup.autostart && !gateOnCustomer) driver.start();
+        setAwaitingCustomer(gateOnCustomer);
         return () => {
             driverRef.current = null;
             driver.stop();
@@ -618,6 +659,8 @@ const ScenarioShowcaseApp = () => {
                                         layout={layout}
                                         activeAgent={activeAgent}
                                         authDecisions={authDecisions}
+                                        awaitingCustomer={awaitingCustomer}
+                                        onSubmitCustomer={submitCustomerInput}
                                     />
                                 </section>
                             </div>
