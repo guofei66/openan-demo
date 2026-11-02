@@ -34,6 +34,7 @@ import AgentLogView from './components/AgentLogView.jsx';
 import AgentTeamBar from './components/AgentTeamBar.jsx';
 import InteractionFlowPanel from './components/InteractionFlowPanel.jsx';
 import ConversationStream from './components/ConversationStream.jsx';
+import AuthModal from './components/AuthModal.jsx';
 import CustomPanelsArea from './components/panels/index.jsx';
 
 const PLUGIN_BASE = resolvePluginBase();
@@ -204,6 +205,9 @@ const ScenarioShowcaseApp = () => {
         setDriverError('');
         setSvcLogs([]);
         setSvcSession(''); // new round: wait for the fresh session id before polling logs
+        setAuthDecisions({});
+        setAuthIdx(-1);
+        authPausedRef.current = false;
     }, []);
 
     /** Normalized driver-event application (shared by both drivers). Messages
@@ -337,6 +341,9 @@ const ScenarioShowcaseApp = () => {
     // 模式（工作流编排 / LLM 生成 / 数据集匹配）实时生成。
     const effDriver = driverMode || 'mockAgent';
     const [modeStats, setModeStats] = useState(null);
+    const [authDecisions, setAuthDecisions] = useState({});   // message index -> 'approved' | 'rejected'
+    const [authIdx, setAuthIdx] = useState(-1);               // message currently awaiting authorization
+    const authPausedRef = useRef(false);
     useEffect(() => {
         if (!caseData) return undefined;
         const driver = createDriver({
@@ -405,6 +412,31 @@ const ScenarioShowcaseApp = () => {
         const executing = (caseData?.steps || []).find((s) => stepStatus[s.id] === 'active');
         return executing?.agent || speakingAgent;
     }, [caseData, stepStatus, speakingAgent]);
+
+    // ── Configuration-change authorization (需求②) ──
+    // A message with `auth.required` freezes the driver (pause keeps the
+    // mockAgent session / virtual clock alive) and opens the AuthModal. The
+    // user's decision stamps the message and the driver resumes. If several
+    // auth messages are pending, the modal walks through them one by one.
+    useEffect(() => {
+        const idx = messages.findIndex((m, i) => m.auth && m.auth.required && authDecisions[i] === undefined);
+        if (idx >= 0) {
+            setAuthIdx(idx);
+            if (!authPausedRef.current) {
+                authPausedRef.current = true;
+                try { driverRef.current?.pause?.(); } catch (e) { /* ignore */ }
+            }
+        } else {
+            setAuthIdx(-1);
+            if (authPausedRef.current) {
+                authPausedRef.current = false;
+                try { driverRef.current?.resume?.(); } catch (e) { /* ignore */ }
+            }
+        }
+    }, [messages, authDecisions]);
+    const decideAuth = useCallback((idx, decision) => {
+        setAuthDecisions((prev) => ({ ...prev, [idx]: decision }));
+    }, []);
 
     // Case-level layout overrides (case JSON `layout`): `teamBar:false` hides
     // the 智能体团队 strip above the interaction area; `conversation:'byAgent'`
@@ -585,6 +617,7 @@ const ScenarioShowcaseApp = () => {
                                         tSec={tSec}
                                         layout={layout}
                                         activeAgent={activeAgent}
+                                        authDecisions={authDecisions}
                                     />
                                 </section>
                             </div>
@@ -628,6 +661,14 @@ const ScenarioShowcaseApp = () => {
                                 </div>
                             </div>
                         </div>
+                    )}
+                    {authIdx >= 0 && messages[authIdx] && (
+                        <AuthModal
+                            m={messages[authIdx]}
+                            onDecide={(d) => decideAuth(authIdx, d)}
+                            tr={tr}
+                            pick={pick}
+                        />
                     )}
                 </main>
             </div>
