@@ -18,7 +18,7 @@ const PAD_R = 38; // room for the live value label at the line tip
 const PAD_T = 8;
 const PAD_B = 8;
 
-const ChartPanel = ({ config, data, isDark }) => {
+const ChartPanel = ({ config, data, isDark, pick }) => {
     const series = config.series || [];
     const yMin = typeof config.yMin === 'number' ? config.yMin : 0;
     const yMax = typeof config.yMax === 'number' ? config.yMax : 100;
@@ -138,7 +138,7 @@ const ChartPanel = ({ config, data, isDark }) => {
                     return (
                         <span key={s.id} className="flex items-center gap-1.5 text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 whitespace-nowrap">
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color, boxShadow: isDark ? `0 0 6px ${s.color}` : 'none' }} />
-                            <span>{typeof s.name === 'string' ? s.name : (s.name?.zh || s.name?.en || s.id)}</span>
+                            <span>{pick ? pick(s.name) : (typeof s.name === 'string' ? s.name : (s.name?.zh || s.name?.en || s.id))}</span>
                             {last != null && <span className="font-mono tabular-nums text-zinc-600 dark:text-zinc-300">{Math.round(last)}</span>}
                         </span>
                     );

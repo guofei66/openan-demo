@@ -53,7 +53,7 @@ const CustomPanelsArea = ({ tr, pick, panels, data, isDark }) => {
                 })}
             </div>
             <div className="flex-1 min-h-0">
-                <ActiveComp config={active.config || {}} data={activeData} isDark={isDark} />
+                <ActiveComp config={active.config || {}} data={activeData} isDark={isDark} pick={pick} />
             </div>
         </div>
     );

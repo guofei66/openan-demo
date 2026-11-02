@@ -133,6 +133,13 @@ const ScenarioShowcaseApp = () => {
     const tr = useCallback((key, zhText, enText) => ((lang === 'zh') ? zhText : enText), [lang]);
     const pick = useCallback((value) => pickLang(lang, value), [lang]);
 
+    // ── Interaction-intent replay (history sidebar) ── state
+    // Each history entry is one interaction intent's full record; clicking it
+    // reloads the case (replayNonce bumps the load effect even for the same
+    // case) and, once the CRM greeting re-opens the customer gate, the intent
+    // requirement is auto-submitted — the whole interaction replays.
+    const replayIntentRef = useRef(null);
+    const [replayNonce, setReplayNonce] = useState(0);
     // startup injection from the launcher (e.g. the Virtual Showroom card):
     //   ?agents=id1,id2  — which agents are started (filters team / PSOP steps /
     //                      replay messages); omitted = all agents
@@ -388,7 +395,7 @@ const ScenarioShowcaseApp = () => {
             }
         })();
         return () => { dead = true; };
-    }, [caseId, resetPlayback, startup]);
+    }, [caseId, resetPlayback, startup, replayNonce]);
 
     // interaction driver — every case supports BOTH: 'script' (pure demo
     // replay from case.script[], launches no agent service) and 'mockAgent'
@@ -472,7 +479,7 @@ const ScenarioShowcaseApp = () => {
             driverRef.current = null;
             driver.stop();
         };
-    }, [caseData, applyEvent, startup, effDriver]);
+    }, [caseData, applyEvent, startup, effDriver, replayNonce]);
 
     // Agent-log panel: poll the mockAgent service log for the CURRENT session
     // only (1s cadence while playing) + one final pull when it completes.
@@ -506,6 +513,29 @@ const ScenarioShowcaseApp = () => {
             window.history.replaceState(null, '', u.toString());
         } catch (e) { /* ignore */ }
     }, []);
+
+    // ── Interaction-intent replay (history sidebar) ──
+    // onOpenEntry bumps replayNonce (declared above, before the case-load and
+    // driver effects that depend on it) so the same case reloads and the CRM
+    // gate re-opens; a self-contained poll then auto-submits the intent
+    // requirement once the gate is up (independent of effect scheduling).
+    const awaitingRef = useRef(false);
+    awaitingRef.current = awaitingCustomer; // render-time mirror for the poll
+    const onOpenEntry = useCallback((h) => {
+        if (!h) return;
+        replayIntentRef.current = h.req || null;
+        setReplayNonce((n) => n + 1);
+        handleCaseChange(h.caseId);
+        const req = h.req;
+        if (!req) return;
+        const text = (typeof req === 'object' && req !== null) ? pick(req) : String(req);
+        const t0 = Date.now();
+        const poll = () => {
+            if (awaitingRef.current) { submitCustomerInput(text); return; }
+            if (Date.now() - t0 < 20000) setTimeout(poll, 400);
+        };
+        setTimeout(poll, 1500);
+    }, [handleCaseChange, pick, submitCustomerInput]);
 
     // the agent currently speaking = author of the newest message
     const speakingAgent = messages.length ? messages[messages.length - 1].from : null;
@@ -658,6 +688,7 @@ const ScenarioShowcaseApp = () => {
                         historyAll={historyAll}
                         activeCaseId={caseId}
                         onOpenCase={handleCaseChange}
+                        onOpenEntry={onOpenEntry}
                         collapsed={histCollapsed}
                         onToggle={() => setHistCollapsed((v) => !v)}
                     />
