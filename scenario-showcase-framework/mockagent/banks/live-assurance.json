@@ -367,7 +367,19 @@
               "en": "+3 dB boost"
             }
           }
-        ]
+        ],
+        "why": {
+          "zh": "直播上行卡顿率升至 2.1%，超过保障目标 1%；根因是主会场上行带宽不足。",
+          "en": "Uplink live-stream stall rate rose to 2.1%, above the 1% target; the root cause is insufficient uplink bandwidth at the main venue."
+        },
+        "action": {
+          "zh": "向无线域下发任务：将主会场及沿线小区射频功率提升 +3dB。",
+          "en": "Dispatch a task to the RAN domain: boost cell RF power (main venue + track cells) by +3 dB."
+        },
+        "impact": {
+          "zh": "覆盖电平与上行速率改善；相邻小区干扰略增，需观察周边小区 KPI，必要时联动回退。",
+          "en": "Better coverage and uplink throughput; slightly higher adjacent-cell interference — monitor neighbor KPIs and roll back if needed."
+        }
       }
     }
   },
@@ -567,7 +579,19 @@
               "en": "deactivated"
             }
           }
-        ]
+        ],
+        "why": {
+          "zh": "功率提升后仍有个别卡顿，容量不足；A2A-T 协商裁定采用节能任务关闭提案补充容量。",
+          "en": "Stalls persist after the power boost due to limited capacity; the A2A-T negotiation adopted the energy-task-off proposal to add capacity."
+        },
+        "action": {
+          "zh": "关闭 Cell-3 区域 50% 站点的节能任务（深度节能 → 运行态）。",
+          "en": "Deactivate energy-saving tasks on 50% of Cell-3 sites (deep energy-saving → running)."
+        },
+        "impact": {
+          "zh": "小区容量与用户体验提升；站点能耗上升（预估 +5%），保障结束后需恢复。",
+          "en": "Higher cell capacity and user experience; site energy consumption rises (est. +5%) and must be restored after the event."
+        }
       }
     }
   },
@@ -890,7 +914,19 @@
               "en": "coordinated"
             }
           }
-        ]
+        ],
+        "why": {
+          "zh": "赛事人流峰值到来，直播体验再次劣化（卡顿率 1.8%），50% 关闭仍不足。",
+          "en": "Crowd peak degrades the live experience again (stall rate 1.8%); deactivating 50% is no longer enough."
+        },
+        "action": {
+          "zh": "关闭全部节能站点，并启动邻区载波均衡与迁移参数协同调整。",
+          "en": "Deactivate ALL energy-saving sites and start neighbor-carrier balancing with coordinated mobility parameters."
+        },
+        "impact": {
+          "zh": "全网容量最大化、直播体验恢复；能耗进一步上升，参数调整范围扩大至全区域，恢复需分批执行避免网络冲击。",
+          "en": "Maximizes network capacity and restores the live experience; energy use rises further and the parameter scope spans the whole area — restore in batches to avoid network shocks."
+        }
       }
     }
   },
@@ -1162,7 +1198,19 @@
               "en": "batched restore to baseline"
             }
           }
-        ]
+        ],
+        "why": {
+          "zh": "保障目标已达成（KQI 达标、卡顿率 < 1%），保障结束，需将网络恢复至保障前基线。",
+          "en": "The assurance target is met (KQI on target, stall rate < 1%) and the event has ended — restore the network to its pre-assurance baseline."
+        },
+        "action": {
+          "zh": "按预案分批恢复节能策略与功率配置至保障前基线。",
+          "en": "Batch-restore the energy-saving policy and power configuration to the pre-assurance baseline."
+        },
+        "impact": {
+          "zh": "恢复节能、降低能耗；分批执行避免二次网络冲击，期间用户体验波动可控。",
+          "en": "Energy-saving resumes and consumption drops; batched execution avoids a second network shock with controlled user-experience fluctuation."
+        }
       }
     }
   },

@@ -13,7 +13,7 @@
  *  Everything else (team task progress, PSOP workflow, agent panels) lives in
  *  the 任务处理 tab. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2 } from 'lucide-react';
+import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2, Lightbulb, Zap, AlertTriangle } from 'lucide-react';
 
 const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
@@ -116,6 +116,22 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
                         )}
                     </div>
                     <p className="mt-1 text-[13px] font-semibold text-zinc-700 dark:text-zinc-200">{pick(d.title)}</p>
+                    {d.why && (
+                        <div className="mt-1.5 flex gap-1.5 items-start">
+                            <Lightbulb size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+                                <span className="font-bold text-zinc-500 dark:text-zinc-400">{tr('ss.auth_why', '为什么：', 'Why: ')}</span>{pick(d.why)}
+                            </p>
+                        </div>
+                    )}
+                    {d.action && (
+                        <div className="mt-1 flex gap-1.5 items-start">
+                            <Zap size={12} className="text-sky-500 shrink-0 mt-0.5" />
+                            <p className="text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-300">
+                                <span className="font-bold text-zinc-500 dark:text-zinc-400">{tr('ss.auth_action', '动作：', 'Action: ')}</span>{pick(d.action)}
+                            </p>
+                        </div>
+                    )}
                     <div className="mt-1.5 space-y-1">
                         {(d.changes || []).map((c, k) => (
                             <div key={k} className="flex items-center gap-1.5 flex-wrap text-[12px]">
@@ -126,6 +142,14 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
                             </div>
                         ))}
                     </div>
+                    {d.impact && (
+                        <div className="mt-1.5 flex gap-1.5 items-start rounded-lg bg-amber-500/[0.07] border border-amber-500/25 px-2 py-1.5">
+                            <AlertTriangle size={12} className="text-amber-500 shrink-0 mt-0.5" />
+                            <p className="text-[12px] leading-relaxed text-amber-700 dark:text-amber-300">
+                                <span className="font-bold">{tr('ss.auth_impact', '可能的影响：', 'Possible impact: ')}</span>{pick(d.impact)}
+                            </p>
+                        </div>
+                    )}
                     {pending ? (
                         <div className="mt-2 flex items-center gap-2">
                             <span className="text-[11px] text-zinc-500 dark:text-zinc-400 animate-pulse">
