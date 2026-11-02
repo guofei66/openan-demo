@@ -657,7 +657,7 @@ const ScenarioShowcaseApp = () => {
                                         : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
                             >
                                 <ListChecks size={14} />
-                                {tr('ss.tab_tasks', '任务处理', 'Task Progress')}
+                                {tr('ss.tab_tasks', '智能体群组', 'Agent Group')}
                             </button>
                             <button
                                 onClick={() => setMainTab('trace')}

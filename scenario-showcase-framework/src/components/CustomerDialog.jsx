@@ -279,7 +279,7 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
                     disabled={!awaitingCustomer}
                     className="flex-1 min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-2.5 py-2 text-[13px] text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-400/60 disabled:opacity-60"
                 >
-                    {!awaitingCustomer && <option value="">{tr('ss.dialog_aligned', '需求已对齐 — 切换「任务处理」页签查看团队执行进度', 'Requirement aligned — see the Task Progress tab')}</option>}
+                    {!awaitingCustomer && <option value="">{tr('ss.dialog_aligned', '需求已对齐 — 切换「智能体群组」页签查看团队执行进度', 'Requirement aligned — see the Agent Group tab')}</option>}
                     {INTENT_OPTIONS.map((o) => (
                         <option key={o} value={o}>{o}</option>
                     ))}
