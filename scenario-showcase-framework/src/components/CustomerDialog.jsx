@@ -13,7 +13,7 @@
  *  Everything else (team task progress, PSOP workflow, agent panels) lives in
  *  the 任务处理 tab. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2, Lightbulb, Zap, AlertTriangle, Workflow, Play } from 'lucide-react';
+import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2, Lightbulb, Zap, AlertTriangle, Workflow, Play, UserRound } from 'lucide-react';
 
 const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
@@ -68,8 +68,8 @@ const CustomerBubble = ({ text, tr }) => (
                 <p className="text-[14px] leading-relaxed text-white whitespace-pre-line break-words">{text}</p>
             </div>
         </div>
-        <div className="w-8 h-8 rounded-lg bg-zinc-400 dark:bg-zinc-600 flex items-center justify-center shadow-md shrink-0">
-            <span className="text-[13px] font-bold text-white">{tr('ss.dialog_you', '客', 'C')}</span>
+        <div className="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center shadow-md shrink-0">
+            <UserRound size={16} className="text-white" />
         </div>
     </div>
 );
@@ -164,7 +164,7 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
                                 </button>
                                 <button
                                     onClick={() => onDecide('approved')}
-                                    className="px-3 py-1 rounded-lg text-[12px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-sm inline-flex items-center gap-1"
+                                    className="px-3 py-1 rounded-lg text-[12px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/30 ring-2 ring-emerald-400/50 hover:ring-emerald-400/80 inline-flex items-center gap-1"
                                 >
                                     <ShieldCheck size={12} />
                                     {tr('ss.auth_approve', '同意授权', 'Approve')}
@@ -273,17 +273,17 @@ const OrchestrationCard = ({ m, orchState, onConfirm, pick, tr }) => {
                         ))}
                     </div>
                     {pending ? (
-                        <div className="mt-2.5">
+                        <div className="mt-2 flex items-center gap-2">
                             <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400">
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
                                 {tr('ss.orch_wait', '执行已暂停，等待您确认编排…', 'Execution paused — confirm the orchestration…')}
                             </div>
                             <button
                                 onClick={onConfirm}
-                                className="mt-2 w-full inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-lg text-[13px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-500/40 ring-2 ring-emerald-400/50 hover:ring-emerald-400/80 hover:scale-[1.01] active:scale-[0.99]"
+                                className="ml-auto px-3 py-1 rounded-lg text-[12px] font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/30 ring-2 ring-emerald-400/50 hover:ring-emerald-400/80 inline-flex items-center gap-1 shrink-0"
                             >
-                                <Play size={14} className="shrink-0" />
-                                {tr('ss.orch_confirm', '确认编排，启动执行', 'Confirm & start execution')}
+                                <Play size={12} />
+                                {tr('ss.orch_confirm', '确认执行', 'Confirm & start')}
                             </button>
                         </div>
                     ) : null}
