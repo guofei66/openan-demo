@@ -218,9 +218,11 @@ const SummaryCard = ({ m, pick, tr }) => {
                             </div>
                         ))}
                     </div>
-                    <div className="mt-2 pt-2 border-t border-emerald-500/20 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
-                        {pick(s.close)}
-                    </div>
+                    {s.close && (
+                        <div className="mt-2 pt-2 border-t border-emerald-500/20 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
+                            {pick(s.close)}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
