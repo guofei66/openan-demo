@@ -237,11 +237,25 @@ const ScenarioShowcaseApp = () => {
                 if (ev.intent) {
                     out = { ...ev, intent: { ...ev.intent, reqId: rid, text: { zh: customerTextRef.current, en: customerTextRef.current } } };
                 }
+                if (out.summary && Array.isArray(out.summary.rows)) {
+                    out = {
+                        ...out,
+                        summary: {
+                            ...out.summary,
+                            rows: out.summary.rows.map((r) => ({ ...r, value: { zh: subst(r.value?.zh), en: subst(r.value?.en) } })),
+                        },
+                    };
+                }
                 if (out.text && typeof out.text === 'object') {
                     out = { ...out, text: { zh: subst(out.text.zh), en: subst(out.text.en) } };
                 }
             }
             setMessages((prev) => [...prev, (typeof out.at === 'number') ? out : { ...out, at: tSecRef.current }]);
+            // the CRM closing summary is FOR the customer — present it in the
+            // 人机对话 tab (switch once, when the summary event arrives)
+            if (out.summary) {
+                setMainTab((prev) => (prev === 'trace' ? prev : 'dialog'));
+            }
         } else if (ev.type === 'step') {
             const st = ev.status || 'done';
             setStepStatus((prev) => ({ ...prev, [ev.id]: st }));

@@ -13,7 +13,7 @@
  *  Everything else (team task progress, PSOP workflow, agent panels) lives in
  *  the 任务处理 tab. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote } from 'lucide-react';
+import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2 } from 'lucide-react';
 
 const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
@@ -165,6 +165,44 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
     );
 };
 
+/** CRM closing summary card — rendered when the assurance flow completes;
+ *  the CRM agent hands the customer a structured wrap-up of the whole run. */
+const SummaryCard = ({ m, pick, tr }) => {
+    const s = m.summary || {};
+    return (
+        <div className="flex gap-2.5 ss-fade-up">
+            <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center shadow-md shrink-0">
+                <Bot size={16} className="text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400">
+                        {tr('ss.dialog_crm', 'CRM智能体', 'CRM Agent')}
+                    </span>
+                    <span className="text-[11px] font-mono text-zinc-300 dark:text-zinc-600 tabular-nums">{fmtClock(m.at || 0)}</span>
+                </div>
+                <div className="mt-1 max-w-[94%] rounded-xl border border-emerald-500/40 bg-emerald-500/[0.05] px-3 py-2.5">
+                    <div className="flex items-center gap-1.5">
+                        <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
+                        <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">{pick(s.title)}</span>
+                    </div>
+                    <div className="mt-2 space-y-1.5">
+                        {(s.rows || []).map((r, k) => (
+                            <div key={k} className="flex gap-2 text-[12px] leading-relaxed">
+                                <span className="shrink-0 w-[52px] text-right font-bold text-zinc-400 dark:text-zinc-500">{pick(r.label)}</span>
+                                <span className="min-w-0 flex-1 text-zinc-700 dark:text-zinc-200">{pick(r.value)}</span>
+                            </div>
+                        ))}
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-emerald-500/20 text-[12px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        {pick(s.close)}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, onSubmitCustomer, authDecisions = {}, authIdx = -1, onDecideAuth, tSec }) => {
     const scrollRef = useRef(null);
     const stickRef = useRef(true);
@@ -226,9 +264,11 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
                 />
                 {customerText && <CustomerBubble text={customerText} tr={tr} />}
                 {items.map(({ m, i }) => (
-                    m.auth && m.auth.required
-                        ? <AuthChatCard key={i} m={m} decision={authDecisions[i]} pending={authIdx === i} onDecide={(d) => onDecideAuth(i, d)} pick={pick} tr={tr} />
-                        : <CrmBubble key={i} m={m} pick={pick} tr={tr} />
+                    m.summary
+                        ? <SummaryCard key={i} m={m} pick={pick} tr={tr} />
+                        : m.auth && m.auth.required
+                            ? <AuthChatCard key={i} m={m} decision={authDecisions[i]} pending={authIdx === i} onDecide={(d) => onDecideAuth(i, d)} pick={pick} tr={tr} />
+                            : <CrmBubble key={i} m={m} pick={pick} tr={tr} />
                 ))}
             </div>
 
