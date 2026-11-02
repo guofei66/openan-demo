@@ -432,7 +432,10 @@ const ScenarioShowcaseApp = () => {
         customerTextRef.current = t;
         setCustomerText(t);
         setAwaitingCustomer(false);
-        setMainTab('tasks'); // requirement aligned → show the team task progress
+        // stay in the 人机对话 tab: intent parsing, team assembly and the
+        // workflow-orchestration confirmation all happen in the dialog;
+        // execution only shows the 智能体群组 tab AFTER the orchestration
+        // is confirmed (confirmOrchestration jumps there).
         try { driverRef.current.start(); } catch (e) { /* driver handles errors via onError */ }
     }, []);
     useEffect(() => {

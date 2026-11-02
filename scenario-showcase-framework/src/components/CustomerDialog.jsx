@@ -303,11 +303,12 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
         stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
     };
 
-    // dialog items: CRM statements to the customer (self-loops) + auth relays,
-    // in message order (the customer bubble is pinned above them)
+    // dialog items: everything the CRM agent says (to the customer or to the
+    // team — parsing, assembly, handover, orchestration, summary are all the
+    // CRM's narration in the dialog) + auth relays, in message order
     const items = useMemo(() => messages
         .map((m, i) => ({ m, i }))
-        .filter(({ m }) => (m.from === 'crm' && m.to === 'crm') || (m.auth && m.auth.required)), [messages]);
+        .filter(({ m }) => m.from === 'crm' || (m.auth && m.auth.required)), [messages]);
 
     const send = () => {
         if (!sel || !awaitingCustomer) return;
