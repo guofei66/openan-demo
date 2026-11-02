@@ -4,13 +4,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /** Bottom-left upper half — the collaboration flow, shown graphically as a
- *  PSOP swimlane collaboration graph (default) or as a vertical stepper list.
- *  Live statuses, agent chips, PSOP step types (SelfLoop/AllSuccess), skills
- *  and task ids. Conference glass theme. */
+ *  3D layered PSOP workflow graph (default), the 2D swimlane graph, or a
+ *  vertical stepper list. Live statuses, agent chips, PSOP step types
+ *  (SelfLoop/AllSuccess), skills and task ids. Conference glass theme. */
 import React, { useState } from 'react';
-import { Check, Circle, Loader2, ListChecks, Repeat, Workflow, Network, Rows3 } from 'lucide-react';
+import { Check, Circle, Loader2, ListChecks, Repeat, Workflow } from 'lucide-react';
 import { agentColor } from '../colors.js';
 import WorkflowGraph from './WorkflowGraph.jsx';
+import WorkflowGraph3D from './WorkflowGraph3D.jsx';
 
 const STEP_ICONS = ({ status }) => {
     if (status === 'done') return <span className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center shadow-md shadow-emerald-500/20"><Check size={13} className="text-white" strokeWidth={3} /></span>;
@@ -20,16 +21,15 @@ const STEP_ICONS = ({ status }) => {
 
 const InteractionFlowPanel = ({ tr, pick, steps, agents, stepStatus, progressPct }) => {
     const agentById = Object.fromEntries(agents.map((a) => [a.id, a]));
-    const [view, setView] = useState('graph');
-    const ToggleBtn = ({ id, icon: Icon, label }) => (
+    const [view, setView] = useState('graph'); // default: 平面 (2D swimlane)
+    const TabBtn = ({ id, label }) => (
         <button
             onClick={() => setView(id)}
-            title={label}
-            className={`p-1 rounded-md border transition-all ${view === id
-                ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800'
-                : 'text-zinc-400 dark:text-zinc-500 border-transparent hover:text-zinc-600 dark:hover:text-zinc-300'}`}
+            className={`px-2.5 py-1 rounded-md text-[12px] font-bold transition-all ${view === id
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
         >
-            <Icon size={14} />
+            {label}
         </button>
     );
     return (
@@ -44,14 +44,22 @@ const InteractionFlowPanel = ({ tr, pick, steps, agents, stepStatus, progressPct
                     <Workflow size={12} />
                     PSOP · psop_live_event_assurance_en
                 </span>
-                <div className="ml-auto flex items-center gap-1">
-                    <ToggleBtn id="graph" icon={Network} label={tr('ss.flow.graph', '图形视图', 'Graph view')} />
-                    <ToggleBtn id="list" icon={Rows3} label={tr('ss.flow.list', '列表视图', 'List view')} />
-                    <span className="ml-1 text-[12px] font-mono text-zinc-400 dark:text-blue-400 tabular-nums">{progressPct}%</span>
+                <div className="ml-auto flex items-center gap-1.5">
+                    {/* PSOP visualization tabs: 平面 (default) | 3D | 列表 */}
+                    <div className="flex items-center rounded-lg bg-zinc-100 dark:bg-zinc-800/70 p-0.5">
+                        <TabBtn id="graph" label={tr('ss.flow.graph', '平面', 'Flat')} />
+                        <TabBtn id="3d" label={tr('ss.flow.3d', '3D', '3D')} />
+                        <TabBtn id="list" label={tr('ss.flow.list', '列表', 'List')} />
+                    </div>
+                    <span className="text-[12px] font-mono text-zinc-400 dark:text-blue-400 tabular-nums">{progressPct}%</span>
                 </div>
             </div>
 
-            {view === 'graph' ? (
+            {view === '3d' ? (
+                <div className="flex-1 min-h-0 px-2 py-2">
+                    <WorkflowGraph3D tr={tr} pick={pick} steps={steps} agents={agents} stepStatus={stepStatus} />
+                </div>
+            ) : view === 'graph' ? (
                 <div className="flex-1 min-h-0 px-2 py-2">
                     <WorkflowGraph pick={pick} steps={steps} agents={agents} stepStatus={stepStatus} />
                 </div>

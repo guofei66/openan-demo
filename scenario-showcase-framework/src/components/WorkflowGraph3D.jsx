@@ -222,16 +222,33 @@ const WorkflowGraph3D = ({ tr, pick, steps, agents, stepStatus }) => {
                 }
             }
         }
-        // deterministic swimlane layers: X=step order, Y=agent lane, Z=tier
+        // per-agent flat tiling (echo of the byAgent execution-flow lanes):
+        // each agent's lane packs ITS OWN steps left→right in workflow order;
+        // chain/fanout links then arc across lanes and stay fully legible.
         const laneIdx = Object.fromEntries(agents.map((a, i) => [a.id, i]));
-        const cols = nodes.length;
-        nodes.forEach((n, i) => {
-            const li = laneIdx[n.agent] ?? 0;
-            n.fx = (i - (cols - 1) / 2) * STEP_SPACING;
-            n.fy = laneY(li, agents.length);
-            n.fz = laneZ(li, agents.length);
+        const byLane = {};
+        nodes.forEach((n) => {
+            if (!n.end) (byLane[n.agent] = byLane[n.agent] || []).push(n);
         });
-        return { nodes, links };
+        Object.entries(byLane).forEach(([agentId, arr]) => {
+            const li = laneIdx[agentId] ?? 0;
+            arr.forEach((n, k) => {
+                n.fx = (k - (arr.length - 1) / 2) * STEP_SPACING;
+                n.fy = laneY(li, agents.length);
+                n.fz = laneZ(li, agents.length);
+            });
+        });
+        // END caps the LAST agent's lane, one slot past its final task
+        const endNode = nodes.find((n) => n.end);
+        if (endNode) {
+            const lastAg = agents[agents.length - 1]?.id;
+            const li = laneIdx[lastAg] ?? 0;
+            const len = (byLane[lastAg] || []).length;
+            endNode.fx = (len - (len - 1) / 2) * STEP_SPACING;
+            endNode.fy = laneY(li, agents.length);
+            endNode.fz = laneZ(li, agents.length);
+        }
+        return { nodes, links, byLane };
     }, [steps, agents]); // eslint-disable-line react-hooks/exhaustive-deps
 
     /* Push the CURRENT graph data + statuses into the mounted instance.
@@ -243,15 +260,21 @@ const WorkflowGraph3D = ({ tr, pick, steps, agents, stepStatus }) => {
         if (!fg) return;
         if (fg.graphData() !== graphData) {
             fg.graphData(graphData);
-            // rebuild the agent lane bands (3D echo of the 2D swimlane stripes)
+            // rebuild the agent lane bands — sized per lane to hug that
+            // agent's own flat task run (byAgent-style tiling)
             try {
                 const scene = fg.scene();
                 if (laneGroupRef.current) scene.remove(laneGroupRef.current);
                 const lg = new THREE.Group();
-                const width = (graphData.nodes.length - 1) * STEP_SPACING + 100;
-                const rx = width / 2 + 14;   // ellipse X radius (step span)
-                const rz = 58;               // ellipse Z radius (layer depth)
+                const byLane = graphData.byLane || {};
                 agents.forEach((a, i) => {
+                    const arr = byLane[a.id] || [];
+                    const len = Math.max(arr.length, 1);
+                    const midX = ((len - 1) / 2) * STEP_SPACING;
+                    const rx = len * STEP_SPACING * 0.58 + 26;  // lane band span (task run)
+                    const rz = 58;                              // lane band depth
+                    const y = laneY(i, agents.length);
+                    const z = laneZ(i, agents.length);
                     // elliptical layer base: tinted disc + bright rim
                     const disc = new THREE.Mesh(
                         new THREE.CircleGeometry(1, 72),
@@ -262,7 +285,7 @@ const WorkflowGraph3D = ({ tr, pick, steps, agents, stepStatus }) => {
                     );
                     disc.rotation.x = -Math.PI / 2;
                     disc.scale.set(rx, rz, 1);
-                    disc.position.set(0, laneY(i, agents.length) - 9, laneZ(i, agents.length));
+                    disc.position.set(midX, y - 9, z);
                     lg.add(disc);
                     const rim = new THREE.LineLoop(
                         new THREE.BufferGeometry().setFromPoints(
@@ -279,7 +302,7 @@ const WorkflowGraph3D = ({ tr, pick, steps, agents, stepStatus }) => {
                     tag.color = hexOf(a.color);
                     tag.textHeight = 10;
                     tag.fontWeight = '700';
-                    tag.position.set(-rx - 30, laneY(i, agents.length), laneZ(i, agents.length));
+                    tag.position.set(midX - rx - 26, y, z);
                     lg.add(tag);
                 });
                 scene.add(lg);
