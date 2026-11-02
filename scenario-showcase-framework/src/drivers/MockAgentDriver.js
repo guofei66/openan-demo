@@ -151,7 +151,15 @@ export const createMockAgentDriver = (caseData, sink) => {
             try {
                 out = await post('/next', { session });
             } catch (e) {
-                if (!stopped) sink.onError(String((e && e.message) || e));
+                if (!stopped) {
+                    const raw = String((e && e.message) || e);
+                    // 404 on /next = unknown session: the service lost this
+                    // session (restart / manual clear) — tell the user how
+                    // to recover instead of a bare HTTP code.
+                    sink.onError(raw.includes('HTTP 404')
+                        ? 'mockAgent 会话已失效（服务可能已重启），请刷新页面重新开始演示'
+                        : raw);
+                }
                 return;
             }
             const ev = out && out.event;

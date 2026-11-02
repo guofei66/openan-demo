@@ -36,7 +36,7 @@ BANK_DIR = os.path.join(BASE_DIR, "banks")
 PORT = int(os.environ.get("MOCKAGENT_PORT", "9015"))
 SAFE_ID = re.compile(r"^[a-zA-Z0-9_-]{1,64}$")
 
-_LOCK = threading.Lock()
+_LOCK = threading.RLock()  # reentrant: handlers call _persist_sessions() while holding the lock
 _SESSIONS = {}  # session -> {"case": str, "bank": list, "idx": int}
 _LOG_LOCK = threading.Lock()
 _LOG_LINES = collections.deque(maxlen=600)  # ring buffer for GET /mockagent/logs
@@ -105,6 +105,43 @@ def load_bank(case_key):
         raise ValueError("bank must be a JSON array of turns")
     return bank
 
+_SESSIONS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "sessions.json")
+
+
+def _persist_sessions():
+    """Sessions survive restarts: {session: {case, idx}} -> sessions.json."""
+    try:
+        with _LOCK:
+            snapshot = {k: {"case": v["case"], "idx": v["idx"]} for k, v in _SESSIONS.items()}
+        tmp = _SESSIONS_PATH + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as fh:
+            json.dump(snapshot, fh)
+        os.replace(tmp, _SESSIONS_PATH)
+    except Exception as exc:  # noqa: BLE001
+        agent_log(f"PERSIST-FAIL {exc}")
+
+
+def _load_sessions():
+    """Restore sessions saved by a previous run (bank re-read per case)."""
+    try:
+        with open(_SESSIONS_PATH, encoding="utf-8") as fh:
+            saved = json.load(fh)
+    except Exception:
+        return 0
+    restored = 0
+    for sess, st in (saved or {}).items():
+        try:
+            bank = load_bank(str(st.get("case") or ""))
+            idx = max(0, min(int(st.get("idx") or 0), len(bank)))
+            _SESSIONS[str(sess)] = {"case": str(st.get("case")), "bank": bank, "idx": idx}
+            restored += 1
+        except Exception as exc:  # noqa: BLE001
+            agent_log(f"RESTORE-FAIL session={str(sess)[:8]} error={exc}")
+    if restored:
+        agent_log(f"SESSIONS RESTORED {restored}/{len(saved or {})}")
+    return restored
+
+
 
 class Handler(BaseHTTPRequestHandler):
     server_version = "mockAgent/1.0"
@@ -170,6 +207,7 @@ class Handler(BaseHTTPRequestHandler):
             session = uuid.uuid4().hex
             with _LOCK:
                 _SESSIONS[session] = {"case": case_key, "bank": bank, "idx": 0}
+                _persist_sessions()
             agent_log(f"SESSION START case={case_key} session={session[:8]} total={len(bank)} client={self.client_address[0]}")
             self._send(200, {"ok": True, "session": session, "total": len(bank)})
             return
@@ -183,6 +221,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             if self.path.rstrip("/").endswith("/reset"):
                 state["idx"] = 0
+                _persist_sessions()
                 agent_log(f"RESET session={session[:8]} case={state['case']}")
                 self._send(200, {"ok": True, "remaining": len(state["bank"])})
                 return
@@ -195,6 +234,7 @@ class Handler(BaseHTTPRequestHandler):
                 return
             turn = state["bank"][idx] or {}
             state["idx"] = idx + 1
+            _persist_sessions()
             event = turn.get("event") or {"type": "done"}
             if event.get("type") == "message":
                 # agent-perspective lines: sender SENT/REPLY + receiver RECV
@@ -207,4 +247,6 @@ class Handler(BaseHTTPRequestHandler):
 
 if __name__ == "__main__":
     agent_log(f"mockAgent listening on 0.0.0.0:{PORT}, banks dir: {BANK_DIR}")
+    _restored = _load_sessions()
+    agent_log(f"mockAgent listening on 0.0.0.0:{PORT}, banks dir: {BANK_DIR}, sessions restored: {_restored}")
     ThreadingHTTPServer(("0.0.0.0", PORT), Handler).serve_forever()
