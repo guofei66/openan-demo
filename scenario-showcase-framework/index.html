@@ -16,6 +16,13 @@
       document.documentElement.classList.add('dark');
       document.documentElement.style.colorScheme = 'dark';
     </script>
+    <!-- build stamp in the tab title: makes stale cached sessions instantly
+         identifiable during demo iterations (file mtime == deploy time). -->
+    <script>
+      try {
+        document.title += ' · build ' + new Date(document.lastModified).toLocaleString('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+      } catch (e) { /* noop */ }
+    </script>
   </head>
   <body>
     <div id="root"></div>
