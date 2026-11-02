@@ -61,7 +61,7 @@ const CustomerBubble = ({ text, tr }) => (
         <div className="min-w-0 flex-1 flex flex-col items-end">
             <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-mono text-zinc-300 dark:text-zinc-600">
-                    {tr('ss.dialog_customer', '客户', 'Customer')}
+                    {tr('ss.dialog_customer', 'admin', 'admin')}
                 </span>
             </div>
             <div className="mt-1 inline-block max-w-[92%] rounded-xl border px-3 py-2 bg-rose-500 border-rose-500 shadow-sm">
