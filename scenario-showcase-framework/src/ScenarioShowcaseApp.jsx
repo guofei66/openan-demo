@@ -357,9 +357,14 @@ const ScenarioShowcaseApp = () => {
                 if (dead) return;
                 // startup injection: apply the launcher's agent startup options —
                 // only started agents join the team, the PSOP keeps their steps,
-                // and replay messages of non-started agents are filtered out
+                // and replay messages of non-started agents are filtered out.
+                // The CRM service desk is NEVER filtered: it fronts the whole
+                // requirement→dialog→auth chain, and a stale launcher config
+                // (e.g. a pre-CRM agents list) must not silently downgrade a
+                // CRM case to the legacy byAgent entry.
                 if (startup.agents.length) {
                     const started = new Set(startup.agents);
+                    if ((data.agents || []).some((a) => a.id === 'crm')) started.add('crm');
                     data = {
                         ...data,
                         agents: (data.agents || []).filter((a) => started.has(a.id)),
