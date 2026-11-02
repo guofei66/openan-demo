@@ -120,7 +120,7 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
                         <div className="mt-1.5 flex gap-1.5 items-start">
                             <Lightbulb size={12} className="text-amber-500 shrink-0 mt-0.5" />
                             <p className="text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-300">
-                                <span className="font-bold text-zinc-500 dark:text-zinc-400">{tr('ss.auth_why', '为什么：', 'Why: ')}</span>{pick(d.why)}
+                                <span className="font-bold text-zinc-500 dark:text-zinc-400">{tr('ss.auth_why', '业务描述：', 'Description: ')}</span>{pick(d.why)}
                             </p>
                         </div>
                     )}
@@ -128,7 +128,7 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
                         <div className="mt-1 flex gap-1.5 items-start">
                             <Zap size={12} className="text-sky-500 shrink-0 mt-0.5" />
                             <p className="text-[12px] leading-relaxed text-zinc-600 dark:text-zinc-300">
-                                <span className="font-bold text-zinc-500 dark:text-zinc-400">{tr('ss.auth_action', '动作：', 'Action: ')}</span>{pick(d.action)}
+                                <span className="font-bold text-zinc-500 dark:text-zinc-400">{tr('ss.auth_action', '授权动作：', 'Authorized action: ')}</span>{pick(d.action)}
                             </p>
                         </div>
                     )}
