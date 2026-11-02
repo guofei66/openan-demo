@@ -18,11 +18,22 @@ import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote,
 const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
 /** Preset customer intents (下拉框选项) — the customer picks one instead of
- *  typing; the selected text becomes the CRM agent's customer intent. */
+ *  typing; the selected text becomes the CRM agent's customer intent.
+ *  Bilingual {zh,en}: the option label AND the submitted requirement text
+ *  follow the UI language. */
 const INTENT_OPTIONS = [
-    '12月10日，XX地区进行马拉松比赛，对比赛进行赛事体验保障，保障赛事期间的用户上网体验',
-    '12月31日，XX市体育中心举办大型跨年演唱会，对活动进行用户体验保障，保障现场直播与分享体验',
-    '1月15日，XX国际会展中心举办大型行业峰会，对展会进行体验保障，保障展商与观众的上网体验',
+    {
+        zh: '12月10日，XX地区进行马拉松比赛，对比赛进行赛事体验保障，保障赛事期间的用户上网体验',
+        en: 'Dec 10 — a marathon is held in XX district; provide event experience assurance to safeguard user internet access during the race',
+    },
+    {
+        zh: '12月31日，XX市体育中心举办大型跨年演唱会，对活动进行用户体验保障，保障现场直播与分享体验',
+        en: 'Dec 31 — a large New Year countdown concert is held at XX Sports Center; provide event experience assurance for the live broadcast and sharing experience',
+    },
+    {
+        zh: '1月15日，XX国际会展中心举办大型行业峰会，对展会进行体验保障，保障展商与观众的上网体验',
+        en: 'Jan 15 — a large industry summit is held at XX International Convention & Exhibition Center; provide event experience assurance for exhibitors and attendees',
+    },
 ];
 
 /** CRM bubble (left, agent avatar) — may carry the customer-intent envelope. */
@@ -296,7 +307,7 @@ const OrchestrationCard = ({ m, orchState, onConfirm, pick, tr }) => {
 const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, onSubmitCustomer, authDecisions = {}, authIdx = -1, onDecideAuth, orchState = 'none', onConfirmOrchestration, tSec }) => {
     const scrollRef = useRef(null);
     const stickRef = useRef(true);
-    const [sel, setSel] = useState(INTENT_OPTIONS[0]);
+    const [sel, setSel] = useState(INTENT_OPTIONS[0].zh);
     useEffect(() => {
         const el = scrollRef.current;
         if (el && stickRef.current) el.scrollTop = el.scrollHeight;
@@ -315,7 +326,10 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
 
     const send = () => {
         if (!sel || !awaitingCustomer) return;
-        onSubmitCustomer(sel);
+        // submit the requirement in the UI language (the option object is
+        // bilingual; the selected value is its stable zh key)
+        const obj = INTENT_OPTIONS.find((x) => x.zh === sel);
+        onSubmitCustomer(obj ? pick(obj) : sel);
     };
     const statusChip = awaitingCustomer
         ? tr('ss.dialog_st_wait', '等待需求输入', 'awaiting request')
@@ -374,7 +388,7 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
                 >
                     {!awaitingCustomer && <option value="">{tr('ss.dialog_aligned', '需求已对齐 — 切换「智能体群组」页签查看团队执行进度', 'Requirement aligned — see the Agent Group tab')}</option>}
                     {INTENT_OPTIONS.map((o) => (
-                        <option key={o} value={o}>{o}</option>
+                        <option key={o.zh} value={o.zh}>{pick(o)}</option>
                     ))}
                 </select>
                 <button
