@@ -218,6 +218,8 @@ const ScenarioShowcaseApp = () => {
         setAwaitingCustomer(false);
         authSwitchedRef.current = -1;
         tabBeforeAuthRef.current = 'tasks';
+        orchStateRef.current = 'none';
+        setOrchState('none');
     }, []);
 
     /** Normalized driver-event application (shared by both drivers). Messages
@@ -254,6 +256,14 @@ const ScenarioShowcaseApp = () => {
             // the CRM closing summary is FOR the customer — present it in the
             // 人机对话 tab (switch once, when the summary event arrives)
             if (out.summary) {
+                setMainTab((prev) => (prev === 'trace' ? prev : 'dialog'));
+            }
+            // the workflow ORCHESTRATION pauses execution: the CRM agent
+            // presents the plan in the dialog and the customer must confirm
+            // before the workflow actually starts (resume + jump to 群组).
+            if (out.orchestration && orchStateRef.current === 'none') {
+                setOrchGate('pending');
+                try { driverRef.current?.pause?.(); } catch (e) { /* ignore */ }
                 setMainTab((prev) => (prev === 'trace' ? prev : 'dialog'));
             }
         } else if (ev.type === 'step') {
@@ -398,6 +408,22 @@ const ScenarioShowcaseApp = () => {
     const [customerText, setCustomerText] = useState(''); // submitted requirement (for the dialog bubble)
     const customerTextRef = useRef('');                   // submitted requirement (for applyEvent)
     const customerReqRef = useRef('');                    // generated REQ id for this run
+    // Workflow-orchestration confirmation gate: when the CRM agent presents
+    // the orchestrated workflow (message with `orchestration`), execution is
+    // PAUSED until the customer confirms in the 人机对话 tab; confirming
+    // resumes the driver and jumps to the 智能体群组 tab.
+    const [orchState, setOrchState] = useState('none');   // 'none' | 'pending' | 'confirmed'
+    const orchStateRef = useRef('none');
+    const setOrchGate = useCallback((state) => {
+        orchStateRef.current = state;
+        setOrchState(state);
+    }, []);
+    const confirmOrchestration = useCallback(() => {
+        if (orchStateRef.current !== 'pending') return;
+        setOrchGate('confirmed');
+        try { driverRef.current?.resume?.(); } catch (e) { /* ignore */ }
+        setMainTab('tasks'); // confirmed → jump to the agent-group execution view
+    }, [setOrchGate]);
 
     const submitCustomerInput = useCallback((text) => {
         const t = String(text || '').trim();
@@ -685,6 +711,8 @@ const ScenarioShowcaseApp = () => {
                             authDecisions={authDecisions}
                             authIdx={authIdx}
                             onDecideAuth={decideAuth}
+                            orchState={orchState}
+                            onConfirmOrchestration={confirmOrchestration}
                             tSec={tSec}
                         />
                     ) : mainTab !== 'trace' ? (

@@ -387,6 +387,119 @@
       "at": 12.1
     },
     {
+      "type": "message",
+      "from": "crm",
+      "to": "crm",
+      "kind": "info",
+      "text": {
+        "zh": "工作流编排完成：9 个执行步骤、3 个智能体协同。请确认编排，确认后启动执行。",
+        "en": "Workflow orchestration ready: 9 execution steps across 3 agents. Please confirm to start execution."
+      },
+      "orchestration": {
+        "title": {
+          "zh": "工作流编排确认",
+          "en": "Workflow orchestration"
+        },
+        "agents": {
+          "zh": "3 个智能体协同：直播域 / 业务保障 / 无线域",
+          "en": "3 agents in coordination: Live-streaming / Assurance / RAN"
+        },
+        "steps": [
+          {
+            "name": {
+              "zh": "赛事信息解析与保障订阅",
+              "en": "Event parsing and assurance subscription"
+            },
+            "agent": {
+              "zh": "直播域智能体",
+              "en": "Live-streaming Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "保障策略生成",
+              "en": "Assurance strategy generation"
+            },
+            "agent": {
+              "zh": "业务保障智能体",
+              "en": "Assurance Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "功率提升与节能 SLA 冲突协商",
+              "en": "Power boost vs energy-SLA negotiation"
+            },
+            "agent": {
+              "zh": "无线域智能体",
+              "en": "RAN Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "KQI 监控与劣化上报",
+              "en": "KQI monitoring and degradation reporting"
+            },
+            "agent": {
+              "zh": "直播域智能体",
+              "en": "Live-streaming Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "劣化分析与保障决策",
+              "en": "Degradation analysis and assurance decision"
+            },
+            "agent": {
+              "zh": "业务保障智能体",
+              "en": "Assurance Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "关闭全部节能并跨站协同优化",
+              "en": "Deactivate all energy-saving and cross-site optimization"
+            },
+            "agent": {
+              "zh": "无线域智能体",
+              "en": "RAN Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "KQI 复核确认",
+              "en": "KQI recheck and confirmation"
+            },
+            "agent": {
+              "zh": "直播域智能体",
+              "en": "Live-streaming Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "保障结果汇总与恢复策略下发",
+              "en": "Result summary and restore strategy"
+            },
+            "agent": {
+              "zh": "业务保障智能体",
+              "en": "Assurance Agent"
+            }
+          },
+          {
+            "name": {
+              "zh": "初始配置恢复",
+              "en": "Baseline configuration restore"
+            },
+            "agent": {
+              "zh": "无线域智能体",
+              "en": "RAN Agent"
+            }
+          }
+        ]
+      },
+      "at": 13.6
+    },
+    {
       "at": 12.5,
       "type": "step",
       "id": "step1",

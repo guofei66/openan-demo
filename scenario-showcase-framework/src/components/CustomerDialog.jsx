@@ -13,7 +13,7 @@
  *  Everything else (team task progress, PSOP workflow, agent panels) lives in
  *  the 任务处理 tab. */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2, Lightbulb, Zap, AlertTriangle } from 'lucide-react';
+import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote, CheckCircle2, Lightbulb, Zap, AlertTriangle, Workflow, Play } from 'lucide-react';
 
 const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
@@ -227,7 +227,70 @@ const SummaryCard = ({ m, pick, tr }) => {
     );
 };
 
-const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, onSubmitCustomer, authDecisions = {}, authIdx = -1, onDecideAuth, tSec }) => {
+/** Workflow-orchestration confirmation card — the CRM agent presents the
+ *  orchestrated execution plan (steps × agents) and the customer must
+ *  confirm before the workflow starts; confirming resumes execution and
+ *  jumps to the 智能体群组 tab. */
+const OrchestrationCard = ({ m, orchState, onConfirm, pick, tr }) => {
+    const o = m.orchestration || {};
+    const pending = orchState === 'pending';
+    const confirmed = orchState === 'confirmed';
+    return (
+        <div className="flex gap-2.5 ss-fade-up">
+            <div className="w-8 h-8 rounded-lg bg-rose-500 flex items-center justify-center shadow-md shrink-0">
+                <Bot size={16} className="text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                    <span className="text-[12px] font-bold text-zinc-500 dark:text-zinc-400">
+                        {tr('ss.dialog_crm', 'CRM智能体', 'CRM Agent')}
+                    </span>
+                    <span className="text-[11px] font-mono text-zinc-300 dark:text-zinc-600 tabular-nums">{fmtClock(m.at || 0)}</span>
+                </div>
+                <div className={`mt-1 max-w-[94%] rounded-xl border px-3 py-2.5 ${confirmed ? 'border-emerald-500/40 bg-emerald-500/[0.05]' : 'border-sky-500/40 bg-sky-500/[0.05]'}`}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                        <Workflow size={14} className={`${confirmed ? 'text-emerald-500' : 'text-sky-500'} shrink-0`} />
+                        <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-100">{pick(o.title)}</span>
+                        {confirmed && (
+                            <span className="ml-auto inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-emerald-500/50 bg-emerald-500/[0.08] text-emerald-500">
+                                <CheckCircle2 size={11} />
+                                {tr('ss.orch_confirmed', '编排已确认 · 执行已启动', 'Confirmed · executing')}
+                            </span>
+                        )}
+                    </div>
+                    {o.agents && (
+                        <p className="mt-1 text-[11px] font-semibold text-sky-600 dark:text-sky-300">{pick(o.agents)}</p>
+                    )}
+                    <div className="mt-2 space-y-1">
+                        {(o.steps || []).map((s, k) => (
+                            <div key={k} className="flex items-center gap-2 text-[12px] leading-relaxed">
+                                <span className="shrink-0 w-4 h-4 rounded bg-sky-500/15 text-sky-600 dark:text-sky-300 text-[10px] font-bold flex items-center justify-center">{k + 1}</span>
+                                <span className="min-w-0 flex-1 text-zinc-700 dark:text-zinc-200">{pick(s.name)}</span>
+                                <span className="shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700">{pick(s.agent)}</span>
+                            </div>
+                        ))}
+                    </div>
+                    {pending ? (
+                        <div className="mt-2 flex items-center gap-2">
+                            <span className="text-[11px] text-zinc-500 dark:text-zinc-400 animate-pulse">
+                                {tr('ss.orch_wait', '执行已暂停，等待您确认编排…', 'Execution paused — confirm the orchestration…')}
+                            </span>
+                            <button
+                                onClick={onConfirm}
+                                className="ml-auto inline-flex items-center gap-1 px-3.5 py-1.5 rounded-lg text-[12px] font-bold text-white bg-sky-500 hover:bg-sky-600 transition-colors shadow-sm"
+                            >
+                                <Play size={12} />
+                                {tr('ss.orch_confirm', '确认编排，启动执行', 'Confirm & start execution')}
+                            </button>
+                        </div>
+                    ) : null}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, onSubmitCustomer, authDecisions = {}, authIdx = -1, onDecideAuth, orchState = 'none', onConfirmOrchestration, tSec }) => {
     const scrollRef = useRef(null);
     const stickRef = useRef(true);
     const [sel, setSel] = useState(INTENT_OPTIONS[0]);
@@ -288,11 +351,13 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
                 />
                 {customerText && <CustomerBubble text={customerText} tr={tr} />}
                 {items.map(({ m, i }) => (
-                    m.summary
-                        ? <SummaryCard key={i} m={m} pick={pick} tr={tr} />
-                        : m.auth && m.auth.required
-                            ? <AuthChatCard key={i} m={m} decision={authDecisions[i]} pending={authIdx === i} onDecide={(d) => onDecideAuth(i, d)} pick={pick} tr={tr} />
-                            : <CrmBubble key={i} m={m} pick={pick} tr={tr} />
+                    m.orchestration
+                        ? <OrchestrationCard key={i} m={m} orchState={orchState} onConfirm={onConfirmOrchestration} pick={pick} tr={tr} />
+                        : m.summary
+                            ? <SummaryCard key={i} m={m} pick={pick} tr={tr} />
+                            : m.auth && m.auth.required
+                                ? <AuthChatCard key={i} m={m} decision={authDecisions[i]} pending={authIdx === i} onDecide={(d) => onDecideAuth(i, d)} pick={pick} tr={tr} />
+                                : <CrmBubble key={i} m={m} pick={pick} tr={tr} />
                 ))}
             </div>
 
