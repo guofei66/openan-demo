@@ -23,7 +23,7 @@
  * runs at 1×. Theme is pinned to the dark conference look.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Bot, MessagesSquare, Route } from 'lucide-react';
+import { AlertTriangle, Bot, ListChecks, MessagesSquare, Route } from 'lucide-react';
 import { absoluteUrl, detectLang, ensureI18n, pickLang, resolvePluginBase } from './env.js';
 import { I18N_RES } from './i18n.js';
 import { createDriver } from './drivers/index.js';
@@ -34,7 +34,7 @@ import AgentLogView from './components/AgentLogView.jsx';
 import AgentTeamBar from './components/AgentTeamBar.jsx';
 import InteractionFlowPanel from './components/InteractionFlowPanel.jsx';
 import ConversationStream from './components/ConversationStream.jsx';
-import AuthModal from './components/AuthModal.jsx';
+import CustomerDialog from './components/CustomerDialog.jsx';
 import CustomPanelsArea from './components/panels/index.jsx';
 
 const PLUGIN_BASE = resolvePluginBase();
@@ -106,16 +106,20 @@ const ScenarioShowcaseApp = () => {
     const [driverError, setDriverError] = useState('');
     const driverRef = useRef(null);
 
-    // DSH-style big tabs: 对话 (everything existing) | 轨迹 (composite trace
-    // view: agent execution timeline + A2A-T message flow + Agent logs).
-    //   ?tab=trace deep-links straight to the trajectory tab.
+    // DSH-style big tabs: 人机对话 (human↔CRM dialog: requirement + auth) |
+    // 任务处理 (agent-team task progress: PSOP flow + panels + per-agent
+    // streams — the former 对话 presentation) | 轨迹 (composite trace view).
+    // The dialog tab is the DEFAULT for CRM-gated cases; ?tab=trace deep-links
+    // to the trajectory. '' resolves to dialog/tasks once the case loads.
     const [mainTab, setMainTab] = useState(() => {
         try {
-            return new URLSearchParams(window.location.search).get('tab') === 'trace' ? 'trace' : 'chat';
+            return new URLSearchParams(window.location.search).get('tab') === 'trace' ? 'trace' : '';
         } catch (e) {
-            return 'chat';
+            return '';
         }
     });
+    const tabBeforeAuthRef = useRef('tasks');   // tab to restore after an auth decision
+    const authSwitchedRef = useRef(-1);         // message idx already auto-switched for
 
     // Agent-log panel: ONLY the real mockAgent service log (polled via
     // GET /mockagent/logs?session=<current run> while an agent run is live).
@@ -210,7 +214,10 @@ const ScenarioShowcaseApp = () => {
         authPausedRef.current = false;
         customerTextRef.current = '';
         customerReqRef.current = '';
+        setCustomerText('');
         setAwaitingCustomer(false);
+        authSwitchedRef.current = -1;
+        tabBeforeAuthRef.current = 'tasks';
     }, []);
 
     /** Normalized driver-event application (shared by both drivers). Messages
@@ -342,6 +349,11 @@ const ScenarioShowcaseApp = () => {
                 resetPlayback(data);
                 setDriverMode(startup.driver || ''); // new case → its default driver (or ?driver=)
                 setIsPlaying(true);
+                // default tab: 人机对话 for CRM-gated cases, else straight to
+                // 任务处理 (the trace deep link ?tab=trace is kept)
+                setMainTab((prev) => (prev === 'trace'
+                    ? 'trace'
+                    : ((data.agents || []).some((a) => a.id === 'crm') ? 'dialog' : 'tasks')));
             } catch (e) {
                 if (!dead) setLoadError(String((e && e.message) || e));
             }
@@ -364,20 +376,23 @@ const ScenarioShowcaseApp = () => {
 
     // ── Customer input gate (客户输入在输入框输入) ──
     // When the case carries a CRM agent, the replay does NOT start on page
-    // load: the customer's requirement must be typed into the input box in
-    // the CRM panel first. Starting the driver and pausing it right away
-    // would race the mockAgent pull loop (burning bank events), so the
-    // driver is simply not started until the request is submitted.
+    // load: the customer's requirement must be typed into the 人机对话 tab
+    // first. Starting the driver and pausing it right away would race the
+    // mockAgent pull loop (burning bank events), so the driver is simply not
+    // started until the request is submitted.
     const [awaitingCustomer, setAwaitingCustomer] = useState(false);
-    const customerTextRef = useRef('');   // submitted requirement (for applyEvent)
-    const customerReqRef = useRef('');    // generated REQ id for this run
+    const [customerText, setCustomerText] = useState(''); // submitted requirement (for the dialog bubble)
+    const customerTextRef = useRef('');                   // submitted requirement (for applyEvent)
+    const customerReqRef = useRef('');                    // generated REQ id for this run
 
     const submitCustomerInput = useCallback((text) => {
         const t = String(text || '').trim();
         if (!t || !driverRef.current) return;
         customerReqRef.current = `REQ-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
         customerTextRef.current = t;
+        setCustomerText(t);
         setAwaitingCustomer(false);
+        setMainTab('tasks'); // requirement aligned → show the team task progress
         try { driverRef.current.start(); } catch (e) { /* driver handles errors via onError */ }
     }, []);
     useEffect(() => {
@@ -456,9 +471,12 @@ const ScenarioShowcaseApp = () => {
 
     // ── Configuration-change authorization (需求②) ──
     // A message with `auth.required` freezes the driver (pause keeps the
-    // mockAgent session / virtual clock alive) and opens the AuthModal. The
-    // user's decision stamps the message and the driver resumes. If several
-    // auth messages are pending, the modal walks through them one by one.
+    // mockAgent session / virtual clock alive) and CRM relays the request to
+    // the customer IN THE 人机对话 TAB as a chat card with Approve/Reject
+    // buttons. The tab auto-switches to the dialog while a decision is
+    // pending (once per pending message) and restores the previous tab after
+    // the decision. If several auth messages are pending, the dialog walks
+    // through them one by one.
     useEffect(() => {
         const idx = messages.findIndex((m, i) => m.auth && m.auth.required && authDecisions[i] === undefined);
         if (idx >= 0) {
@@ -467,6 +485,13 @@ const ScenarioShowcaseApp = () => {
                 authPausedRef.current = true;
                 try { driverRef.current?.pause?.(); } catch (e) { /* ignore */ }
             }
+            if (authSwitchedRef.current !== idx) {
+                authSwitchedRef.current = idx;
+                if (mainTab !== 'dialog') {
+                    tabBeforeAuthRef.current = mainTab === 'dialog' ? 'tasks' : mainTab;
+                    setMainTab('dialog');
+                }
+            }
         } else {
             setAuthIdx(-1);
             if (authPausedRef.current) {
@@ -474,9 +499,10 @@ const ScenarioShowcaseApp = () => {
                 try { driverRef.current?.resume?.(); } catch (e) { /* ignore */ }
             }
         }
-    }, [messages, authDecisions]);
+    }, [messages, authDecisions, mainTab]);
     const decideAuth = useCallback((idx, decision) => {
         setAuthDecisions((prev) => ({ ...prev, [idx]: decision }));
+        setMainTab(tabBeforeAuthRef.current || 'tasks'); // back to the task progress view
     }, []);
 
     // Case-level layout overrides (case JSON `layout`): `teamBar:false` hides
@@ -485,6 +511,7 @@ const ScenarioShowcaseApp = () => {
     // Unset = classic layout (team bar + single conversation stream), so other
     // cases are unaffected.
     const layout = caseData?.layout || {};
+    const crmPresent = (caseData?.agents || []).some((a) => a.id === 'crm');
 
     const doneCount = useMemo(
         () => Object.values(stepStatus).filter((s) => s === 'done').length,
@@ -590,18 +617,33 @@ const ScenarioShowcaseApp = () => {
 
                 {/* Main column */}
                 <main className="flex-1 min-w-0 flex flex-col gap-3 p-3 min-h-0">
-                    {/* DSH-style big tabs: 对话 (all existing content) | 轨迹 (traces) */}
+                    {/* DSH-style big tabs: 人机对话 | 任务处理 | 轨迹 */}
                     <div className="shrink-0 flex items-center gap-2 flex-wrap">
                         <div className="inline-flex items-center gap-1 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60">
+                            {crmPresent && (
+                                <button
+                                    onClick={() => setMainTab('dialog')}
+                                    className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-md text-[13px] font-semibold transition-colors ${
+                                        mainTab === 'dialog'
+                                            ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
+                                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
+                                >
+                                    <MessagesSquare size={14} />
+                                    {tr('ss.tab_dialog', '人机对话', 'Dialog')}
+                                    {authIdx >= 0 && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title={tr('ss.tab_auth_pending', '待授权确认', 'authorization pending')} />
+                                    )}
+                                </button>
+                            )}
                             <button
-                                onClick={() => setMainTab('chat')}
+                                onClick={() => setMainTab('tasks')}
                                 className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-md text-[13px] font-semibold transition-colors ${
-                                    mainTab === 'chat'
+                                    mainTab === 'tasks'
                                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
                                         : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
                             >
-                                <MessagesSquare size={14} />
-                                {tr('ss.tab_chat', '对话', 'Conversation')}
+                                <ListChecks size={14} />
+                                {tr('ss.tab_tasks', '任务处理', 'Task Progress')}
                             </button>
                             <button
                                 onClick={() => setMainTab('trace')}
@@ -616,7 +658,22 @@ const ScenarioShowcaseApp = () => {
                         </div>
                     </div>
 
-                    {mainTab === 'chat' ? (
+                    {mainTab === 'dialog' && crmPresent ? (
+                        /* 人机对话 — the customer talks to the CRM agent here:
+                           requirement input + authorization confirmations. */
+                        <CustomerDialog
+                            tr={tr}
+                            pick={pick}
+                            messages={messages}
+                            awaitingCustomer={awaitingCustomer}
+                            customerText={customerText}
+                            onSubmitCustomer={submitCustomerInput}
+                            authDecisions={authDecisions}
+                            authIdx={authIdx}
+                            onDecideAuth={decideAuth}
+                            tSec={tSec}
+                        />
+                    ) : mainTab !== 'trace' ? (
                         <>
                             {/* Top: agent team (hidden when the case sets layout.teamBar=false) */}
                             {layout.teamBar !== false && (
@@ -660,7 +717,6 @@ const ScenarioShowcaseApp = () => {
                                         activeAgent={activeAgent}
                                         authDecisions={authDecisions}
                                         awaitingCustomer={awaitingCustomer}
-                                        onSubmitCustomer={submitCustomerInput}
                                     />
                                 </section>
                             </div>
@@ -705,13 +761,10 @@ const ScenarioShowcaseApp = () => {
                             </div>
                         </div>
                     )}
-                    {authIdx >= 0 && messages[authIdx] && (
-                        <AuthModal
-                            m={messages[authIdx]}
-                            onDecide={(d) => decideAuth(authIdx, d)}
-                            tr={tr}
-                            pick={pick}
-                        />
+                    {authIdx >= 0 && messages[authIdx] && authDecisions[authIdx] === undefined && (
+                        <div className="sr-only" aria-live="polite">
+                            {tr('ss.auth_dialog_hint', '配置变更待授权：请在人机对话页签确认', 'Authorization pending: confirm in the Dialog tab')}
+                        </div>
                     )}
                 </main>
             </div>
