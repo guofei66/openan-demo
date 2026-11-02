@@ -1,11 +1,20 @@
 [
   {
+    "waitMs": 600,
+    "event": {
+      "type": "step",
+      "id": "crm-intent",
+      "status": "active"
+    }
+  },
+  {
     "waitMs": 1600,
     "event": {
       "type": "message",
       "from": "crm",
       "to": "crm",
       "kind": "info",
+      "step": "crm-intent",
       "text": {
         "zh": "收到客户需求 REQ-2026-1102，正在解析客户意图并匹配保障方案。",
         "en": "Customer request REQ-2026-1102 received; parsing intent and matching an assurance plan."
@@ -20,12 +29,29 @@
     }
   },
   {
+    "waitMs": 400,
+    "event": {
+      "type": "step",
+      "id": "crm-intent",
+      "status": "done"
+    }
+  },
+  {
+    "waitMs": 600,
+    "event": {
+      "type": "step",
+      "id": "crm-assembly",
+      "status": "active"
+    }
+  },
+  {
     "waitMs": 2600,
     "event": {
       "type": "message",
       "from": "crm",
       "to": "crm",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "意图解析完成：匹配「大型活动体验保障」方案，需要组建跨域保障团队协同执行。",
         "en": "Intent parsed: matched the Large-Event Experience Assurance plan; assembling a cross-domain agent team."
@@ -39,6 +65,7 @@
       "from": "crm",
       "to": "live-streaming",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "团队组建 1/3：接入 直播域智能体，负责赛事直播质量监控与体验保障。",
         "en": "Team assembly 1/3: Live Streaming Agent joined for live QoE monitoring."
@@ -55,6 +82,7 @@
       "from": "crm",
       "to": "assurance",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "团队组建 2/3：接入 业务保障智能体，负责保障策略生成与跨域协同裁定。",
         "en": "Team assembly 2/3: Assurance Agent joined for strategy generation and cross-domain arbitration."
@@ -71,6 +99,7 @@
       "from": "crm",
       "to": "ran",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "团队组建 3/3：接入 无线域智能体，负责无线资源配置与节能协同。",
         "en": "Team assembly 3/3: RAN Agent joined for radio resource configuration and energy coordination."
@@ -87,10 +116,19 @@
       "from": "crm",
       "to": "live-streaming",
       "kind": "request",
+      "step": "crm-assembly",
       "text": {
         "zh": "保障团队组建完成（3/3）。任务移交：按 REQ-2026-1102 执行马拉松赛事全程体验保障，直播域牵头。",
         "en": "Team ready (3/3). Handing over: run full-event experience assurance per REQ-2026-1102, led by the Live Streaming Agent."
       }
+    }
+  },
+  {
+    "waitMs": 400,
+    "event": {
+      "type": "step",
+      "id": "crm-assembly",
+      "status": "done"
     }
   },
   {

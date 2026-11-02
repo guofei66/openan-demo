@@ -65,6 +65,26 @@
   ],
   "steps": [
     {
+      "id": "crm-intent",
+      "name": {
+        "zh": "接收客户意图",
+        "en": "Receive Customer Intent"
+      },
+      "agent": "crm",
+      "skill": "Customer Intent Parsing",
+      "task": "REQ-2026-1102"
+    },
+    {
+      "id": "crm-assembly",
+      "name": {
+        "zh": "组建保障团队",
+        "en": "Assemble Assurance Team"
+      },
+      "agent": "crm",
+      "skill": "Assurance Team Assembly",
+      "task": "REQ-2026-1102"
+    },
+    {
       "id": "step1",
       "name": {
         "zh": "赛事信息解析与保障订阅",
@@ -250,10 +270,17 @@
   ],
   "script": [
     {
+      "type": "step",
+      "id": "crm-intent",
+      "status": "active",
+      "at": 0.2
+    },
+    {
       "type": "message",
       "from": "crm",
       "to": "crm",
       "kind": "info",
+      "step": "crm-intent",
       "text": {
         "zh": "收到客户需求 REQ-2026-1102，正在解析客户意图并匹配保障方案。",
         "en": "Customer request REQ-2026-1102 received; parsing intent and matching an assurance plan."
@@ -265,24 +292,38 @@
           "en": "Customer requests experience assurance for the marathon event (REQ-2026-1102): continuous smooth live streaming and coordinated public-private network operation."
         }
       },
-      "at": 0.2
+      "at": 0.4
+    },
+    {
+      "type": "step",
+      "id": "crm-intent",
+      "status": "done",
+      "at": 2.0
+    },
+    {
+      "type": "step",
+      "id": "crm-assembly",
+      "status": "active",
+      "at": 2.4
     },
     {
       "type": "message",
       "from": "crm",
       "to": "crm",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "意图解析完成：匹配「大型活动体验保障」方案，需要组建跨域保障团队协同执行。",
         "en": "Intent parsed: matched the Large-Event Experience Assurance plan; assembling a cross-domain agent team."
       },
-      "at": 0.9
+      "at": 2.6
     },
     {
       "type": "message",
       "from": "crm",
       "to": "live-streaming",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "团队组建 1/3：接入 直播域智能体，负责赛事直播质量监控与体验保障。",
         "en": "Team assembly 1/3: Live Streaming Agent joined for live QoE monitoring."
@@ -290,13 +331,14 @@
       "assembles": [
         "live-streaming"
       ],
-      "at": 1.6
+      "at": 5.2
     },
     {
       "type": "message",
       "from": "crm",
       "to": "assurance",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "团队组建 2/3：接入 业务保障智能体，负责保障策略生成与跨域协同裁定。",
         "en": "Team assembly 2/3: Assurance Agent joined for strategy generation and cross-domain arbitration."
@@ -304,13 +346,14 @@
       "assembles": [
         "assurance"
       ],
-      "at": 2.3
+      "at": 6.7
     },
     {
       "type": "message",
       "from": "crm",
       "to": "ran",
       "kind": "info",
+      "step": "crm-assembly",
       "text": {
         "zh": "团队组建 3/3：接入 无线域智能体，负责无线资源配置与节能协同。",
         "en": "Team assembly 3/3: RAN Agent joined for radio resource configuration and energy coordination."
@@ -318,27 +361,34 @@
       "assembles": [
         "ran"
       ],
-      "at": 3.0
+      "at": 8.2
     },
     {
       "type": "message",
       "from": "crm",
       "to": "live-streaming",
       "kind": "request",
+      "step": "crm-assembly",
       "text": {
         "zh": "保障团队组建完成（3/3）。任务移交：按 REQ-2026-1102 执行马拉松赛事全程体验保障，直播域牵头。",
         "en": "Team ready (3/3). Handing over: run full-event experience assurance per REQ-2026-1102, led by the Live Streaming Agent."
       },
-      "at": 3.7
+      "at": 9.7
     },
     {
-      "at": 4.0,
+      "type": "step",
+      "id": "crm-assembly",
+      "status": "done",
+      "at": 12.1
+    },
+    {
+      "at": 12.5,
       "type": "step",
       "id": "step1",
       "status": "active"
     },
     {
-      "at": 4.5,
+      "at": 13.0,
       "type": "message",
       "from": "live-streaming",
       "kind": "request",
@@ -384,13 +434,13 @@
       "to": "assurance"
     },
     {
-      "at": 7.0,
+      "at": 15.5,
       "type": "step",
       "id": "step1",
       "status": "done"
     },
     {
-      "at": 7.5,
+      "at": 16.0,
       "type": "message",
       "from": "live-streaming",
       "kind": "response",
@@ -430,13 +480,13 @@
       "to": "assurance"
     },
     {
-      "at": 10.0,
+      "at": 18.5,
       "type": "step",
       "id": "step2",
       "status": "active"
     },
     {
-      "at": 10.5,
+      "at": 19.0,
       "type": "message",
       "from": "assurance",
       "kind": "info",
@@ -506,19 +556,19 @@
       "to": "ran"
     },
     {
-      "at": 17.0,
+      "at": 25.5,
       "type": "step",
       "id": "step2",
       "status": "done"
     },
     {
-      "at": 18.0,
+      "at": 26.5,
       "type": "step",
       "id": "step3",
       "status": "active"
     },
     {
-      "at": 18.5,
+      "at": 27.0,
       "type": "message",
       "from": "assurance",
       "kind": "request",
@@ -554,7 +604,7 @@
       }
     },
     {
-      "at": 24.0,
+      "at": 32.5,
       "type": "message",
       "from": "ran",
       "kind": "alert",
@@ -599,7 +649,7 @@
       "to": "assurance"
     },
     {
-      "at": 24.4,
+      "at": 32.9,
       "type": "message",
       "from": "ran",
       "kind": "a2at",
@@ -657,7 +707,7 @@
       "to": "assurance"
     },
     {
-      "at": 28.0,
+      "at": 36.5,
       "type": "message",
       "from": "assurance",
       "kind": "response",
@@ -669,7 +719,7 @@
       "to": "ran"
     },
     {
-      "at": 28.4,
+      "at": 36.9,
       "type": "message",
       "from": "assurance",
       "kind": "a2at",
@@ -746,7 +796,7 @@
       }
     },
     {
-      "at": 32.0,
+      "at": 40.5,
       "type": "message",
       "from": "ran",
       "kind": "response",
@@ -758,19 +808,19 @@
       "to": "assurance"
     },
     {
-      "at": 34.0,
+      "at": 42.5,
       "type": "step",
       "id": "step3",
       "status": "done"
     },
     {
-      "at": 35.0,
+      "at": 43.5,
       "type": "step",
       "id": "step4",
       "status": "active"
     },
     {
-      "at": 35.0,
+      "at": 43.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -780,7 +830,7 @@
       }
     },
     {
-      "at": 35.0,
+      "at": 43.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -790,7 +840,7 @@
       }
     },
     {
-      "at": 35.0,
+      "at": 43.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -800,7 +850,7 @@
       }
     },
     {
-      "at": 38.0,
+      "at": 46.5,
       "type": "message",
       "from": "live-streaming",
       "kind": "info",
@@ -812,7 +862,7 @@
       "to": "live-streaming"
     },
     {
-      "at": 44.0,
+      "at": 52.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -822,7 +872,7 @@
       }
     },
     {
-      "at": 44.0,
+      "at": 52.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -832,7 +882,7 @@
       }
     },
     {
-      "at": 44.0,
+      "at": 52.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -842,7 +892,7 @@
       }
     },
     {
-      "at": 50.0,
+      "at": 58.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -852,7 +902,7 @@
       }
     },
     {
-      "at": 50.0,
+      "at": 58.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -862,7 +912,7 @@
       }
     },
     {
-      "at": 50.0,
+      "at": 58.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -872,7 +922,7 @@
       }
     },
     {
-      "at": 54.0,
+      "at": 62.5,
       "type": "message",
       "from": "live-streaming",
       "kind": "alert",
@@ -909,7 +959,7 @@
       "to": "assurance"
     },
     {
-      "at": 54.0,
+      "at": 62.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -919,7 +969,7 @@
       }
     },
     {
-      "at": 54.0,
+      "at": 62.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -929,7 +979,7 @@
       }
     },
     {
-      "at": 54.0,
+      "at": 62.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -939,19 +989,19 @@
       }
     },
     {
-      "at": 56.0,
+      "at": 64.5,
       "type": "step",
       "id": "step4",
       "status": "done"
     },
     {
-      "at": 57.0,
+      "at": 65.5,
       "type": "step",
       "id": "step5",
       "status": "active"
     },
     {
-      "at": 57.5,
+      "at": 66.0,
       "type": "message",
       "from": "assurance",
       "kind": "info",
@@ -963,7 +1013,7 @@
       "to": "ran"
     },
     {
-      "at": 66.0,
+      "at": 74.5,
       "type": "message",
       "from": "assurance",
       "kind": "request",
@@ -1027,19 +1077,19 @@
       }
     },
     {
-      "at": 70.0,
+      "at": 78.5,
       "type": "step",
       "id": "step5",
       "status": "done"
     },
     {
-      "at": 71.0,
+      "at": 79.5,
       "type": "step",
       "id": "step6",
       "status": "active"
     },
     {
-      "at": 71.5,
+      "at": 80.0,
       "type": "message",
       "from": "ran",
       "kind": "request",
@@ -1051,7 +1101,7 @@
       "to": "assurance"
     },
     {
-      "at": 80.0,
+      "at": 88.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -1061,7 +1111,7 @@
       }
     },
     {
-      "at": 80.0,
+      "at": 88.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -1071,7 +1121,7 @@
       }
     },
     {
-      "at": 80.0,
+      "at": 88.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -1081,7 +1131,7 @@
       }
     },
     {
-      "at": 84.0,
+      "at": 92.5,
       "type": "message",
       "from": "ran",
       "kind": "response",
@@ -1103,19 +1153,19 @@
       "to": "assurance"
     },
     {
-      "at": 86.0,
+      "at": 94.5,
       "type": "step",
       "id": "step6",
       "status": "done"
     },
     {
-      "at": 87.0,
+      "at": 95.5,
       "type": "step",
       "id": "step7",
       "status": "active"
     },
     {
-      "at": 88.0,
+      "at": 96.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -1125,7 +1175,7 @@
       }
     },
     {
-      "at": 88.0,
+      "at": 96.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -1135,7 +1185,7 @@
       }
     },
     {
-      "at": 88.0,
+      "at": 96.5,
       "type": "panel",
       "panel": "kqi",
       "action": "push",
@@ -1145,7 +1195,7 @@
       }
     },
     {
-      "at": 90.0,
+      "at": 98.5,
       "type": "message",
       "from": "live-streaming",
       "kind": "info",
@@ -1157,19 +1207,19 @@
       "to": "assurance"
     },
     {
-      "at": 92.0,
+      "at": 100.5,
       "type": "step",
       "id": "step7",
       "status": "done"
     },
     {
-      "at": 93.0,
+      "at": 101.5,
       "type": "step",
       "id": "step8",
       "status": "active"
     },
     {
-      "at": 93.5,
+      "at": 102.0,
       "type": "message",
       "from": "assurance",
       "kind": "info",
@@ -1229,7 +1279,7 @@
       "to": "ran"
     },
     {
-      "at": 100.0,
+      "at": 108.5,
       "type": "message",
       "from": "assurance",
       "kind": "response",
@@ -1265,19 +1315,19 @@
       }
     },
     {
-      "at": 102.0,
+      "at": 110.5,
       "type": "step",
       "id": "step8",
       "status": "done"
     },
     {
-      "at": 103.0,
+      "at": 111.5,
       "type": "step",
       "id": "step9",
       "status": "active"
     },
     {
-      "at": 103.5,
+      "at": 112.0,
       "type": "message",
       "from": "ran",
       "kind": "response",
@@ -1289,13 +1339,13 @@
       "to": "assurance"
     },
     {
-      "at": 110.0,
+      "at": 118.5,
       "type": "step",
       "id": "step9",
       "status": "done"
     },
     {
-      "at": 111.0,
+      "at": 119.5,
       "type": "message",
       "from": "assurance",
       "kind": "info",
