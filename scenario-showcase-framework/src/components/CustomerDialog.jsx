@@ -17,7 +17,13 @@ import { Bot, ArrowRight, ShieldAlert, ShieldCheck, Send, MessagesSquare, Quote 
 
 const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
 
-const EXAMPLE_INTENT = '客户要求对马拉松赛事进行体验保障，保证赛事期间直播连续流畅、公专网协同联动。';
+/** Preset customer intents (下拉框选项) — the customer picks one instead of
+ *  typing; the selected text becomes the CRM agent's customer intent. */
+const INTENT_OPTIONS = [
+    '12月10日，XX地区进行马拉松比赛，对比赛进行赛事体验保障，保障赛事期间的用户上网体验',
+    '12月31日，XX市体育中心举办大型跨年演唱会，对活动进行用户体验保障，保障现场直播与分享体验',
+    '1月15日，XX国际会展中心举办大型行业峰会，对展会进行体验保障，保障展商与观众的上网体验',
+];
 
 /** CRM bubble (left, agent avatar) — may carry the customer-intent envelope. */
 const CrmBubble = ({ m, pick, tr }) => (
@@ -162,7 +168,7 @@ const AuthChatCard = ({ m, decision, pending, onDecide, pick, tr }) => {
 const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, onSubmitCustomer, authDecisions = {}, authIdx = -1, onDecideAuth, tSec }) => {
     const scrollRef = useRef(null);
     const stickRef = useRef(true);
-    const [val, setVal] = useState('');
+    const [sel, setSel] = useState(INTENT_OPTIONS[0]);
     useEffect(() => {
         const el = scrollRef.current;
         if (el && stickRef.current) el.scrollTop = el.scrollHeight;
@@ -179,10 +185,8 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
         .filter(({ m }) => (m.from === 'crm' && m.to === 'crm') || (m.auth && m.auth.required)), [messages]);
 
     const send = () => {
-        const t = val.trim();
-        if (!t || !awaitingCustomer) return;
-        setVal('');
-        onSubmitCustomer(t);
+        if (!sel || !awaitingCustomer) return;
+        onSubmitCustomer(sel);
     };
     const statusChip = awaitingCustomer
         ? tr('ss.dialog_st_wait', '等待需求输入', 'awaiting request')
@@ -214,8 +218,8 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
             <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto ss-scroll px-4 py-3 space-y-3">
                 <CrmBubble
                     m={{ at: 0, text: {
-                        zh: '您好，我是 CRM 智能体。请在此描述您的保障需求，我将解析意图并为您组建保障团队。',
-                        en: 'Hello, this is the CRM Agent. Please describe your assurance requirement here — I will parse the intent and assemble an assurance team for you.',
+                        zh: '您好，我是 CRM 智能体。请从下方选择保障需求意图，我将解析意图并为您组建保障团队。',
+                        en: 'Hello, this is the CRM Agent. Please pick your assurance intent below — I will parse it and assemble an assurance team for you.',
                     } }}
                     pick={pick}
                     tr={tr}
@@ -228,19 +232,21 @@ const CustomerDialog = ({ tr, pick, messages, awaitingCustomer, customerText, on
                 ))}
             </div>
 
-            <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 px-3 py-2 flex items-end gap-2">
-                <textarea
-                    value={val}
-                    onChange={(e) => setVal(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) { e.preventDefault(); send(); } }}
-                    rows={2}
+            <div className="shrink-0 border-t border-zinc-100 dark:border-zinc-800 px-3 py-2 flex items-center gap-2">
+                <select
+                    value={sel}
+                    onChange={(e) => setSel(e.target.value)}
                     disabled={!awaitingCustomer}
-                    placeholder={awaitingCustomer ? EXAMPLE_INTENT : tr('ss.dialog_disabled', '需求已对齐 — 切换「任务处理」页签查看团队执行进度', 'Requirement aligned — switch to the Task Progress tab to watch the team work')}
-                    className="flex-1 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-2.5 py-1.5 text-[13px] leading-relaxed text-zinc-800 dark:text-zinc-100 resize-none focus:outline-none focus:ring-2 focus:ring-rose-400/60 disabled:opacity-60"
-                />
+                    className="flex-1 min-w-0 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 px-2.5 py-2 text-[13px] text-zinc-800 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-rose-400/60 disabled:opacity-60"
+                >
+                    {!awaitingCustomer && <option value="">{tr('ss.dialog_aligned', '需求已对齐 — 切换「任务处理」页签查看团队执行进度', 'Requirement aligned — see the Task Progress tab')}</option>}
+                    {INTENT_OPTIONS.map((o) => (
+                        <option key={o} value={o}>{o}</option>
+                    ))}
+                </select>
                 <button
                     onClick={send}
-                    disabled={!awaitingCustomer || !val.trim()}
+                    disabled={!awaitingCustomer || !sel}
                     className="shrink-0 inline-flex items-center gap-1 px-3.5 py-2 rounded-lg text-[13px] font-bold text-white bg-rose-500 hover:bg-rose-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
                 >
                     <Send size={13} />
