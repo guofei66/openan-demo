@@ -45,6 +45,20 @@
     }
   },
   {
+    "waitMs": 0,
+    "event": {
+      "type": "panel",
+      "panel": "route-map",
+      "action": "merge",
+      "data": {
+        "marker": {
+          "x": 8,
+          "y": 44
+        }
+      }
+    }
+  },
+  {
     "waitMs": 2600,
     "event": {
       "type": "message",
@@ -361,6 +375,20 @@
     }
   },
   {
+    "waitMs": 0,
+    "event": {
+      "type": "panel",
+      "panel": "route-map",
+      "action": "merge",
+      "data": {
+        "marker": {
+          "x": 30,
+          "y": 24
+        }
+      }
+    }
+  },
+  {
     "waitMs": 500,
     "event": {
       "type": "message",
@@ -446,6 +474,23 @@
       "type": "step",
       "id": "step3",
       "status": "active"
+    }
+  },
+  {
+    "waitMs": 0,
+    "event": {
+      "type": "panel",
+      "panel": "route-map",
+      "action": "merge",
+      "data": {
+        "marker": {
+          "x": 66,
+          "y": 18
+        },
+        "siteStatus": {
+          "bs3": "warn"
+        }
+      }
     }
   },
   {
@@ -1062,6 +1107,24 @@
     }
   },
   {
+    "waitMs": 0,
+    "event": {
+      "type": "panel",
+      "panel": "route-map",
+      "action": "merge",
+      "data": {
+        "marker": {
+          "x": 76,
+          "y": 26
+        },
+        "siteStatus": {
+          "bs3": "boost",
+          "bs4": "boost"
+        }
+      }
+    }
+  },
+  {
     "waitMs": 500,
     "event": {
       "type": "message",
@@ -1149,6 +1212,23 @@
       "type": "step",
       "id": "step7",
       "status": "active"
+    }
+  },
+  {
+    "waitMs": 0,
+    "event": {
+      "type": "panel",
+      "panel": "route-map",
+      "action": "merge",
+      "data": {
+        "marker": {
+          "x": 86,
+          "y": 34
+        },
+        "siteStatus": {
+          "bs3": "good"
+        }
+      }
     }
   },
   {
@@ -1343,6 +1423,23 @@
       "type": "step",
       "id": "step9",
       "status": "active"
+    }
+  },
+  {
+    "waitMs": 0,
+    "event": {
+      "type": "panel",
+      "panel": "route-map",
+      "action": "merge",
+      "data": {
+        "marker": {
+          "x": 93,
+          "y": 44
+        },
+        "siteStatus": {
+          "bs4": "good"
+        }
+      }
     }
   },
   {

@@ -19,20 +19,20 @@ const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${St
 
 /** Preset customer intents (下拉框选项) — the customer picks one instead of
  *  typing; the selected text becomes the CRM agent's customer intent.
- *  Bilingual {zh,en}: the option label AND the submitted requirement text
- *  follow the UI language. */
+ *  Bilingual {zh,en} with time / place / assurance goals; the option label
+ *  AND the submitted requirement text follow the UI language. */
 const INTENT_OPTIONS = [
     {
-        zh: '12月10日，XX地区进行马拉松比赛，对比赛进行赛事体验保障，保障赛事期间的用户上网体验',
-        en: 'Dec 10 — a marathon is held in XX district; provide event experience assurance to safeguard user internet access during the race',
+        zh: '12月10日 07:00-13:00，XX市滨江大道及城区环线举办全程马拉松比赛（42.195公里，约2万名选手参赛），对比赛进行赛事体验保障。保障目标：参赛选手与沿途观众的移动上网体验，直播回传上行速率≥50Mbps，视频卡顿率<1%，沿途基站零重大故障。',
+        en: 'Dec 10, 07:00-13:00 — a full marathon (42.195 km, ~20,000 runners) is held along XX City riverside avenue and the urban loop; provide event experience assurance. Goals: mobile internet experience for runners and spectators, live uplink ≥50 Mbps, stall ratio <1%, zero critical site outages along the route.',
     },
     {
-        zh: '12月31日，XX市体育中心举办大型跨年演唱会，对活动进行用户体验保障，保障现场直播与分享体验',
-        en: 'Dec 31 — a large New Year countdown concert is held at XX Sports Center; provide event experience assurance for the live broadcast and sharing experience',
+        zh: '12月31日 19:00-次日00:30，XX市体育中心举办大型跨年演唱会（现场约5万名观众），对活动进行用户体验保障。保障目标：现场观众上网与社交分享体验，直播推流与短视频上传成功率≥99%，散场高峰期网络不拥塞、业务零中断。',
+        en: 'Dec 31, 19:00-00:30+1 — a large New Year countdown concert (~50,000 attendees) is held at XX Sports Center; provide event experience assurance. Goals: on-site internet and social sharing experience, live-stream and short-video upload success ≥99%, no congestion or service outage during the exit peak.',
     },
     {
-        zh: '1月15日，XX国际会展中心举办大型行业峰会，对展会进行体验保障，保障展商与观众的上网体验',
-        en: 'Jan 15 — a large industry summit is held at XX International Convention & Exhibition Center; provide event experience assurance for exhibitors and attendees',
+        zh: '1月15日 09:00-18:00，XX国际会展中心举办大型行业峰会（3个展馆、约1.2万名展商与观众），对展会进行体验保障。保障目标：展商与观众上网体验，主论坛 keynote 直播稳定不卡顿，会议签到、电子支付等关键业务零中断。',
+        en: 'Jan 15, 09:00-18:00 — a large industry summit (3 halls, ~12,000 exhibitors and visitors) is held at XX International Convention & Exhibition Center; provide event experience assurance. Goals: attendee internet experience, stable keynote live-streaming, zero interruption for critical services such as check-in and e-payment.',
     },
 ];
 

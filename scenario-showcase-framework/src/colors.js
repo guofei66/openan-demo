@@ -107,11 +107,11 @@ export const GLASS_PANEL = 'border-zinc-200 dark:border-zinc-800 bg-white dark:b
 export const ACTIVE_CARD = 'bg-blue-500/5 border-blue-500 shadow-[inset_4px_0_0_0_#3b82f6]';
 
 export const SITE_STATUS = {
-    good: { fill: '#10b981', label: '正常' },
-    warn: { fill: '#f59e0b', label: '劣化' },
-    bad: { fill: '#f43f5e', label: '严重劣化' },
-    boost: { fill: '#06b6d4', label: '协同增强' },
-    idle: { fill: '#71717a', label: '空闲' },
+    good: { fill: '#10b981', label: { zh: '正常', en: 'Normal' } },
+    warn: { fill: '#f59e0b', label: { zh: '劣化', en: 'Degraded' } },
+    bad: { fill: '#f43f5e', label: { zh: '严重劣化', en: 'Critical' } },
+    boost: { fill: '#06b6d4', label: { zh: '协同增强', en: 'Boosted' } },
+    idle: { fill: '#71717a', label: { zh: '空闲', en: 'Idle' } },
 };
 
 export const KIND_BADGES = {

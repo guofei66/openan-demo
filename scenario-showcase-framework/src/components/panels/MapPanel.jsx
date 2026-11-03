@@ -1,4 +1,4 @@
-﻿// Copyright (c) 2026 Huawei Technologies Co., Ltd.
+// Copyright (c) 2026 Huawei Technologies Co., Ltd.
 // All Rights Reserved.
 //
 // SPDX-License-Identifier: Apache-2.0
@@ -13,7 +13,8 @@ import { SITE_STATUS } from '../../colors.js';
 const W = 100;
 const H = 62;
 
-const MapPanel = ({ config, data, isDark }) => {
+const MapPanel = ({ config, data, isDark, pick }) => {
+    const pickLabel = (v) => (pick ? pick(v) : (typeof v === 'string' ? v : (v?.zh || v?.en || '')));
     const sites = config.sites || [];
     const route = config.route || [];
     const statusOverride = data?.siteStatus || {};
@@ -76,7 +77,7 @@ const MapPanel = ({ config, data, isDark }) => {
                                 fill={labelColor}
                                 style={{ fontFamily: 'Inter, system-ui, sans-serif' }}
                             >
-                                {s.label}
+                                {pickLabel(s.label)}
                             </text>
                         </g>
                     );
@@ -97,7 +98,7 @@ const MapPanel = ({ config, data, isDark }) => {
                     ? Object.entries(SITE_STATUS).map(([k, meta]) => (
                         <span key={k} className="flex items-center gap-1 text-[9px] font-bold text-zinc-400 dark:text-zinc-500">
                             <span className="w-1.5 h-1.5 rounded-full" style={{ background: meta.fill, boxShadow: isDark ? `0 0 6px ${meta.fill}` : 'none' }} />
-                            {meta.label}
+                            {pickLabel(meta.label)}
                         </span>
                     ))
                     : null}
