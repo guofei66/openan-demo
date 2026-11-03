@@ -3,10 +3,9 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-/** Map panel — an abstract network map on an SVG grid: sites (cells / venues)
- *  with live statuses, an optional route polyline and a moving marker.
- *  Dark mode renders a neon "operations console" look: cyan grid, glowing site
- *  dots, marching-dash route. Config-driven; no external map dependency. */
+/** Map panel — a stylized CITY MAP (streets, blocks, river, parks) with live
+ *  assurance overlay: sites (cells / venues) with statuses, the event route
+ *  and a moving marker. Config-driven city layers, no external map tiles. */
 import React from 'react';
 import { SITE_STATUS } from '../../colors.js';
 
@@ -20,11 +19,28 @@ const MapPanel = ({ config, data, isDark, pick }) => {
     const statusOverride = data?.siteStatus || {};
     const marker = data?.marker || null;
     const routeActive = data?.routeActive || false;
+    // city layers: base (blocks), roads (secondary + arteries), river, parks
+    const city = config.city || {};
+    const blocks = city.blocks || [];
+    const roads = city.roads || [];      // secondary streets {points, w?}
+    const arteries = city.arteries || []; // main roads {points, w?}
+    const river = city.river || null;     // {points, label?}
+    const parks = city.parks || [];       // [{points, label?}]
 
     const gridColor = isDark ? 'rgba(56,189,248,0.10)' : '#e4e4e7';
     const labelColor = isDark ? '#94a3b8' : '#52525b';
     const routeColor = isDark ? (routeActive ? '#22d3ee' : 'rgba(56,189,248,0.35)') : (routeActive ? '#06b6d4' : '#d4d4d8');
     const halo = isDark ? '#09090B' : '#ffffff';
+    // map base palette
+    const baseFill = isDark ? 'rgba(30,41,59,0.42)' : 'rgba(244,244,245,0.9)';
+    const blockFill = isDark ? 'rgba(148,163,184,0.07)' : '#ececec';
+    const blockStroke = isDark ? 'rgba(148,163,184,0.10)' : '#e0e0e0';
+    const roadColor = isDark ? 'rgba(148,163,184,0.20)' : '#ffffff';
+    const arteryColor = isDark ? 'rgba(203,213,225,0.34)' : '#fafafa';
+    const riverFill = isDark ? 'rgba(56,189,248,0.22)' : 'rgba(96,165,250,0.35)';
+    const riverCore = isDark ? 'rgba(125,211,252,0.20)' : 'rgba(147,197,253,0.45)';
+    const parkFill = isDark ? 'rgba(34,197,94,0.13)' : 'rgba(134,239,172,0.55)';
+    const parkStroke = isDark ? 'rgba(34,197,94,0.22)' : 'rgba(74,222,128,0.6)';
 
     return (
         <div className="h-full w-full p-2 relative">
@@ -36,7 +52,56 @@ const MapPanel = ({ config, data, isDark, pick }) => {
                     </filter>
                 </defs>
 
-                {/* grid */}
+                {/* city base */}
+                <rect x={0} y={0} width={W} height={H} rx={2.4} fill={baseFill} />
+
+                {/* city blocks (between the streets) */}
+                {blocks.map((b, i) => (
+                    <rect key={`bl${i}`} x={b.x} y={b.y} width={b.w} height={b.h} rx={0.5}
+                        fill={blockFill} stroke={blockStroke} strokeWidth={0.15} />
+                ))}
+
+                {/* parks */}
+                {parks.map((p, i) => (
+                    <g key={`pk${i}`}>
+                        <polygon points={p.points} fill={parkFill} stroke={parkStroke} strokeWidth={0.18} />
+                        {p.label ? (
+                            <text x={p.lx} y={p.ly} textAnchor="middle" fontSize={2.1} fontWeight={600}
+                                fill={isDark ? 'rgba(134,239,172,0.65)' : '#166534'}
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                {pickLabel(p.label)}
+                            </text>
+                        ) : null}
+                    </g>
+                ))}
+
+                {/* river */}
+                {river ? (
+                    <g>
+                        <polyline points={river.points} fill="none" stroke={riverFill} strokeWidth={river.w || 6} strokeLinecap="round" />
+                        <polyline points={river.points} fill="none" stroke={riverCore} strokeWidth={(river.w || 6) * 0.45} strokeLinecap="round" />
+                        {river.label ? (
+                            <text x={river.lx} y={river.ly} textAnchor="middle" fontSize={2.1} fontWeight={600}
+                                fill={isDark ? 'rgba(125,211,252,0.6)' : '#1d4ed8'}
+                                style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                {pickLabel(river.label)}
+                            </text>
+                        ) : null}
+                    </g>
+                ) : null}
+
+                {/* streets */}
+                {roads.map((r, i) => (
+                    <polyline key={`rd${i}`} points={r.points} fill="none" stroke={roadColor}
+                        strokeWidth={r.w || 1.2} strokeLinecap="round" />
+                ))}
+                {/* main arteries */}
+                {arteries.map((r, i) => (
+                    <polyline key={`ar${i}`} points={r.points} fill="none" stroke={arteryColor}
+                        strokeWidth={r.w || 2.2} strokeLinecap="round" />
+                ))}
+
+                {/* faint engineering grid on top of the base */}
                 {Array.from({ length: Math.floor(W / 10) + 1 }, (_, i) => (
                     <line key={`v${i}`} x1={i * 10} y1={0} x2={i * 10} y2={H} stroke={gridColor} strokeWidth={0.25} />
                 ))}
@@ -46,15 +111,30 @@ const MapPanel = ({ config, data, isDark, pick }) => {
 
                 {/* route */}
                 {route.length > 1 && (
-                    <polyline
-                        points={route.map((p) => `${p.x},${p.y}`).join(' ')}
-                        fill="none"
-                        stroke={routeColor}
-                        strokeWidth={0.8}
-                        strokeDasharray="2 1.4"
-                        strokeLinecap="round"
-                        className={isDark ? 'ss-dash-flow' : undefined}
-                    />
+                    <g>
+                        <polyline
+                            points={route.map((p) => `${p.x},${p.y}`).join(' ')}
+                            fill="none"
+                            stroke={routeColor}
+                            strokeOpacity={0.35}
+                            strokeWidth={2.6}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                        <polyline
+                            points={route.map((p) => `${p.x},${p.y}`).join(' ')}
+                            fill="none"
+                            stroke={routeColor}
+                            strokeWidth={0.9}
+                            strokeDasharray="2 1.4"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={isDark ? 'ss-dash-flow' : undefined}
+                        />
+                        {route.map((p, i) => (
+                            <circle key={`wp${i}`} cx={p.x} cy={p.y} r={0.55} fill={routeColor} opacity={0.85} />
+                        ))}
+                    </g>
                 )}
 
                 {/* sites */}
