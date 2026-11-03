@@ -34,7 +34,7 @@ import AgentLogView from './components/AgentLogView.jsx';
 import AgentTeamBar from './components/AgentTeamBar.jsx';
 import InteractionFlowPanel from './components/InteractionFlowPanel.jsx';
 import ConversationStream from './components/ConversationStream.jsx';
-import CustomerDialog from './components/CustomerDialog.jsx';
+import CustomerDialog, { INTENT_OPTIONS } from './components/CustomerDialog.jsx';
 import CustomPanelsArea from './components/panels/index.jsx';
 
 const PLUGIN_BASE = resolvePluginBase();
@@ -440,6 +440,14 @@ const ScenarioShowcaseApp = () => {
     const submitCustomerInput = useCallback((text) => {
         const t = String(text || '').trim();
         if (!t || !driverRef.current) return;
+        // the map panel follows the intent's preset city (location chips)
+        const opt = INTENT_OPTIONS.find((o) => o.zh === t || o.en === t);
+        if (opt && opt.loc) {
+            setPanelData((prev) => ({
+                ...prev,
+                'route-map': { ...(prev['route-map'] || {}), location: opt.loc, loc: opt.loc, siteStatus: {}, marker: null },
+            }));
+        }
         customerReqRef.current = `REQ-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
         customerTextRef.current = t;
         setCustomerText(t);

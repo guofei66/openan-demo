@@ -53,8 +53,10 @@
       "data": {
         "marker": {
           "x": 8,
-          "y": 44
-        }
+          "y": 44,
+          "loc": "shanghai"
+        },
+        "loc": "shanghai"
       }
     }
   },
@@ -383,8 +385,10 @@
       "data": {
         "marker": {
           "x": 30,
-          "y": 24
-        }
+          "y": 24,
+          "loc": "shanghai"
+        },
+        "loc": "shanghai"
       }
     }
   },
@@ -485,11 +489,13 @@
       "data": {
         "marker": {
           "x": 66,
-          "y": 18
+          "y": 18,
+          "loc": "shanghai"
         },
         "siteStatus": {
           "bs3": "warn"
-        }
+        },
+        "loc": "shanghai"
       }
     }
   },
@@ -1115,12 +1121,14 @@
       "data": {
         "marker": {
           "x": 76,
-          "y": 26
+          "y": 26,
+          "loc": "shanghai"
         },
         "siteStatus": {
           "bs3": "boost",
           "bs4": "boost"
-        }
+        },
+        "loc": "shanghai"
       }
     }
   },
@@ -1223,11 +1231,13 @@
       "data": {
         "marker": {
           "x": 86,
-          "y": 34
+          "y": 34,
+          "loc": "shanghai"
         },
         "siteStatus": {
           "bs3": "good"
-        }
+        },
+        "loc": "shanghai"
       }
     }
   },
@@ -1434,11 +1444,13 @@
       "data": {
         "marker": {
           "x": 93,
-          "y": 44
+          "y": 44,
+          "loc": "shanghai"
         },
         "siteStatus": {
           "bs4": "good"
-        }
+        },
+        "loc": "shanghai"
       }
     }
   },

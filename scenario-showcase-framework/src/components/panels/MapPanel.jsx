@@ -5,8 +5,10 @@
 
 /** Map panel — a stylized CITY MAP (streets, blocks, river, parks) with live
  *  assurance overlay: sites (cells / venues) with statuses, the event route
- *  and a moving marker. Config-driven city layers, no external map tiles. */
-import React from 'react';
+ *  and a moving marker. Multiple preset LOCATIONS (city maps) can be declared;
+ *  a chip switcher selects one and customer intents auto-switch it.
+ *  Config-driven city layers, no external map tiles. */
+import React, { useEffect, useState } from 'react';
 import { SITE_STATUS } from '../../colors.js';
 
 const W = 100;
@@ -14,18 +16,30 @@ const H = 62;
 
 const MapPanel = ({ config, data, isDark, pick }) => {
     const pickLabel = (v) => (pick ? pick(v) : (typeof v === 'string' ? v : (v?.zh || v?.en || '')));
-    const sites = config.sites || [];
-    const route = config.route || [];
-    const statusOverride = data?.siteStatus || {};
-    const marker = data?.marker || null;
-    const routeActive = data?.routeActive || false;
-    // city layers: base (blocks), roads (secondary + arteries), river, parks
-    const city = config.city || {};
+    // locations: the base config is the default city; altLocations carry the rest.
+    const baseId = config.locId || 'default';
+    const alt = config.altLocations || [];
+    const locs = [{ id: baseId, label: config.locLabel }, ...alt.map((a) => ({ id: a.id, label: a.label }))];
+    const [sel, setSel] = useState(null);
+    const remoteLoc = data && data.location;
+    useEffect(() => { setSel(null); }, [remoteLoc]); // a new intent resets the chip override
+    const active = sel || remoteLoc || baseId;
+    const altCfg = alt.find((a) => a.id === active);
+    const sites = (altCfg ? altCfg.sites : config.sites) || [];
+    const route = (altCfg ? altCfg.route : config.route) || [];
+    const city = (altCfg ? altCfg.city : config.city) || {};
     const blocks = city.blocks || [];
     const roads = city.roads || [];      // secondary streets {points, w?}
     const arteries = city.arteries || []; // main roads {points, w?}
     const river = city.river || null;     // {points, label?}
     const parks = city.parks || [];       // [{points, label?}]
+    // live data (marker / site status) is tagged with a location — only apply
+    // it when it belongs to the city currently shown.
+    const locMatch = !data || !data.loc || data.loc === active;
+    const statusOverride = locMatch ? (data?.siteStatus || {}) : {};
+    const rawMarker = data?.marker || null;
+    const marker = rawMarker && (!rawMarker.loc || rawMarker.loc === active) ? rawMarker : null;
+    const routeActive = data?.routeActive || false;
 
     const gridColor = isDark ? 'rgba(56,189,248,0.10)' : '#e4e4e7';
     const labelColor = isDark ? '#94a3b8' : '#52525b';
@@ -44,7 +58,26 @@ const MapPanel = ({ config, data, isDark, pick }) => {
 
     return (
         <div className="h-full w-full p-2 relative">
-                        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
+            {/* location switcher (city chips) */}
+            {locs.length > 1 && (
+                <div className="absolute top-2.5 right-3 z-10 flex items-center gap-1">
+                    {locs.map((l) => (
+                        <button
+                            key={l.id}
+                            type="button"
+                            onClick={() => setSel(l.id)}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-colors ${
+                                l.id === active
+                                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
+                                    : 'bg-white/5 text-zinc-400 border-white/10 hover:text-zinc-200'
+                            }`}
+                        >
+                            {pickLabel(l.label)}
+                        </button>
+                    ))}
+                </div>
+            )}
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                 <defs>
                     <filter id="ss-site-glow" x="-120%" y="-120%" width="340%" height="340%">
                         <feGaussianBlur stdDeviation="1.6" result="b" />
