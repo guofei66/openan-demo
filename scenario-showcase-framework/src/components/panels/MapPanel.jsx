@@ -39,7 +39,7 @@ const MAP_CSS = `
 .leaflet-tile.ss-osm-dark { filter: invert(1) hue-rotate(180deg) brightness(0.86) contrast(0.92) saturate(0.55); }
 `;
 
-const MapPanel = ({ config, data, isDark, pick }) => {
+const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const pickLabel = (v) => (pick ? pick(v) : (typeof v === 'string' ? v : (v?.zh || v?.en || '')));
     // locations: the base config is the default city; altLocations carry the rest.
     const baseId = config.locId || 'default';
@@ -170,28 +170,57 @@ const MapPanel = ({ config, data, isDark, pick }) => {
     }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick]);
 
     // moving marker (bank-driven, real coordinates)
+    // moving marker — synced with the unfolding event: when a race progress
+    // (0-100) is provided the marker GLIDES along the real route continuously
+    // (interpolated by distance); otherwise fall back to bank markers.
     useEffect(() => {
         const map = mapRef.current;
         const group = markerLayerRef.current;
         if (!map || !group || !geo) return;
-        const ok = rawMarker && rawMarker.lat != null && rawMarker.lng != null
-            && (!rawMarker.loc || rawMarker.loc === active);
-        if (!ok) {
+        let pos = null;
+        const routeOk = geo.route && geo.route.length > 1 && progress != null;
+        if (routeOk) {
+            // distance-interpolate along the route polyline
+            const segs = [];
+            let total = 0;
+            for (let i = 1; i < geo.route.length; i += 1) {
+                const a = geo.route[i - 1];
+                const b = geo.route[i];
+                const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+                segs.push({ a, b, d });
+                total += d;
+            }
+            let target = (Math.min(100, Math.max(0, progress)) / 100) * total;
+            for (let i = 0; i < segs.length; i += 1) {
+                const { a, b, d } = segs[i];
+                if (target <= d || i === segs.length - 1) {
+                    const f = d > 0 ? Math.min(1, Math.max(0, target / d)) : 0;
+                    pos = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+                    break;
+                }
+                target -= d;
+            }
+        } else {
+            const ok = rawMarker && rawMarker.lat != null && rawMarker.lng != null
+                && (!rawMarker.loc || rawMarker.loc === active);
+            if (ok) pos = [rawMarker.lat, rawMarker.lng];
+        }
+        if (!pos) {
             if (markerRef.current) { try { group.removeLayer(markerRef.current); } catch (e) { /* ignore */ } markerRef.current = null; }
             return;
         }
         try {
             if (!markerRef.current) {
-                markerRef.current = L.marker([rawMarker.lat, rawMarker.lng], {
+                markerRef.current = L.marker(pos, {
                     icon: L.divIcon({ className: '', html: '<div class="ss-map-marker"><i></i></div>', iconSize: [14, 14], iconAnchor: [7, 7] }),
                     zIndexOffset: 500,
                 });
                 group.addLayer(markerRef.current);
             } else {
-                markerRef.current.setLatLng([rawMarker.lat, rawMarker.lng]);
+                markerRef.current.setLatLng(pos);
             }
         } catch (e) { /* ignore */ }
-    }, [rawMarker, geo, active]);
+    }, [rawMarker, geo, active, progress]);
 
     const hasMap = !!geo;
     // ── SVG stylized fallback base (offline-safe) ──

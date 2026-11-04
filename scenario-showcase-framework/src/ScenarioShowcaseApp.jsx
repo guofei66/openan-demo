@@ -608,6 +608,23 @@ const ScenarioShowcaseApp = () => {
     const clockLabel = `${String(Math.floor(tSec / 60)).padStart(2, '0')}:${String(Math.floor(tSec % 60)).padStart(2, '0')}`;
     const isMockAgent = effDriver === 'mockAgent';
     const completed = driverDone || (!isMockAgent && endAtSec > 0 && tSec > endAtSec + 1.2);
+    // race progress for the route map: continuous "event unfolding" — steps
+    // completed + the fraction of the current step elapsed (steps run only
+    // during execution, so the marker waits at the start during the dialog
+    // and freezes while an authorization pause holds the clock).
+    const lastStepTs = useMemo(() => {
+        let mx = 0;
+        Object.values(stepTimes || {}).forEach((e) => {
+            const t = Math.max(e?.done || 0, e?.running || 0);
+            if (t > mx) mx = t;
+        });
+        return mx;
+    }, [stepTimes]);
+    const inStepFraction = (doneCount > 0 && doneCount < totalSteps && isPlaying && lastStepTs > 0)
+        ? Math.min(1, Math.max(0, (tSec - lastStepTs) / 8000)) : 0;
+    const raceProgress = (isMockAgent && totalSteps)
+        ? Math.min(100, Math.round(((doneCount + (driverDone ? 0 : inStepFraction)) / totalSteps) * 100))
+        : null;
 
     if (loadError) {
         return (
@@ -793,6 +810,7 @@ const ScenarioShowcaseApp = () => {
                                         panels={caseData?.panels || []}
                                         data={panelData}
                                         isDark={isDark}
+                                        progress={raceProgress}
                                     />
                                 </section>
                                 <section className="flex-1 min-w-0 min-h-0">

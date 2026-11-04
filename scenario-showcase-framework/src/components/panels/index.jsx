@@ -22,7 +22,7 @@ const FallbackPanel = ({ type }) => (
     </div>
 );
 
-const CustomPanelsArea = ({ tr, pick, panels, data, isDark }) => {
+const CustomPanelsArea = ({ tr, pick, panels, data, isDark, progress }) => {
     const [tab, setTab] = useState(0);
     useEffect(() => { setTab(0); }, [panels]);
 
@@ -53,7 +53,7 @@ const CustomPanelsArea = ({ tr, pick, panels, data, isDark }) => {
                 })}
             </div>
             <div className="flex-1 min-h-0">
-                <ActiveComp config={active.config || {}} data={activeData} isDark={isDark} pick={pick} />
+                <ActiveComp config={active.config || {}} data={activeData} isDark={isDark} pick={pick} progress={progress} />
             </div>
         </div>
     );
