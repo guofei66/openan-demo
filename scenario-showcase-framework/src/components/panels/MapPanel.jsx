@@ -29,6 +29,8 @@ const MAP_CSS = `
 .leaflet-control-attribution { background: rgba(2,6,23,0.6) !important; color: #64748b !important;
   font-size: 8px !important; }
 .leaflet-control-attribution a { color: #94a3b8 !important; }
+/* OSM standard tiles are bright — darken them to match the dark theme */
+.leaflet-tile.ss-osm-dark { filter: invert(1) hue-rotate(180deg) brightness(0.86) contrast(0.92) saturate(0.55); }
 `;
 
 const MapPanel = ({ config, data, isDark, pick }) => {
@@ -58,25 +60,57 @@ const MapPanel = ({ config, data, isDark, pick }) => {
     const mapRef = useRef(null);
     const layerRef = useRef(null);
     const markerRef = useRef(null);
+    const [tilesFailed, setTilesFailed] = useState(false);
 
     useEffect(() => {
         if (!geo || !mapElRef.current || mapRef.current) return undefined;
+        // key-free tile sources in failover order: Esri dark gray canvas first
+        // (dark, anonymous access), then standard OSM (bright, CSS-darkened).
+        // CARTO's old free dark tiles now answer "Api Required", so they are gone.
+        const SOURCES = [
+            {
+                url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+                attribution: 'Tiles &copy; Esri — Esri, DeLorme, NAVTEQ', maxZoom: 16, className: '',
+            },
+            {
+                url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors', maxZoom: 19, className: 'ss-osm-dark',
+            },
+        ];
+        let map = null;
+        let layer = null;
+        let srcIdx = 0;
+        let errCount = 0;
+        const attach = (i) => {
+            if (!map) return;
+            if (layer) { try { map.removeLayer(layer); } catch (e) { /* ignore */ } }
+            const s = SOURCES[i];
+            layer = L.tileLayer(s.url, {
+                maxZoom: s.maxZoom,
+                attribution: s.attribution,
+                className: s.className,
+                crossOrigin: true,
+            });
+            errCount = 0;
+            layer.on('tileerror', () => {
+                errCount += 1;
+                if (errCount >= 4 && srcIdx < SOURCES.length - 1) { srcIdx += 1; attach(srcIdx); }
+                else if (errCount >= 4) setTilesFailed(true); // all sources down → SVG fallback
+            });
+            layer.addTo(map);
+        };
         try {
-            const map = L.map(mapElRef.current, {
+            map = L.map(mapElRef.current, {
                 zoomControl: false,
                 attributionControl: true,
                 center: geo.center,
                 zoom: geo.zoom || 13,
                 scrollWheelZoom: false,
             });
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19,
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-            }).addTo(map);
             mapRef.current = map;
             layerRef.current = L.layerGroup().addTo(map);
-        } catch (e) { /* tile/network failure → SVG fallback stays visible */ }
+            attach(srcIdx);
+        } catch (e) { /* map init failure → SVG fallback stays visible */ }
         return () => {
             if (mapRef.current) { try { mapRef.current.remove(); } catch (e) { /* ignore */ } }
             mapRef.current = null;
@@ -183,7 +217,7 @@ const MapPanel = ({ config, data, isDark, pick }) => {
             )}
 
             {/* SVG stylized base — visible until (and if) the real map is ready */}
-            <div className="absolute inset-2 rounded-xl overflow-hidden" style={{ visibility: hasMap ? 'hidden' : 'visible' }}>
+            <div className="absolute inset-2 rounded-xl overflow-hidden" style={{ visibility: hasMap && !tilesFailed ? 'hidden' : 'visible' }}>
                 <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-full" preserveAspectRatio="xMidYMid meet">
                     <defs>
                         <filter id="ss-site-glow" x="-120%" y="-120%" width="340%" height="340%">
@@ -287,8 +321,8 @@ const MapPanel = ({ config, data, isDark, pick }) => {
                 </svg>
             </div>
 
-            {/* real map (Leaflet + OSM/CARTO dark tiles, no API key) */}
-            {hasMap && <div ref={mapElRef} className="absolute inset-2 rounded-xl overflow-hidden z-[5]" />}
+            {/* real map (Leaflet + key-free tiles: Esri dark gray, OSM fallback) */}
+            {hasMap && <div ref={mapElRef} className="absolute inset-2 rounded-xl overflow-hidden z-[5]" style={{ visibility: tilesFailed ? 'hidden' : 'visible' }} />}
         </div>
     );
 };
