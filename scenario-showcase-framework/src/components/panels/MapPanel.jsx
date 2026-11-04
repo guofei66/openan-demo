@@ -68,8 +68,9 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const liveConfigs = locMatch ? (data?.configs || null) : null;
     const fmtPct = (v) => `${Number(v).toFixed(1)}%`;
     const siteTip = (s, now) => {
-        const m = (liveMetrics || {})[s.id] || s.metrics || null;
-        const cfg = (liveConfigs || {})[s.id] || s.config || null;
+        const reached = reachedIds.has(s.id);
+        const m = reached ? ((liveMetrics || {})[s.id] || s.metrics || null) : null;
+        const cfg = reached ? ((liveConfigs || {})[s.id] || s.config || null) : null;
         const kpi = m
             ? `<div class="ss-site-kpi">${pick({ zh: `↑速率 <b>${Number(m.up).toFixed(0)}Mbps</b> · 卡顿 <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>`, en: `Up <b>${Number(m.up).toFixed(0)}Mbps</b> · Stall <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>` })}</div>`
             : '';
@@ -114,6 +115,14 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
         let cur = siteDists[0].id;
         siteDists.forEach(({ id, at }) => { if (at <= markerDist + 1e-6) cur = id; });
         return cur;
+    }, [markerDist, siteDists]);
+    // sites the race has already reached (passed or current) — only these
+    // reveal their KPI/dispatch info; future sites stay name-only.
+    const reachedIds = React.useMemo(() => {
+        const set = new Set();
+        if (markerDist == null) return set;
+        siteDists.forEach(({ id, at }) => { if (at <= markerDist + 1e-6) set.add(id); });
+        return set;
     }, [markerDist, siteDists]);
 
     // ── Leaflet map (real tiles) ──
@@ -217,7 +226,7 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                 group.addLayer(dot);
             });
         } catch (e) { /* keep the base map even if an overlay fails */ }
-    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId]);
+    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId, reachedIds]);
 
     // moving marker (bank-driven, real coordinates)
     // moving marker — synced with the unfolding event: when a race progress
