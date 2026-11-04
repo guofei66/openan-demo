@@ -33,7 +33,7 @@ const InteractionFlowPanel = ({ tr, pick, steps, agents, stepStatus, progressPct
         </button>
     );
     return (
-        <div className="flex-1 min-h-0 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 dark:ring-1 dark:ring-white/[0.04] flex flex-col overflow-hidden">
+        <div className="h-[30%] min-h-[150px] shrink-0 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 dark:ring-1 dark:ring-white/[0.04] flex flex-col overflow-hidden">
             <div className="shrink-0 px-4 pt-2.5 pb-2 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800">
                 <ListChecks size={15} className="text-zinc-400" />
                 <span className="text-[15px] font-semibold text-zinc-700 dark:text-zinc-200">
