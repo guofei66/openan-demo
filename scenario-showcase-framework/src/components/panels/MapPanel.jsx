@@ -28,6 +28,9 @@ const MAP_CSS = `
 .ss-site-tip .ss-site-kpi b { color: #67e8f9; font-weight: 700; }
 .ss-site-tip .ss-site-cfg { font-size: 9px; font-weight: 700; color: #34d399; margin-top: 1px; white-space: nowrap; }
 .ss-site-tip .ss-site-cfg::before { content: '⚡ '; }
+.ss-site-tip .ss-site-name.ss-now { color: #67e8f9; }
+.ss-site-badge { display: inline-block; margin-left: 4px; padding: 0 3px; border-radius: 3px;
+  background: rgba(34,211,238,0.25); color: #67e8f9; font-size: 8px; font-weight: 700; vertical-align: 1px; }
 .ss-map-marker { display: flex; align-items: center; justify-content: center; }
 .ss-map-marker i { width: 12px; height: 12px; border-radius: 9999px; background: #3b82f6; border: 2px solid #bfdbfe;
   box-shadow: 0 0 10px 2px rgba(59,130,246,0.75); display: block; }
@@ -64,15 +67,54 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const liveMetrics = locMatch ? (data?.metrics || null) : null;
     const liveConfigs = locMatch ? (data?.configs || null) : null;
     const fmtPct = (v) => `${Number(v).toFixed(1)}%`;
-    const siteTip = (s) => {
+    const siteTip = (s, now) => {
         const m = (liveMetrics || {})[s.id] || s.metrics || null;
         const cfg = (liveConfigs || {})[s.id] || s.config || null;
         const kpi = m
             ? `<div class="ss-site-kpi">${pick({ zh: `↑速率 <b>${Number(m.up).toFixed(0)}Mbps</b> · 卡顿 <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>`, en: `Up <b>${Number(m.up).toFixed(0)}Mbps</b> · Stall <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>` })}</div>`
             : '';
         const cfgLine = cfg ? `<div class="ss-site-cfg">${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}</div>` : '';
-        return `<div class="ss-site-tip"><div class="ss-site-name">${pickLabel(s.label)}</div>${kpi}${cfgLine}</div>`;
+        const nameCls = now ? 'ss-site-name ss-now' : 'ss-site-name';
+        const badge = now ? `<span class="ss-site-badge">${pick({ zh: '当前', en: 'NOW' })}</span>` : '';
+        return `<div class="ss-site-tip"><div class="${nameCls}">${pickLabel(s.label)}${badge}</div>${kpi}${cfgLine}</div>`;
     };
+
+    // ── "where the race is" — project sites onto the route so the checkpoint
+    // the marker is currently passing can light up (走到哪、哪亮).
+    const routePts = (geo && geo.route) || [];
+    const routeTotal = React.useMemo(() => {
+        let total = 0;
+        for (let i = 1; i < routePts.length; i += 1) total += Math.hypot(routePts[i][0] - routePts[i - 1][0], routePts[i][1] - routePts[i - 1][1]);
+        return total;
+    }, [geo]);
+    const siteDists = React.useMemo(() => {
+        if (!geo || !geo.route || geo.route.length < 2 || !geo.sites) return [];
+        const proj = (pt) => {
+            let acc = 0;
+            let best = { at: 0, d: Infinity };
+            for (let i = 1; i < geo.route.length; i += 1) {
+                const a = geo.route[i - 1];
+                const b = geo.route[i];
+                const abx = b[0] - a[0]; const aby = b[1] - a[1];
+                const len2 = abx * abx + aby * aby || 1e-9;
+                const t = Math.min(1, Math.max(0, ((pt[0] - a[0]) * abx + (pt[1] - a[1]) * aby) / len2));
+                const px = a[0] + abx * t; const py = a[1] + aby * t;
+                const dist = Math.hypot(pt[0] - px, pt[1] - py);
+                if (dist < best.d) best = { at: acc + Math.hypot(abx, aby) * t, d: dist };
+                acc += Math.hypot(abx, aby);
+            }
+            return best.at;
+        };
+        return geo.sites.map((s) => ({ id: s.id, at: proj(s.position) }));
+    }, [geo]);
+    const markerDist = (routePts.length > 1 && progress != null)
+        ? (Math.min(100, Math.max(0, progress)) / 100) * routeTotal : null;
+    const currentId = React.useMemo(() => {
+        if (markerDist == null || !siteDists.length) return null;
+        let cur = siteDists[0].id;
+        siteDists.forEach(({ id, at }) => { if (at <= markerDist + 1e-6) cur = id; });
+        return cur;
+    }, [markerDist, siteDists]);
 
     // ── Leaflet map (real tiles) ──
     const mapElRef = useRef(null);
@@ -160,14 +202,22 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             (geo.sites || []).forEach((s) => {
                 const st = (statusOverride || {})[s.id] || s.status || 'idle';
                 const meta = SITE_STATUS[st] || SITE_STATUS.idle;
+                const now = s.id === currentId;
+                if (now) {
+                    group.addLayer(L.circleMarker(s.position, {
+                        radius: 11, color: '#22d3ee', weight: 1.2, fillColor: '#22d3ee', fillOpacity: 0.14,
+                        className: isDark ? 'ss-pulse-dot' : undefined,
+                    }));
+                }
                 const dot = L.circleMarker(s.position, {
-                    radius: 5.5, color: '#ffffff', weight: 1.2, fillColor: meta.fill, fillOpacity: 0.95,
+                    radius: now ? 7.5 : 5.5, color: now ? '#67e8f9' : '#ffffff',
+                    weight: now ? 1.8 : 1.2, fillColor: meta.fill, fillOpacity: 0.95,
                 });
-                dot.bindTooltip(siteTip(s), { permanent: true, direction: 'top', offset: [0, -6], className: 'ss-map-tip', interactive: false });
+                dot.bindTooltip(siteTip(s, now), { permanent: true, direction: 'top', offset: [0, -6], className: 'ss-map-tip', interactive: false });
                 group.addLayer(dot);
             });
         } catch (e) { /* keep the base map even if an overlay fails */ }
-    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick]);
+    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId]);
 
     // moving marker (bank-driven, real coordinates)
     // moving marker — synced with the unfolding event: when a race progress
@@ -346,17 +396,48 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                         </g>
                     )}
                     {sites.map((s) => {
-                        const st = statusOverride[s.id] || s.status || 'idle';
+                        const st = statusOverride ? ((statusOverride || {})[s.id] || s.status || 'idle') : (s.status || 'idle');
                         const meta = SITE_STATUS[st] || SITE_STATUS.idle;
+                        // current checkpoint highlight (projection onto the SVG route)
+                        let nowSvg = false;
+                        if (route.length > 1 && progress != null) {
+                            const segs = [];
+                            let total = 0;
+                            for (let i = 1; i < route.length; i += 1) {
+                                const d = Math.hypot(route[i].x - route[i - 1].x, route[i].y - route[i - 1].y);
+                                segs.push(d); total += d;
+                            }
+                            const target = (Math.min(100, Math.max(0, progress)) / 100) * total;
+                            const ats = sites.map((s2) => {
+                                let acc = 0; let best = { id: s2.id, at: 0, d: Infinity };
+                                for (let i = 1; i < route.length; i += 1) {
+                                    const a = route[i - 1]; const b = route[i];
+                                    const abx = b.x - a.x; const aby = b.y - a.y;
+                                    const len2 = abx * abx + aby * aby || 1e-9;
+                                    const t = Math.min(1, Math.max(0, ((s2.x - a.x) * abx + (s2.y - a.y) * aby) / len2));
+                                    const dd = Math.hypot(s2.x - (a.x + abx * t), s2.y - (a.y + aby * t));
+                                    if (dd < best.d) best = { id: s2.id, at: acc + Math.hypot(abx, aby) * t, d: dd };
+                                    acc += Math.hypot(abx, aby);
+                                }
+                                return best;
+                            });
+                            let cur = ats.length ? ats[0].id : null;
+                            ats.forEach((a) => { if (a.at <= target + 0.01) cur = a.id; });
+                            nowSvg = s.id === cur;
+                        }
                         return (
                             <g key={s.id} className="ss-fade-up">
+                                {nowSvg && (
+                                    <circle cx={s.x} cy={s.y} r={6.5} fill="#22d3ee" opacity={0.16} className="ss-pulse-dot" />
+                                )}
                                 {(st === 'bad' || (isDark && st !== 'idle')) && (
                                     <circle cx={s.x} cy={s.y} r={4.6} fill={meta.fill} opacity={isDark ? 0.14 : 0.18}
                                         className={st === 'bad' ? 'ss-pulse-dot' : undefined} />
                                 )}
-                                <circle cx={s.x} cy={s.y} r={2.1} fill={meta.fill} stroke={halo} strokeWidth={0.5} filter={isDark ? 'url(#ss-site-glow)' : undefined} />
+                                <circle cx={s.x} cy={s.y} r={nowSvg ? 2.9 : 2.1} fill={meta.fill} stroke={nowSvg ? '#67e8f9' : halo}
+                                    strokeWidth={nowSvg ? 0.8 : 0.5} filter={isDark ? 'url(#ss-site-glow)' : undefined} />
                                 <text x={s.x} y={s.y - 3.4} textAnchor="middle" fontSize={2.6} fontWeight={700}
-                                    fill={labelColor} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+                                    fill={nowSvg ? '#67e8f9' : labelColor} style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
                                     {pickLabel(s.label)}
                                 </text>
                             </g>
