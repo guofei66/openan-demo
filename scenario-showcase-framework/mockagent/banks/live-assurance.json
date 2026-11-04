@@ -56,7 +56,8 @@
           "lng": 121.4903,
           "loc": "shanghai"
         },
-        "loc": "shanghai"
+        "loc": "shanghai",
+        "metrics": {}
       }
     }
   },
@@ -388,7 +389,19 @@
           "lng": 121.488,
           "loc": "shanghai"
         },
-        "loc": "shanghai"
+        "loc": "shanghai",
+        "metrics": {
+          "bs3": {
+            "up": 49,
+            "stall": 0.9,
+            "kqi": 92
+          },
+          "bs4": {
+            "up": 48,
+            "stall": 0.9,
+            "kqi": 91
+          }
+        }
       }
     }
   },
@@ -495,7 +508,19 @@
         "siteStatus": {
           "bs3": "warn"
         },
-        "loc": "shanghai"
+        "loc": "shanghai",
+        "metrics": {
+          "bs3": {
+            "up": 18,
+            "stall": 4.2,
+            "kqi": 62
+          },
+          "bs4": {
+            "up": 46,
+            "stall": 1.4,
+            "kqi": 88
+          }
+        }
       }
     }
   },
@@ -1128,7 +1153,29 @@
           "bs3": "boost",
           "bs4": "boost"
         },
-        "loc": "shanghai"
+        "loc": "shanghai",
+        "metrics": {
+          "bs3": {
+            "up": 55,
+            "stall": 0.9,
+            "kqi": 94
+          },
+          "bs4": {
+            "up": 58,
+            "stall": 0.7,
+            "kqi": 95
+          }
+        },
+        "configs": {
+          "bs3": {
+            "zh": "关闭节能 · 功率+3dB",
+            "en": "sleep-off · +3dB power"
+          },
+          "bs4": {
+            "zh": "载波聚合开启",
+            "en": "CA enabled"
+          }
+        }
       }
     }
   },
@@ -1237,7 +1284,19 @@
         "siteStatus": {
           "bs3": "good"
         },
-        "loc": "shanghai"
+        "loc": "shanghai",
+        "metrics": {
+          "bs3": {
+            "up": 57,
+            "stall": 0.5,
+            "kqi": 96
+          },
+          "bs4": {
+            "up": 56,
+            "stall": 0.6,
+            "kqi": 95
+          }
+        }
       }
     }
   },
@@ -1450,7 +1509,19 @@
         "siteStatus": {
           "bs4": "good"
         },
-        "loc": "shanghai"
+        "loc": "shanghai",
+        "metrics": {
+          "bs3": {
+            "up": 58,
+            "stall": 0.4,
+            "kqi": 97
+          },
+          "bs4": {
+            "up": 57,
+            "stall": 0.5,
+            "kqi": 96
+          }
+        }
       }
     }
   },

@@ -22,6 +22,12 @@ const MAP_CSS = `
   color: #e2e8f0 !important; border-radius: 6px !important; font: 600 10px/1.3 Inter, system-ui, sans-serif;
   padding: 2px 6px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.45) !important; }
 .ss-map-tip::before { border-top-color: rgba(56,189,248,0.35) !important; }
+.ss-site-tip { min-width: 118px; }
+.ss-site-tip .ss-site-name { font-size: 10px; font-weight: 700; color: #e2e8f0; white-space: nowrap; }
+.ss-site-tip .ss-site-kpi { font-size: 9px; color: #94a3b8; margin-top: 1px; white-space: nowrap; }
+.ss-site-tip .ss-site-kpi b { color: #67e8f9; font-weight: 700; }
+.ss-site-tip .ss-site-cfg { font-size: 9px; font-weight: 700; color: #34d399; margin-top: 1px; white-space: nowrap; }
+.ss-site-tip .ss-site-cfg::before { content: '⚡ '; }
 .ss-map-marker { display: flex; align-items: center; justify-content: center; }
 .ss-map-marker i { width: 12px; height: 12px; border-radius: 9999px; background: #3b82f6; border: 2px solid #bfdbfe;
   box-shadow: 0 0 10px 2px rgba(59,130,246,0.75); display: block; }
@@ -53,12 +59,26 @@ const MapPanel = ({ config, data, isDark, pick }) => {
     // live data (marker / site status) is tagged with a location — only apply
     // it when it belongs to the city currently shown.
     const locMatch = !data || !data.loc || data.loc === active;
-    const statusOverride = locMatch ? (data?.siteStatus || {}) : {};
+    const statusOverride = locMatch ? (data?.siteStatus || null) : null;
+    // per-site live metrics + dispatched configs (bank-driven, loc-gated)
+    const liveMetrics = locMatch ? (data?.metrics || null) : null;
+    const liveConfigs = locMatch ? (data?.configs || null) : null;
+    const fmtPct = (v) => `${Number(v).toFixed(1)}%`;
+    const siteTip = (s) => {
+        const m = (liveMetrics || {})[s.id] || s.metrics || null;
+        const cfg = (liveConfigs || {})[s.id] || s.config || null;
+        const kpi = m
+            ? `<div class="ss-site-kpi">${pick({ zh: `↑速率 <b>${Number(m.up).toFixed(0)}Mbps</b> · 卡顿 <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>`, en: `Up <b>${Number(m.up).toFixed(0)}Mbps</b> · Stall <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>` })}</div>`
+            : '';
+        const cfgLine = cfg ? `<div class="ss-site-cfg">${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}</div>` : '';
+        return `<div class="ss-site-tip"><div class="ss-site-name">${pickLabel(s.label)}</div>${kpi}${cfgLine}</div>`;
+    };
 
     // ── Leaflet map (real tiles) ──
     const mapElRef = useRef(null);
     const mapRef = useRef(null);
     const layerRef = useRef(null);
+    const markerLayerRef = useRef(null);
     const markerRef = useRef(null);
     const [tilesFailed, setTilesFailed] = useState(false);
 
@@ -109,12 +129,14 @@ const MapPanel = ({ config, data, isDark, pick }) => {
             });
             mapRef.current = map;
             layerRef.current = L.layerGroup().addTo(map);
+            markerLayerRef.current = L.layerGroup().addTo(map);
             attach(srcIdx);
         } catch (e) { /* map init failure → SVG fallback stays visible */ }
         return () => {
             if (mapRef.current) { try { mapRef.current.remove(); } catch (e) { /* ignore */ } }
             mapRef.current = null;
             layerRef.current = null;
+            markerLayerRef.current = null;
             markerRef.current = null;
         };
     }, [geo]);
@@ -125,7 +147,6 @@ const MapPanel = ({ config, data, isDark, pick }) => {
         const group = layerRef.current;
         if (!map || !group || !geo) return;
         group.clearLayers();
-        markerRef.current = null;
         try {
             if (geo.route && geo.route.length > 1) {
                 const line = L.polyline(geo.route, { color: '#22d3ee', weight: 10, opacity: 0.22 });
@@ -137,21 +158,21 @@ const MapPanel = ({ config, data, isDark, pick }) => {
                 map.fitBounds(line.getBounds(), { padding: [14, 14] });
             }
             (geo.sites || []).forEach((s) => {
-                const st = statusOverride[s.id] || s.status || 'idle';
+                const st = (statusOverride || {})[s.id] || s.status || 'idle';
                 const meta = SITE_STATUS[st] || SITE_STATUS.idle;
                 const dot = L.circleMarker(s.position, {
                     radius: 5.5, color: '#ffffff', weight: 1.2, fillColor: meta.fill, fillOpacity: 0.95,
                 });
-                dot.bindTooltip(pickLabel(s.label), { permanent: true, direction: 'top', offset: [0, -6], className: 'ss-map-tip' });
+                dot.bindTooltip(siteTip(s), { permanent: true, direction: 'top', offset: [0, -6], className: 'ss-map-tip', interactive: false });
                 group.addLayer(dot);
             });
         } catch (e) { /* keep the base map even if an overlay fails */ }
-    }, [geo, statusOverride, routeActive, pick]);
+    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick]);
 
     // moving marker (bank-driven, real coordinates)
     useEffect(() => {
         const map = mapRef.current;
-        const group = layerRef.current;
+        const group = markerLayerRef.current;
         if (!map || !group || !geo) return;
         const ok = rawMarker && rawMarker.lat != null && rawMarker.lng != null
             && (!rawMarker.loc || rawMarker.loc === active);
