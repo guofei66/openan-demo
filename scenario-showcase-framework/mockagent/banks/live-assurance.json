@@ -52,8 +52,8 @@
       "action": "merge",
       "data": {
         "marker": {
-          "x": 8,
-          "y": 44,
+          "lat": 31.2336,
+          "lng": 121.4903,
           "loc": "shanghai"
         },
         "loc": "shanghai"
@@ -384,8 +384,8 @@
       "action": "merge",
       "data": {
         "marker": {
-          "x": 30,
-          "y": 24,
+          "lat": 31.2475,
+          "lng": 121.4925,
           "loc": "shanghai"
         },
         "loc": "shanghai"
@@ -488,8 +488,8 @@
       "action": "merge",
       "data": {
         "marker": {
-          "x": 66,
-          "y": 18,
+          "lat": 31.246,
+          "lng": 121.482,
           "loc": "shanghai"
         },
         "siteStatus": {
@@ -1120,8 +1120,8 @@
       "action": "merge",
       "data": {
         "marker": {
-          "x": 76,
-          "y": 26,
+          "lat": 31.229,
+          "lng": 121.474,
           "loc": "shanghai"
         },
         "siteStatus": {
@@ -1230,8 +1230,8 @@
       "action": "merge",
       "data": {
         "marker": {
-          "x": 86,
-          "y": 34,
+          "lat": 31.21,
+          "lng": 121.47,
           "loc": "shanghai"
         },
         "siteStatus": {
@@ -1443,8 +1443,8 @@
       "action": "merge",
       "data": {
         "marker": {
-          "x": 93,
-          "y": 44,
+          "lat": 31.23,
+          "lng": 121.496,
           "loc": "shanghai"
         },
         "siteStatus": {
