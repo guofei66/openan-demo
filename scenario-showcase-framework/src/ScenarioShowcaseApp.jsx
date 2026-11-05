@@ -278,7 +278,34 @@ const ScenarioShowcaseApp = () => {
             setStepStatus((prev) => ({ ...prev, [ev.id]: st }));
             setStepTimes((prev) => ({ ...prev, [ev.id]: { ...(prev[ev.id] || {}), [st]: tSecRef.current } }));
         } else if (ev.type === 'panel') {
-            setPanelData((prev) => applyPanelEvents(prev, [ev]));
+            if (ev.panel === 'route-map' && ev.data && ev.data.metrics) {
+                // merge the event AND append a per-site metrics history — the
+                // map's before→after callouts need the values from before the
+                // dispatch even when the map panel is not mounted (tab switch).
+                setPanelData((prev) => {
+                    const cur = prev['route-map'] || {};
+                    const merged = applyPanelEvents(prev, [ev])['route-map'];
+                    const hist = { ...(cur.metricsHist || {}) };
+                    const beforeMap = { ...(cur.cfgBefore || {}) };
+                    Object.entries(ev.data.metrics).forEach(([id, m]) => {
+                        const arr = [...(hist[id] || [])];
+                        const lastPre = arr.length ? arr[arr.length - 1] : null;
+                        // freeze the pre-dispatch value the moment the config
+                        // for this site first arrives (survives tab unmounts)
+                        if (ev.data.configs && ev.data.configs[id] && !beforeMap[id]) {
+                            beforeMap[id] = lastPre;
+                        }
+                        const last = arr[arr.length - 1];
+                        if (!last || last.up !== m.up || last.stall !== m.stall || last.kqi !== m.kqi) {
+                            arr.push({ up: m.up, stall: m.stall, kqi: m.kqi });
+                        }
+                        hist[id] = arr;
+                    });
+                    return { ...prev, 'route-map': { ...merged, metricsHist: hist, cfgBefore: beforeMap } };
+                });
+            } else {
+                setPanelData((prev) => applyPanelEvents(prev, [ev]));
+            }
         }
     }, []);
 
@@ -623,7 +650,7 @@ const ScenarioShowcaseApp = () => {
     const inStepFraction = (doneCount > 0 && doneCount < totalSteps && isPlaying && lastStepTs > 0)
         ? Math.min(1, Math.max(0, (tSec - lastStepTs) / 8000)) : 0;
     const raceProgress = (isMockAgent && totalSteps)
-        ? Math.min(100, Math.round(((doneCount + (driverDone ? 0 : inStepFraction)) / totalSteps) * 100))
+        ? Math.min(100, Math.round(((driverDone ? totalSteps : (doneCount + inStepFraction)) / totalSteps) * 100))
         : null;
 
     if (loadError) {

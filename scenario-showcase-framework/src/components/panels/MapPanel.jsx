@@ -17,6 +17,11 @@ import { SITE_STATUS } from '../../colors.js';
 const W = 100;
 const H = 62;
 
+// circled numbers for dispatched-config callouts (match the authorization order)
+const CIRCLED = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨'];
+// callout offset from the site (lat, lng delta) for the leader line
+const CFG_OFFSET = [-0.0022, 0.0032];
+
 const MAP_CSS = `
 .ss-map-tip { background: rgba(2,6,23,0.85) !important; border: 1px solid rgba(56,189,248,0.35) !important;
   color: #e2e8f0 !important; border-radius: 6px !important; font: 600 10px/1.3 Inter, system-ui, sans-serif;
@@ -39,10 +44,11 @@ const MAP_CSS = `
 .ss-runner { font-size: 20px; line-height: 26px; text-align: center; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.65)); }
 .ss-runner i { display: inline-block; font-style: normal; animation: ss-runner-blink 0.9s ease-in-out infinite; }
 @keyframes ss-runner-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.ss-cfg-bubble { transform: translate(-50%, 14px); background: rgba(6,78,59,0.94); color: #6ee7b7;
-  border: 1px solid rgba(52,211,153,0.55); border-radius: 6px; padding: 2px 7px; white-space: nowrap;
-  font: 700 9px/1.5 Inter, system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
-.ss-cfg-bubble::before { content: '📡 '; }
+.ss-cfg-bubble { transform: translate(10px, -50%); background: rgba(6,78,59,0.94); color: #6ee7b7;
+  border: 1px solid rgba(52,211,153,0.55); border-radius: 6px; padding: 3px 8px; white-space: normal;
+  max-width: 175px; font: 700 9px/1.5 Inter, system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.ss-cfg-bubble .ss-cfg-no { color: #ffffff; margin-right: 2px; }
+.ss-cfg-bubble .ss-cfg-delta { display: block; color: #a7f3d0; font-weight: 600; margin-top: 1px; white-space: nowrap; }
 .ss-map-marker { display: flex; align-items: center; justify-content: center; }
 .ss-map-marker i { width: 12px; height: 12px; border-radius: 9999px; background: #3b82f6; border: 2px solid #bfdbfe;
   box-shadow: 0 0 10px 2px rgba(59,130,246,0.75); display: block; }
@@ -82,12 +88,13 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const siteTip = (s, now) => {
         // KPIs appear only while the race is passing this site; dispatched
         // config strategies stay visible on every site that received one.
+        const no = cfgOrder.get(s.id) || '';
         const m = (s.id === currentId) ? ((liveMetrics || {})[s.id] || s.metrics || null) : null;
         const cfg = (liveConfigs || {})[s.id] || s.config || null;
         const kpi = m
             ? `<div class="ss-site-kpi">${pick({ zh: `↑速率 <b>${Number(m.up).toFixed(0)}Mbps</b> · 卡顿 <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>`, en: `Up <b>${Number(m.up).toFixed(0)}Mbps</b> · Stall <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>` })}</div>`
             : '';
-        const cfgLine = cfg ? `<div class="ss-site-cfg">${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}</div>` : '';
+        const cfgLine = cfg ? `<div class="ss-site-cfg">${no || ''} ${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}</div>` : '';
         const nameCls = now ? 'ss-site-name ss-now' : 'ss-site-name';
         const badge = now ? `<span class="ss-site-badge">${pick({ zh: '当前', en: 'NOW' })}</span>` : '';
         return `<div class="ss-site-tip"><div class="${nameCls}">${pickLabel(s.label)}${badge}</div>${kpi}${cfgLine}</div>`;
@@ -272,7 +279,32 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
         } catch (e) { /* keep the base map even if an overlay fails */ }
     }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId, reachedIds, markerDist, isDark]);
 
-    // dispatched config strategy bubbles under the base stations that got one
+    // dispatched-config callouts: number them ①② in dispatch order (matching
+    // the authorization sequence); the before→after comparison uses the
+    // metrics history the APP records in panelData (survives tab unmount):
+    // with a dispatch the last history entry is the post-dispatch value, so
+    // the "before" is the entry right before it (the degraded one).
+    const liveMetricsHist = locMatch ? (data?.metricsHist || null) : null;
+    const cfgOrder = React.useMemo(() => {
+        const order = new Map();
+        let no = 0;
+        Object.keys(liveConfigs || {}).forEach((id) => {
+            order.set(id, CIRCLED[no % CIRCLED.length]);
+            no += 1;
+        });
+        return order;
+    }, [liveConfigs]);
+    const liveCfgBefore = locMatch ? (data?.cfgBefore || null) : null;
+    const cfgBefore = React.useMemo(() => {
+        const before = {};
+        Object.keys(liveConfigs || {}).forEach((id) => {
+            // frozen at dispatch time by the App (see ScenarioShowcaseApp);
+            // fall back to the geo baseline when no history preceded it
+            before[id] = (liveCfgBefore || {})[id]
+                || (geo?.sites || []).find((s) => s.id === id)?.metrics || null;
+        });
+        return before;
+    }, [liveConfigs, liveCfgBefore]);
     useEffect(() => {
         const map = mapRef.current;
         const group = cfgLayerRef.current;
@@ -282,18 +314,32 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
         geo.sites.forEach((s) => {
             const cfg = (liveConfigs || {})[s.id];
             if (!cfg) return;
+            const no = cfgOrder.get(s.id) || CIRCLED[0];
+            const before = cfgBefore[s.id];
+            const after = (liveMetrics || {})[s.id] || s.metrics || null;
+            const delta = (before && after)
+                ? `<span class="ss-cfg-delta">${pick({
+                    zh: `↑${Number(before.up).toFixed(0)}→${Number(after.up).toFixed(0)}Mbps · KQI ${Number(before.kqi).toFixed(0)}→${Number(after.kqi).toFixed(0)}`,
+                    en: `Up ${Number(before.up).toFixed(0)}→${Number(after.up).toFixed(0)}Mbps · KQI ${Number(before.kqi).toFixed(0)}→${Number(after.kqi).toFixed(0)}`,
+                })}</span>`
+                : '';
             try {
-                group.addLayer(L.marker(s.position, {
+                // leader line pulled out from the base station
+                const tip = [s.position[0] + CFG_OFFSET[0], s.position[1] + CFG_OFFSET[1]];
+                group.addLayer(L.polyline([s.position, tip], {
+                    color: '#34d399', weight: 1, opacity: 0.75, dashArray: '2 3', interactive: false,
+                }));
+                group.addLayer(L.marker(tip, {
                     icon: L.divIcon({
                         className: '',
-                        html: `<div class="ss-cfg-bubble">${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}</div>`,
+                        html: `<div class="ss-cfg-bubble"><b class="ss-cfg-no">${no}</b>${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}${delta}</div>`,
                         iconSize: [0, 0], iconAnchor: [0, 0],
                     }),
                     interactive: false, zIndexOffset: 250,
                 }));
             } catch (e) { /* ignore */ }
         });
-    }, [geo, liveConfigs, pick]);
+    }, [geo, liveConfigs, pick, cfgOrder, cfgBefore, liveMetrics]);
 
     // moving marker (bank-driven, real coordinates)
     // moving marker — synced with the unfolding event: when a race progress
