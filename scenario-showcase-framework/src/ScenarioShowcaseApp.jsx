@@ -376,12 +376,14 @@ const ScenarioShowcaseApp = () => {
                     }
                 }));
                 if (dead) return;
+                // history = human-machine interactions starting from an intent —
+                // static seed entries without an intent are not shown.
                 const merged = loads.filter(Boolean).flatMap((c) => (c.history || []).map((h) => ({
                     ...h,
                     mode: h.mode || (c.driver === 'mockAgent' ? 'agent' : 'demo'),
                     caseId: c.caseId,
                     caseTitle: c.caseTitle,
-                })));
+                }))).filter((h) => h && (h.req || h.intent));
                 merged.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
                 setHistoryAll(merged);
             } catch (e) {
@@ -468,6 +470,8 @@ const ScenarioShowcaseApp = () => {
     const [customerText, setCustomerText] = useState(''); // submitted requirement (for the dialog bubble)
     const customerTextRef = useRef('');                   // submitted requirement (for applyEvent)
     const customerReqRef = useRef('');                    // generated REQ id for this run
+    const runIntentRef = useRef(null);                    // the intent this run started from (history)
+    const runLoggedRef = useRef(false);                   // one history entry per completed run
     // Workflow-orchestration confirmation gate: when the CRM agent presents
     // the orchestrated workflow (message with `orchestration`), execution is
     // PAUSED until the customer confirms in the 人机对话 tab; confirming
@@ -500,6 +504,10 @@ const ScenarioShowcaseApp = () => {
         customerTextRef.current = t;
         setCustomerText(t);
         setAwaitingCustomer(false);
+        // history records start HERE (the intent) — one entry per real
+        // human-machine interaction, appended when the run completes.
+        runIntentRef.current = { loc: (opt && opt.loc) || null, text: t };
+        runLoggedRef.current = false;
         // stay in the 人机对话 tab: intent parsing, team assembly and the
         // workflow-orchestration confirmation all happen in the dialog;
         // execution only shows the 智能体群组 tab AFTER the orchestration
@@ -656,6 +664,39 @@ const ScenarioShowcaseApp = () => {
     const clockLabel = `${String(Math.floor(tSec / 60)).padStart(2, '0')}:${String(Math.floor(tSec % 60)).padStart(2, '0')}`;
     const isMockAgent = effDriver === 'mockAgent';
     const completed = driverDone || (!isMockAgent && endAtSec > 0 && tSec > endAtSec + 1.2);
+    // history = real human-machine interactions, each starting from the sent
+    // intent; append one entry when the interaction completes (once per run).
+    useEffect(() => {
+        if (!completed || runLoggedRef.current || !runIntentRef.current) return;
+        runLoggedRef.current = true;
+        const { loc, text } = runIntentRef.current;
+        const CITY_TITLES = {
+            shanghai: { zh: '马拉松赛事体验保障', en: 'Marathon event assurance' },
+            london: { zh: '跨年演唱会保障', en: 'New Year concert assurance' },
+            singapore: { zh: '行业峰会保障', en: 'Industry summit assurance' },
+            bangkok: { zh: '曼谷马拉松保障', en: 'Bangkok marathon assurance' },
+        };
+        const ct = (loc && CITY_TITLES[loc]) || { zh: String(text).slice(0, 24), en: String(text).slice(0, 24) };
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const mm = now.getMonth() + 1;
+        const mins = Math.floor(tSecRef.current / 60);
+        const secs = Math.floor(tSecRef.current % 60);
+        const entry = {
+            id: `run-${now.getTime()}`,
+            intent: loc || 'custom',
+            mode: effDriver === 'mockAgent' ? 'agent' : 'demo',
+            result: 'success',
+            time: `${pad(mm)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+            duration: `${mins}m ${pad(secs)}s`,
+            title: { zh: `人机交互 · ${ct.zh}`, en: `Interaction · ${ct.en}` },
+            req: { zh: String(text), en: String(text) },
+            caseId,
+            caseTitle: (caseData && caseData.title) || { zh: caseId, en: caseId },
+        };
+        setHistoryAll((prev) => [entry, ...prev]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [completed]);
     // race progress for the route map: continuous "event unfolding" — steps
     // completed + the fraction of the current step elapsed (steps run only
     // during execution, so the marker waits at the start during the dialog
