@@ -697,6 +697,12 @@ const ScenarioShowcaseApp = () => {
             className={`${isDark ? 'dark' : ''} ss-root relative h-full w-full flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100`}
             style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
         >
+            {/* build stamp: lets anyone instantly tell WHICH build this tab runs */}
+            {buildV && (
+                <div className="fixed bottom-1.5 left-3 z-[2500] text-[10px] font-mono text-zinc-600 dark:text-zinc-500 pointer-events-none select-none">
+                    build {buildV}
+                </div>
+            )}
             {ssOutdated && (
                 <div className="fixed bottom-4 right-4 z-[3000] rounded-xl border border-amber-500/40 bg-zinc-900/95 text-zinc-100 shadow-2xl px-4 py-3 flex items-center gap-3">
                     <span className="text-sm">🔄 {tr('ss.new_version', '系统已更新，请刷新页面', 'A new version was deployed — please refresh')}</span>
