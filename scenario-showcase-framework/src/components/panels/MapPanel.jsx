@@ -211,13 +211,41 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
         group.clearLayers();
         try {
             if (geo.route && geo.route.length > 1) {
-                const line = L.polyline(geo.route, { color: '#22d3ee', weight: 10, opacity: 0.22 });
-                group.addLayer(line);
-                group.addLayer(L.polyline(geo.route, {
-                    color: routeActive ? '#22d3ee' : 'rgba(56,189,248,0.6)', weight: 3.5,
-                    opacity: 0.95, dashArray: '6 6', className: isDark ? 'ss-dash-flow' : undefined,
-                }));
-                map.fitBounds(line.getBounds(), { padding: [14, 14] });
+                // progressive route lighting: the path behind the runner is
+                // bright cyan; the path ahead stays gray until it is run.
+                const route = geo.route;
+                const buildSlices = (target) => {
+                    const traveled = [route[0]];
+                    const ahead = [];
+                    let acc = 0;
+                    for (let i = 1; i < route.length; i += 1) {
+                        const a = route[i - 1];
+                        const b = route[i];
+                        const d = Math.hypot(b[0] - a[0], b[1] - a[1]);
+                        if (target == null || acc + d <= target) {
+                            traveled.push(b);
+                        } else {
+                            const f = d > 0 ? Math.min(1, Math.max(0, (target - acc) / d)) : 0;
+                            const mid = [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f];
+                            traveled.push(mid);
+                            ahead.push(mid, b);
+                        }
+                        acc += d;
+                    }
+                    return { traveled, ahead };
+                };
+                const { traveled, ahead } = buildSlices(markerDist);
+                if (traveled.length > 1) {
+                    group.addLayer(L.polyline(traveled, { color: '#22d3ee', weight: 10, opacity: 0.25 }));
+                    group.addLayer(L.polyline(traveled, { color: '#22d3ee', weight: 3.5, opacity: 0.95 }));
+                }
+                if (ahead.length > 1) {
+                    group.addLayer(L.polyline(ahead, {
+                        color: isDark ? '#64748b' : '#9ca3af', weight: 3, opacity: 0.85,
+                        dashArray: '5 8', className: isDark ? 'ss-dash-flow' : undefined,
+                    }));
+                }
+                map.fitBounds(L.latLngBounds(route), { padding: [14, 14] });
             }
             (geo.sites || []).forEach((s) => {
                 const st = (statusOverride || {})[s.id] || s.status || 'idle';
@@ -237,7 +265,7 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                 group.addLayer(dot);
             });
         } catch (e) { /* keep the base map even if an overlay fails */ }
-    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId, reachedIds]);
+    }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId, reachedIds, markerDist, isDark]);
 
     // dispatched config strategy bubbles under the base stations that got one
     useEffect(() => {
@@ -421,22 +449,60 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                             <polyline
                                 points={route.map((p) => `${p.x},${p.y}`).join(' ')}
                                 fill="none"
-                                stroke={routeColor}
-                                strokeOpacity={0.35}
-                                strokeWidth={2.6}
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            />
-                            <polyline
-                                points={route.map((p) => `${p.x},${p.y}`).join(' ')}
-                                fill="none"
-                                stroke={routeColor}
+                                stroke={isDark ? '#64748b' : '#9ca3af'}
+                                strokeOpacity={0.85}
                                 strokeWidth={0.9}
                                 strokeDasharray="2 1.4"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className={isDark ? 'ss-dash-flow' : undefined}
                             />
+                            {(() => {
+                                // bright path behind the runner (same slicing as Leaflet)
+                                const segs = [];
+                                let total = 0;
+                                for (let i = 1; i < route.length; i += 1) {
+                                    const d = Math.hypot(route[i].x - route[i - 1].x, route[i].y - route[i - 1].y);
+                                    segs.push(d); total += d;
+                                }
+                                const target = progress != null ? (Math.min(100, Math.max(0, progress)) / 100) * total : null;
+                                if (target == null || target <= 0) return null;
+                                const pts = [route[0]];
+                                let acc = 0;
+                                for (let i = 1; i < route.length; i += 1) {
+                                    const a = route[i - 1]; const b = route[i];
+                                    if (acc + segs[i - 1] <= target) {
+                                        pts.push(b);
+                                    } else {
+                                        const f = segs[i - 1] > 0 ? (target - acc) / segs[i - 1] : 0;
+                                        pts.push({ x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f });
+                                        break;
+                                    }
+                                    acc += segs[i - 1];
+                                }
+                                if (pts.length < 2) return null;
+                                return (
+                                    <g>
+                                        <polyline
+                                            points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
+                                            fill="none"
+                                            stroke={routeColor}
+                                            strokeOpacity={0.35}
+                                            strokeWidth={2.6}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                        <polyline
+                                            points={pts.map((p) => `${p.x},${p.y}`).join(' ')}
+                                            fill="none"
+                                            stroke={routeColor}
+                                            strokeWidth={0.9}
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        />
+                                    </g>
+                                );
+                            })()}
                             {route.map((p, i) => (
                                 <circle key={`wp${i}`} cx={p.x} cy={p.y} r={0.55} fill={routeColor} opacity={0.85} />
                             ))}
