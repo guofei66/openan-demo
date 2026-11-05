@@ -253,8 +253,8 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                 }
                 if (ahead.length > 1) {
                     group.addLayer(L.polyline(ahead, {
-                        color: isDark ? '#93c5fd' : '#bfdbfe', weight: 3, opacity: 0.55,
-                        dashArray: '2 10', className: isDark ? 'ss-dash-flow' : undefined,
+                        color: isDark ? '#93c5fd' : '#3b82f6', weight: 4, opacity: 0.95,
+                        dashArray: '12 8', className: isDark ? 'ss-dash-flow' : undefined,
                     }));
                 }
                 map.fitBounds(L.latLngBounds(route), { padding: [14, 14] });
@@ -500,10 +500,10 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                             <polyline
                                 points={route.map((p) => `${p.x},${p.y}`).join(' ')}
                                 fill="none"
-                                stroke={isDark ? '#93c5fd' : '#bfdbfe'}
-                                strokeOpacity={0.55}
-                                strokeWidth={0.9}
-                                strokeDasharray="1.2 3.5"
+                                stroke={isDark ? '#93c5fd' : '#3b82f6'}
+                                strokeOpacity={0.95}
+                                strokeWidth={1.3}
+                                strokeDasharray="2.2 1.6"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
                                 className={isDark ? 'ss-dash-flow' : undefined}
