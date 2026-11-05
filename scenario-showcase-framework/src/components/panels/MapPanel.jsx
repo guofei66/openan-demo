@@ -63,13 +63,11 @@ const MAP_CSS = `
 const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const pickLabel = (v) => (pick ? pick(v) : (typeof v === 'string' ? v : (v?.zh || v?.en || '')));
     // locations: the base config is the default city; altLocations carry the rest.
+    // The shown city follows the customer intent (remoteLoc) — no manual override.
     const baseId = config.locId || 'default';
     const alt = config.altLocations || [];
-    const locs = [{ id: baseId, label: config.locLabel }, ...alt.map((a) => ({ id: a.id, label: a.label }))];
-    const [sel, setSel] = useState(null);
     const remoteLoc = data && data.location;
-    useEffect(() => { setSel(null); }, [remoteLoc]); // a new intent resets the chip override
-    const active = sel || remoteLoc || baseId;
+    const active = remoteLoc || baseId;
     const altCfg = alt.find((a) => a.id === active);
     const sites = (altCfg ? altCfg.sites : config.sites) || [];
     const route = (altCfg ? altCfg.route : config.route) || [];
@@ -422,25 +420,7 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     return (
         <div className="h-full w-full p-2 relative">
             <style>{MAP_CSS}</style>
-            {/* location switcher (city chips) */}
-            {locs.length > 1 && (
-                <div className="absolute top-2.5 right-3 z-[900] flex items-center gap-1">
-                    {locs.map((l) => (
-                        <button
-                            key={l.id}
-                            type="button"
-                            onClick={() => setSel(l.id)}
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-colors ${
-                                l.id === active
-                                    ? 'bg-cyan-500/20 text-cyan-300 border-cyan-400/40'
-                                    : 'bg-slate-900/70 text-zinc-300 border-white/10 hover:text-white'
-                            }`}
-                        >
-                            {pickLabel(l.label)}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {/* map location follows the customer intent (data.location) — no manual chips */}
 
             {/* SVG stylized base — visible until (and if) the real map is ready */}
             <div className="absolute inset-2 rounded-xl overflow-hidden" style={{ visibility: hasMap && !tilesFailed ? 'hidden' : 'visible' }}>
