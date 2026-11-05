@@ -31,6 +31,11 @@ const MAP_CSS = `
 .ss-site-tip .ss-site-name.ss-now { color: #67e8f9; }
 .ss-site-badge { display: inline-block; margin-left: 4px; padding: 0 3px; border-radius: 3px;
   background: rgba(34,211,238,0.25); color: #67e8f9; font-size: 8px; font-weight: 700; vertical-align: 1px; }
+/* in-place blink for map overlays: the shared ss-pulse-dot keyframes scale
+   around the SVG canvas origin, which makes Leaflet halos DRIFT — override
+   with a pure-opacity blink (no transform) inside the map. */
+@keyframes ss-halo-blink { 0%, 100% { opacity: 0.9; } 50% { opacity: 0.12; } }
+.leaflet-container .ss-pulse-dot, svg .ss-pulse-dot { animation: ss-halo-blink 1.2s ease-in-out infinite; transform: none; }
 .ss-runner { font-size: 20px; line-height: 26px; text-align: center; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.65)); }
 .ss-runner i { display: inline-block; font-style: normal; animation: ss-runner-blink 0.9s ease-in-out infinite; }
 @keyframes ss-runner-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
