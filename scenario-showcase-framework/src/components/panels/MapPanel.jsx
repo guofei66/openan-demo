@@ -241,12 +241,12 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                 };
                 const { traveled, ahead } = buildSlices(markerDist);
                 if (traveled.length > 1) {
-                    group.addLayer(L.polyline(traveled, { color: '#22d3ee', weight: 10, opacity: 0.25 }));
-                    group.addLayer(L.polyline(traveled, { color: '#22d3ee', weight: 3.5, opacity: 0.95 }));
+                    group.addLayer(L.polyline(traveled, { color: '#3b82f6', weight: 10, opacity: 0.25 }));
+                    group.addLayer(L.polyline(traveled, { color: '#3b82f6', weight: 3.5, opacity: 0.95 }));
                 }
                 if (ahead.length > 1) {
                     group.addLayer(L.polyline(ahead, {
-                        color: isDark ? '#e2e8f0' : '#e4e4e7', weight: 3, opacity: 0.45,
+                        color: isDark ? '#d4d4d8' : '#a1a1aa', weight: 3, opacity: 0.5,
                         dashArray: '2 10', className: isDark ? 'ss-dash-flow' : undefined,
                     }));
                 }
@@ -361,7 +361,7 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const parks = city.parks || [];       // [{points, label?}]
     const gridColor = isDark ? 'rgba(56,189,248,0.10)' : '#e4e4e7';
     const labelColor = isDark ? '#94a3b8' : '#52525b';
-    const routeColor = isDark ? (routeActive ? '#22d3ee' : 'rgba(56,189,248,0.35)') : (routeActive ? '#06b6d4' : '#d4d4d8');
+    const routeColor = isDark ? '#3b82f6' : '#2563eb'; // traveled path: clearly blue
     const halo = isDark ? '#09090B' : '#ffffff';
     const baseFill = isDark ? 'rgba(30,41,59,0.42)' : 'rgba(244,244,245,0.9)';
     const blockFill = isDark ? 'rgba(148,163,184,0.07)' : '#ececec';
@@ -454,8 +454,8 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                             <polyline
                                 points={route.map((p) => `${p.x},${p.y}`).join(' ')}
                                 fill="none"
-                                stroke={isDark ? '#e2e8f0' : '#e4e4e7'}
-                                strokeOpacity={0.45}
+                                stroke={isDark ? '#d4d4d8' : '#a1a1aa'}
+                                strokeOpacity={0.5}
                                 strokeWidth={0.9}
                                 strokeDasharray="1.2 3.5"
                                 strokeLinecap="round"
