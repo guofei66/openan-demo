@@ -248,8 +248,8 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
                 };
                 const { traveled, ahead } = buildSlices(markerDist);
                 if (traveled.length > 1) {
-                    group.addLayer(L.polyline(traveled, { color: '#3b82f6', weight: 10, opacity: 0.25 }));
-                    group.addLayer(L.polyline(traveled, { color: '#3b82f6', weight: 3.5, opacity: 0.95 }));
+                    group.addLayer(L.polyline(traveled, { color: '#22c55e', weight: 10, opacity: 0.25 }));
+                    group.addLayer(L.polyline(traveled, { color: '#22c55e', weight: 3.5, opacity: 0.95 }));
                 }
                 if (ahead.length > 1) {
                     group.addLayer(L.polyline(ahead, {
@@ -407,7 +407,7 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const parks = city.parks || [];       // [{points, label?}]
     const gridColor = isDark ? 'rgba(56,189,248,0.10)' : '#e4e4e7';
     const labelColor = isDark ? '#94a3b8' : '#52525b';
-    const routeColor = isDark ? '#3b82f6' : '#2563eb'; // traveled path: clearly blue
+    const routeColor = isDark ? '#22c55e' : '#16a34a'; // traveled path: clearly green
     const halo = isDark ? '#09090B' : '#ffffff';
     const baseFill = isDark ? 'rgba(30,41,59,0.42)' : 'rgba(244,244,245,0.9)';
     const blockFill = isDark ? 'rgba(148,163,184,0.07)' : '#ececec';
