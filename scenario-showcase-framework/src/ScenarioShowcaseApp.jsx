@@ -94,6 +94,27 @@ const ScenarioShowcaseApp = () => {
     const [caseData, setCaseData] = useState(null);
     const [loadError, setLoadError] = useState('');
 
+    // runtime version self-check: every open page compares its build id with
+    // the deployed version.json (30s poll) and prompts a refresh when a newer
+    // build is live — no more silently stale screens after a deploy.
+    const buildV = (typeof window !== 'undefined' && window.__SS_BUILD_V__) || '';
+    const [ssOutdated, setSsOutdated] = useState(false);
+    useEffect(() => {
+        if (!buildV) return undefined;
+        let dead = false;
+        const check = async () => {
+            try {
+                const res = await fetch(`${absoluteUrl(PLUGIN_BASE, 'version.json')}?t=${Date.now()}`, { cache: 'no-store' });
+                if (!res.ok) return;
+                const j = await res.json();
+                if (!dead && j && j.v && j.v !== buildV) setSsOutdated(true);
+            } catch (e) { /* ignore — offline or older deploy without version.json */ }
+        };
+        check();
+        const timer = setInterval(check, 30000);
+        return () => { dead = true; clearInterval(timer); };
+    }, [buildV]);
+
     // playback state
     const [isPlaying, setIsPlaying] = useState(false);
     const [tSec, setTSec] = useState(0);
@@ -661,6 +682,12 @@ const ScenarioShowcaseApp = () => {
                     <p className="text-xs text-zinc-500 mt-2 font-mono">{loadError}</p>
                     <p className="text-xs text-zinc-400 mt-1 font-mono">{PLUGIN_BASE}</p>
                 </div>
+                {ssOutdated && (
+                    <div className="fixed bottom-4 right-4 z-[3000] rounded-xl border border-amber-500/40 bg-zinc-900/95 text-zinc-100 shadow-2xl px-4 py-3 flex items-center gap-3">
+                        <span className="text-sm">🔄 {tr('ss.new_version', '系统已更新，请刷新页面', 'A new version was deployed — please refresh')}</span>
+                        <button onClick={() => window.location.reload()} className="px-3 py-1.5 rounded-lg bg-cyan-500 text-zinc-950 text-xs font-bold hover:bg-cyan-400">{tr('ss.refresh_now', '立即刷新', 'Refresh now')}</button>
+                    </div>
+                )}
             </div>
         );
     }
@@ -670,6 +697,12 @@ const ScenarioShowcaseApp = () => {
             className={`${isDark ? 'dark' : ''} ss-root relative h-full w-full flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100`}
             style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
         >
+            {ssOutdated && (
+                <div className="fixed bottom-4 right-4 z-[3000] rounded-xl border border-amber-500/40 bg-zinc-900/95 text-zinc-100 shadow-2xl px-4 py-3 flex items-center gap-3">
+                    <span className="text-sm">🔄 {tr('ss.new_version', '系统已更新，请刷新页面', 'A new version was deployed — please refresh')}</span>
+                    <button onClick={() => window.location.reload()} className="px-3 py-1.5 rounded-lg bg-cyan-500 text-zinc-950 text-xs font-bold hover:bg-cyan-400">{tr('ss.refresh_now', '立即刷新', 'Refresh now')}</button>
+                </div>
+            )}
             {/* ── Tech backdrop (dark only): faint blueprint grid + aurora glows ── */}
                                                             
             {/* ── Header — ONE line only: 场景演示 · <case title> + 答复模式
