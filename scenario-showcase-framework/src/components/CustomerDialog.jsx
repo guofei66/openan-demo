@@ -38,6 +38,11 @@ export const INTENT_OPTIONS = [
         zh: '1月15日 09:00-18:00，新加坡滨海湾金沙会展中心举办大型行业峰会（3个展馆、约1.2万名展商与观众），对展会进行体验保障。保障目标：展商与观众上网体验，主论坛 keynote 直播稳定不卡顿，会议签到、电子支付等关键业务零中断。',
         en: 'Jan 15, 09:00-18:00 — a large industry summit (3 halls, ~12,000 exhibitors and visitors) is held at Marina Bay Sands, Singapore; provide event experience assurance. Goals: attendee internet experience, stable keynote live-streaming, zero interruption for critical services such as check-in and e-payment.',
     },
+    {
+        loc: 'bangkok',
+        zh: '2月8日 05:00-11:00，泰国曼谷拉玛四路及素坤逸沿线举办全程马拉松比赛（42.195公里，约3万名选手参赛），对比赛进行赛事体验保障。保障目标：参赛选手与沿途观众的移动上网体验，直播回传上行速率≥50Mbps，视频卡顿率<1%，沿途基站零重大故障。',
+        en: 'Feb 8, 05:00-11:00 — a full marathon (42.195 km, ~30,000 runners) is held along Rama IV Road and the Sukhumvit corridor in Bangkok, Thailand; provide event experience assurance. Goals: mobile internet experience for runners and spectators, live uplink ≥50 Mbps, stall ratio <1%, zero critical site outages along the route.',
+    },
 ];
 
 /** CRM bubble (left, agent avatar) — may carry the customer-intent envelope. */
