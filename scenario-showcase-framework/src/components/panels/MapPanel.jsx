@@ -34,7 +34,6 @@ const MAP_CSS = `
 .ss-runner { font-size: 20px; line-height: 26px; text-align: center; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.65)); }
 .ss-runner i { display: inline-block; font-style: normal; animation: ss-runner-blink 0.9s ease-in-out infinite; }
 @keyframes ss-runner-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-.ss-flag { font-size: 14px; line-height: 16px; text-align: center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)); }
 .ss-cfg-bubble { transform: translate(-50%, 14px); background: rgba(6,78,59,0.94); color: #6ee7b7;
   border: 1px solid rgba(52,211,153,0.55); border-radius: 6px; padding: 2px 7px; white-space: nowrap;
   font: 700 9px/1.5 Inter, system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
@@ -139,7 +138,6 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const mapRef = useRef(null);
     const layerRef = useRef(null);
     const markerLayerRef = useRef(null);
-    const flagsLayerRef = useRef(null);
     const cfgLayerRef = useRef(null);
     const markerRef = useRef(null);
     const [tilesFailed, setTilesFailed] = useState(false);
@@ -192,7 +190,6 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             mapRef.current = map;
             layerRef.current = L.layerGroup().addTo(map);
             markerLayerRef.current = L.layerGroup().addTo(map);
-            flagsLayerRef.current = L.layerGroup().addTo(map);
             cfgLayerRef.current = L.layerGroup().addTo(map);
             attach(srcIdx);
         } catch (e) { /* map init failure → SVG fallback stays visible */ }
@@ -201,7 +198,6 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             mapRef.current = null;
             layerRef.current = null;
             markerLayerRef.current = null;
-            flagsLayerRef.current = null;
             cfgLayerRef.current = null;
             markerRef.current = null;
         };
@@ -242,28 +238,6 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             });
         } catch (e) { /* keep the base map even if an overlay fails */ }
     }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId, reachedIds]);
-
-    // red flags planted at the checkpoints the race has already passed
-    // (strictly behind the runner, so sites at the runner's position wait)
-    useEffect(() => {
-        const map = mapRef.current;
-        const group = flagsLayerRef.current;
-        if (!map || !group || !geo) return;
-        group.clearLayers();
-        if (!geo.sites || markerDist == null) return;
-        const byId = {};
-        geo.sites.forEach((s) => { byId[s.id] = s; });
-        siteDists.forEach(({ id, at }) => {
-            const s = byId[id];
-            if (!s || id === currentId || at > markerDist - 1e-3) return;
-            try {
-                group.addLayer(L.marker(s.position, {
-                    icon: L.divIcon({ className: '', html: '<div class="ss-flag">🚩</div>', iconSize: [16, 16], iconAnchor: [8, 8] }),
-                    interactive: false, zIndexOffset: 300,
-                }));
-            } catch (e) { /* ignore */ }
-        });
-    }, [geo, siteDists, markerDist, currentId]);
 
     // dispatched config strategy bubbles under the base stations that got one
     useEffect(() => {
