@@ -32,8 +32,8 @@ const MAP_CSS = `
 .ss-site-badge { display: inline-block; margin-left: 4px; padding: 0 3px; border-radius: 3px;
   background: rgba(34,211,238,0.25); color: #67e8f9; font-size: 8px; font-weight: 700; vertical-align: 1px; }
 .ss-runner { font-size: 20px; line-height: 26px; text-align: center; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.65)); }
-.ss-runner i { display: inline-block; font-style: normal; animation: ss-runner-bob 0.55s ease-in-out infinite alternate; }
-@keyframes ss-runner-bob { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-3px) rotate(8deg); } }
+.ss-runner i { display: inline-block; font-style: normal; animation: ss-runner-blink 0.9s ease-in-out infinite; }
+@keyframes ss-runner-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 .ss-flag { font-size: 14px; line-height: 16px; text-align: center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)); }
 .ss-cfg-bubble { transform: translate(-50%, 14px); background: rgba(6,78,59,0.94); color: #6ee7b7;
   border: 1px solid rgba(52,211,153,0.55); border-radius: 6px; padding: 2px 7px; white-space: nowrap;
