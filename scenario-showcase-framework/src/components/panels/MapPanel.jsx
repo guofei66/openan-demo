@@ -31,6 +31,14 @@ const MAP_CSS = `
 .ss-site-tip .ss-site-name.ss-now { color: #67e8f9; }
 .ss-site-badge { display: inline-block; margin-left: 4px; padding: 0 3px; border-radius: 3px;
   background: rgba(34,211,238,0.25); color: #67e8f9; font-size: 8px; font-weight: 700; vertical-align: 1px; }
+.ss-runner { font-size: 20px; line-height: 26px; text-align: center; filter: drop-shadow(0 2px 5px rgba(0,0,0,0.65)); }
+.ss-runner i { display: inline-block; font-style: normal; animation: ss-runner-bob 0.55s ease-in-out infinite alternate; }
+@keyframes ss-runner-bob { from { transform: translateY(0) rotate(-6deg); } to { transform: translateY(-3px) rotate(8deg); } }
+.ss-flag { font-size: 14px; line-height: 16px; text-align: center; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.6)); }
+.ss-cfg-bubble { transform: translate(-50%, 14px); background: rgba(6,78,59,0.94); color: #6ee7b7;
+  border: 1px solid rgba(52,211,153,0.55); border-radius: 6px; padding: 2px 7px; white-space: nowrap;
+  font: 700 9px/1.5 Inter, system-ui, sans-serif; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }
+.ss-cfg-bubble::before { content: '📡 '; }
 .ss-map-marker { display: flex; align-items: center; justify-content: center; }
 .ss-map-marker i { width: 12px; height: 12px; border-radius: 9999px; background: #3b82f6; border: 2px solid #bfdbfe;
   box-shadow: 0 0 10px 2px rgba(59,130,246,0.75); display: block; }
@@ -68,9 +76,10 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const liveConfigs = locMatch ? (data?.configs || null) : null;
     const fmtPct = (v) => `${Number(v).toFixed(1)}%`;
     const siteTip = (s, now) => {
-        const reached = reachedIds.has(s.id);
-        const m = reached ? ((liveMetrics || {})[s.id] || s.metrics || null) : null;
-        const cfg = reached ? ((liveConfigs || {})[s.id] || s.config || null) : null;
+        // KPIs appear only while the race is passing this site; dispatched
+        // config strategies stay visible on every site that received one.
+        const m = (s.id === currentId) ? ((liveMetrics || {})[s.id] || s.metrics || null) : null;
+        const cfg = (liveConfigs || {})[s.id] || s.config || null;
         const kpi = m
             ? `<div class="ss-site-kpi">${pick({ zh: `↑速率 <b>${Number(m.up).toFixed(0)}Mbps</b> · 卡顿 <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>`, en: `Up <b>${Number(m.up).toFixed(0)}Mbps</b> · Stall <b>${fmtPct(m.stall)}</b> · KQI <b>${Number(m.kqi).toFixed(0)}</b>` })}</div>`
             : '';
@@ -130,6 +139,8 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
     const mapRef = useRef(null);
     const layerRef = useRef(null);
     const markerLayerRef = useRef(null);
+    const flagsLayerRef = useRef(null);
+    const cfgLayerRef = useRef(null);
     const markerRef = useRef(null);
     const [tilesFailed, setTilesFailed] = useState(false);
 
@@ -181,6 +192,8 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             mapRef.current = map;
             layerRef.current = L.layerGroup().addTo(map);
             markerLayerRef.current = L.layerGroup().addTo(map);
+            flagsLayerRef.current = L.layerGroup().addTo(map);
+            cfgLayerRef.current = L.layerGroup().addTo(map);
             attach(srcIdx);
         } catch (e) { /* map init failure → SVG fallback stays visible */ }
         return () => {
@@ -188,6 +201,8 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             mapRef.current = null;
             layerRef.current = null;
             markerLayerRef.current = null;
+            flagsLayerRef.current = null;
+            cfgLayerRef.current = null;
             markerRef.current = null;
         };
     }, [geo]);
@@ -227,6 +242,51 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
             });
         } catch (e) { /* keep the base map even if an overlay fails */ }
     }, [geo, statusOverride, liveMetrics, liveConfigs, routeActive, pick, currentId, reachedIds]);
+
+    // red flags planted at the checkpoints the race has already passed
+    // (strictly behind the runner, so sites at the runner's position wait)
+    useEffect(() => {
+        const map = mapRef.current;
+        const group = flagsLayerRef.current;
+        if (!map || !group || !geo) return;
+        group.clearLayers();
+        if (!geo.sites || markerDist == null) return;
+        const byId = {};
+        geo.sites.forEach((s) => { byId[s.id] = s; });
+        siteDists.forEach(({ id, at }) => {
+            const s = byId[id];
+            if (!s || id === currentId || at > markerDist - 1e-3) return;
+            try {
+                group.addLayer(L.marker(s.position, {
+                    icon: L.divIcon({ className: '', html: '<div class="ss-flag">🚩</div>', iconSize: [16, 16], iconAnchor: [8, 8] }),
+                    interactive: false, zIndexOffset: 300,
+                }));
+            } catch (e) { /* ignore */ }
+        });
+    }, [geo, siteDists, markerDist, currentId]);
+
+    // dispatched config strategy bubbles under the base stations that got one
+    useEffect(() => {
+        const map = mapRef.current;
+        const group = cfgLayerRef.current;
+        if (!map || !group || !geo) return;
+        group.clearLayers();
+        if (!geo.sites) return;
+        geo.sites.forEach((s) => {
+            const cfg = (liveConfigs || {})[s.id];
+            if (!cfg) return;
+            try {
+                group.addLayer(L.marker(s.position, {
+                    icon: L.divIcon({
+                        className: '',
+                        html: `<div class="ss-cfg-bubble">${pick({ zh: `已下发: ${cfg.zh}`, en: `Dispatched: ${cfg.en}` })}</div>`,
+                        iconSize: [0, 0], iconAnchor: [0, 0],
+                    }),
+                    interactive: false, zIndexOffset: 250,
+                }));
+            } catch (e) { /* ignore */ }
+        });
+    }, [geo, liveConfigs, pick]);
 
     // moving marker (bank-driven, real coordinates)
     // moving marker — synced with the unfolding event: when a race progress
@@ -271,8 +331,12 @@ const MapPanel = ({ config, data, isDark, pick, progress }) => {
         try {
             if (!markerRef.current) {
                 markerRef.current = L.marker(pos, {
-                    icon: L.divIcon({ className: '', html: '<div class="ss-map-marker"><i></i></div>', iconSize: [14, 14], iconAnchor: [7, 7] }),
-                    zIndexOffset: 500,
+                    icon: L.divIcon({
+                        className: '',
+                        html: '<div class="ss-runner"><i>🏃</i></div>',
+                        iconSize: [26, 26], iconAnchor: [13, 13],
+                    }),
+                    zIndexOffset: 600,
                 });
                 group.addLayer(markerRef.current);
             } else {
