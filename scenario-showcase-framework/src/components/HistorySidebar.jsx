@@ -27,7 +27,7 @@ const ModeBadge = ({ mode, tr }) => (
     </span>
 );
 
-const HistorySidebar = ({ tr, pick, caseData, driver, live, historyAll, activeCaseId, onOpenCase, collapsed, onToggle }) => {
+const HistorySidebar = ({ tr, pick, caseData, driver, live, historyAll, activeCaseId, onOpenCase, onOpenEntry, collapsed, onToggle }) => {
     if (collapsed) {
         return (
             <div className="flex flex-col items-center gap-2 pt-3 pb-3 h-full min-h-0">
@@ -44,7 +44,7 @@ const HistorySidebar = ({ tr, pick, caseData, driver, live, historyAll, activeCa
                         className="text-[11px] font-semibold tracking-[0.25em] text-zinc-400 dark:text-zinc-500"
                         style={{ writingMode: 'vertical-rl' }}
                     >
-                        {tr('ss.history', '场景历史', 'HISTORY')}
+                        {tr('ss.history', '交互历史', 'HISTORY')}
                     </span>
                 </div>
                 <span className="text-[12px] font-semibold tabular-nums px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
@@ -58,7 +58,7 @@ const HistorySidebar = ({ tr, pick, caseData, driver, live, historyAll, activeCa
             <div className="shrink-0 px-4 pt-3 pb-2.5 flex items-center gap-2 border-b border-zinc-100 dark:border-zinc-800">
                 <History size={15} className="text-zinc-400" />
                 <span className="text-[15px] font-semibold text-zinc-700 dark:text-zinc-200">
-                    {tr('ss.history', '场景历史', 'History')}
+                    {tr('ss.history', '交互历史', 'History')}
                 </span>
                 <button
                     onClick={onToggle}
@@ -108,7 +108,7 @@ const HistorySidebar = ({ tr, pick, caseData, driver, live, historyAll, activeCa
                 return (
                     <div
                         key={`${h.caseId}/${h.id}`}
-                        onClick={() => onOpenCase && onOpenCase(h.caseId)}
+                        onClick={() => (onOpenEntry ? onOpenEntry(h) : onOpenCase && onOpenCase(h.caseId))}
                         title={pick(h.caseTitle)}
                         className={`p-3 rounded-xl border transition-all cursor-pointer ${
                             active
@@ -139,7 +139,7 @@ const HistorySidebar = ({ tr, pick, caseData, driver, live, historyAll, activeCa
 
         <div className="shrink-0 px-4 py-2.5 border-t border-zinc-100 dark:border-zinc-800">
             <p className="text-[12px] leading-relaxed text-zinc-400 dark:text-zinc-500">
-                {tr('ss.history_hint', '历史记录由场景 Case 配置（cases/*.json）提供；点击条目可切换到对应场景。', 'History entries come from the case configs (cases/*.json); click an entry to switch to its scenario.')}
+                {tr('ss.history_hint', '交互意图的全部记录回放：点击条目重新回放该意图的完整交互（对话 → 编排确认 → 执行 → 总结）。', 'Replays of every interaction intent: click an entry to replay its full interaction (dialog → orchestration → execution → summary).')}
             </p>
         </div>
     </div>

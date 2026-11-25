@@ -19,7 +19,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import {
     Bot, Users, Clock, RadioTower, Gauge, CheckCircle2,
     AlertTriangle, Zap, Wifi, BatteryCharging, Video, TrendingUp, FileText,
-    Handshake, MoveRight, Repeat,
+    Handshake, MoveRight, Repeat, Quote, ShieldAlert, ShieldCheck, UserPlus,
 } from 'lucide-react';
 import { agentColor, KIND_BADGES } from '../colors.js';
 
@@ -183,6 +183,42 @@ const A2ATCard = ({ pick, m }) => {
     );
 };
 
+/** Customer-intent envelope — the CRM agent renders the customer's verbatim
+ *  requirement it received (CRM Agent 接收客户的意图). */
+const IntentBlock = ({ m, pick, tr }) => (
+    <div className="mt-1 rounded-xl border border-rose-300 dark:border-rose-500/40 bg-rose-50/70 dark:bg-rose-500/[0.08] px-3 py-2">
+        <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-600 dark:text-rose-300">
+            <Quote size={11} className="shrink-0" />
+            {tr('ss.intent', '客户意图', 'Customer Intent')}
+            {m.intent.reqId && (
+                <span className="font-mono font-semibold opacity-70">{m.intent.reqId}</span>
+            )}
+        </div>
+        <p className="mt-1 text-[13px] leading-relaxed text-zinc-700 dark:text-zinc-200">
+            {pick(m.intent.text)}
+        </p>
+    </div>
+);
+
+/** Authorization footer — the decision state of a config-change message
+ *  (pending → amber pulse / approved → emerald / rejected → rose). */
+const AuthFooter = ({ m, decision, tr }) => (
+    <div className={`mt-2 rounded-lg border px-2 py-1.5 flex items-center gap-1.5 text-[11px] font-semibold ${
+        decision === 'approved'
+            ? 'border-emerald-500/50 bg-emerald-500/[0.08] text-emerald-400'
+            : decision === 'rejected'
+                ? 'border-rose-500/50 bg-rose-500/[0.08] text-rose-400'
+                : 'border-amber-500/50 bg-amber-500/[0.08] text-amber-400 animate-pulse'
+    }`}>
+        {decision === 'approved' ? <ShieldCheck size={12} className="shrink-0" /> : <ShieldAlert size={12} className="shrink-0" />}
+        {decision === 'approved'
+            ? tr('ss.auth.ok', '配置变更已授权执行', 'config change approved')
+            : decision === 'rejected'
+                ? tr('ss.auth.no', '已拒绝：维持现网配置', 'rejected — keeping current configuration')
+                : tr('ss.auth.wait', '配置变更待授权…请在弹窗中审批', 'config change pending authorization…')}
+    </div>
+);
+
 /** From/To participant chips — the A2A-T communication envelope.
  *  Neutral zinc: agent identity is carried by the avatar alone (one-color
  *  conversation area, per 2026-10-22 review feedback). */
@@ -199,7 +235,7 @@ const fmtClock = (sec) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${St
  *  - stream mode: avatar + FROM→TO envelope (chronological timeline);
  *  - byAgent lane mode (`compact`): the lane already is the sender, so the
  *    FROM chip is dropped and only the → TO envelope stays. */
-const MessageCard = ({ m, index, isLatest, agentById, pick, tr, compact = false }) => {
+const MessageCard = ({ m, index, isLatest, agentById, pick, tr, compact = false, authDecision }) => {
     const agent = agentById[m.from];
     const toAgent = agentById[m.to];
     const badge = KIND_BADGES[m.kind] || KIND_BADGES.info;
@@ -269,7 +305,9 @@ const MessageCard = ({ m, index, isLatest, agentById, pick, tr, compact = false 
                         {pick(m.text)}
                     </p>
                     {isA2AT && <A2ATCard pick={pick} m={m} />}
+                    {m.intent && <IntentBlock m={m} pick={pick} tr={tr} />}
                     {m.attachments && <Attachments pick={pick} items={m.attachments} />}
+                    {m.auth?.required && <AuthFooter m={m} decision={authDecision} tr={tr} />}
                 </div>
             </div>
         </div>
@@ -283,7 +321,7 @@ const MessageCard = ({ m, index, isLatest, agentById, pick, tr, compact = false 
  *  one agent per row. Boundaries stay unmistakable: a solid agent-colored
  *  edge bar on the left, an agent-tinted header strip and a darker panel
  *  well separate the three lanes at a glance. */
-const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, registerRef, onScrollRow }) => {
+const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, inactive, registerRef, onScrollRow, authDecisions, awaitingCustomer }) => {
     const color = agentColor(col.agent?.color);
     return (
         <div
@@ -306,15 +344,21 @@ const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, registerRef, 
                 className={`shrink-0 ${speaking ? 'w-1.5' : 'w-1'} ${color.dot}`}
                 style={speaking ? { boxShadow: `0 0 12px rgba(${color.glow},0.9)` } : undefined}
             />
-            <div className="flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden">
+            <div className={`flex-1 min-w-0 min-h-0 flex flex-col overflow-hidden transition-opacity duration-300 ${inactive ? 'opacity-60' : ''}`}>
                 <div
                     className={`shrink-0 px-2.5 py-1.5 flex items-center gap-1.5 border-b border-zinc-200 dark:border-zinc-800 ${color.lane}`}
                     style={speaking ? { backgroundColor: `rgba(${color.glow},0.16)` } : undefined}
                 >
                     <AgentAvatar agent={col.agent} size="w-6 h-6" />
-                    <span className={`text-[13px] font-bold truncate ${color.text}`} title={col.agent ? pick(col.agent.name) : col.key}>
+                    <span className={`text-[13px] font-bold truncate ${color.text} ${inactive ? 'opacity-50' : ''}`} title={col.agent ? pick(col.agent.name) : col.key}>
                         {col.agent ? pick(col.agent.name) : col.key}
                     </span>
+                    {inactive && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 border border-zinc-300 dark:border-zinc-700 shrink-0">
+                            <UserPlus size={10} className="shrink-0" />
+                            {tr('ss.col_assembling', '待组建', 'awaiting assembly')}
+                        </span>
+                    )}
                     {speaking && (
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-500 text-white shrink-0 animate-pulse">
                             {tr('ss.speaking', '交互中', 'LIVE')}
@@ -330,8 +374,12 @@ const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, registerRef, 
                     className="flex-1 min-h-0 overflow-y-auto ss-scroll px-2.5 py-2 space-y-2.5"
                 >
                     {col.items.length === 0 && (
-                        <div className="h-full min-h-[40px] flex items-center justify-center text-[11px] font-mono text-zinc-300 dark:text-zinc-600">
-                            {tr('ss.col_idle', '暂无输出', 'no output yet')}
+                        <div className="h-full min-h-[40px] flex items-center justify-center text-[11px] font-mono text-zinc-300 dark:text-zinc-600 text-center px-2">
+                            {awaitingCustomer && col.agent?.id === 'crm'
+                                ? tr('ss.col_awaiting_customer', '等待客户在「人机对话」页签提交需求…', 'waiting for the customer request in the Dialog tab…')
+                                : inactive
+                                    ? tr('ss.col_assembling_wait', '等待 CRM 组建接入…', 'waiting for CRM team assembly…')
+                                    : tr('ss.col_idle', '暂无输出', 'no output yet')}
                         </div>
                     )}
                     {col.items.map(({ m, i }) => (
@@ -344,6 +392,7 @@ const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, registerRef, 
                             pick={pick}
                             tr={tr}
                             compact
+                            authDecision={authDecisions[i]}
                         />
                     ))}
                 </div>
@@ -352,7 +401,7 @@ const AgentRow = ({ col, agentById, pick, tr, latestIdx, speaking, registerRef, 
     );
 };
 
-const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAgent }) => {
+const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAgent, authDecisions = {}, awaitingCustomer = false }) => {
     const scrollRef = useRef(null);
     const stickRef = useRef(true);
     const byAgent = layout?.conversation === 'byAgent';
@@ -363,6 +412,16 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAg
     }, [messages]);
 
     const agentById = Object.fromEntries(agents.map((a) => [a.id, a]));
+
+    // CRM team-assembly gating: when the case includes a CRM agent, the team
+    // panels start dimmed (待组建) and light up one by one as the CRM agent
+    // announces them (message `assembles: [agentId]`).
+    const crmPresent = agents.some((a) => a.id === 'crm');
+    const assembled = useMemo(() => {
+        const s = new Set();
+        for (const m of messages) for (const id of (m.assembles || [])) s.add(id);
+        return s;
+    }, [messages]);
 
     // byAgent rows — one per case agent (case order); messages authored by
     // anyone outside the team get a trailing fallback row so nothing is
@@ -425,7 +484,9 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAg
                         <div className="h-full flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-500">
                             <Bot size={30} strokeWidth={1.5} />
                             <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
-                                {tr('ss.waiting', '回放即将开始…', 'Replay starting…')}
+                                {awaitingCustomer && crmPresent
+                                    ? tr('ss.waiting_customer', '等待客户在「人机对话」页签提交需求…', 'Waiting for the customer request in the Dialog tab…')
+                                    : tr('ss.waiting', '回放即将开始…', 'Replay starting…')}
                             </p>
                         </div>
                     )}
@@ -438,12 +499,13 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAg
                             agentById={agentById}
                             pick={pick}
                             tr={tr}
+                            authDecision={authDecisions[i]}
                         />
                     ))}
                 </div>
             ) : (
                 <div className="flex-1 min-h-0 flex flex-col gap-2.5 p-2">
-                    {messages.length === 0 ? (
+                    {messages.length === 0 && !(awaitingCustomer && crmPresent) ? (
                         <div className="flex-1 flex flex-col items-center justify-center text-zinc-300 dark:text-zinc-500">
                             <Bot size={30} strokeWidth={1.5} />
                             <p className="text-xs mt-2 text-zinc-400 dark:text-zinc-500">
@@ -460,8 +522,11 @@ const ConversationStream = ({ tr, pick, agents, messages, tSec, layout, activeAg
                                 tr={tr}
                                 latestIdx={messages.length - 1}
                                 speaking={activeAgent === r.key}
+                                inactive={crmPresent && !!r.agent && r.agent.id !== 'crm' && !assembled.has(r.agent.id)}
                                 registerRef={registerRef}
                                 onScrollRow={onScrollRow}
+                                authDecisions={authDecisions}
+                                awaitingCustomer={awaitingCustomer}
                             />
                         ))
                     )}

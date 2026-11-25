@@ -23,7 +23,7 @@
  * runs at 1×. Theme is pinned to the dark conference look.
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Bot, MessagesSquare, Route } from 'lucide-react';
+import { AlertTriangle, Bot, ListChecks, MessagesSquare, Route } from 'lucide-react';
 import { absoluteUrl, detectLang, ensureI18n, pickLang, resolvePluginBase } from './env.js';
 import { I18N_RES } from './i18n.js';
 import { createDriver } from './drivers/index.js';
@@ -34,6 +34,7 @@ import AgentLogView from './components/AgentLogView.jsx';
 import AgentTeamBar from './components/AgentTeamBar.jsx';
 import InteractionFlowPanel from './components/InteractionFlowPanel.jsx';
 import ConversationStream from './components/ConversationStream.jsx';
+import CustomerDialog, { INTENT_OPTIONS } from './components/CustomerDialog.jsx';
 import CustomPanelsArea from './components/panels/index.jsx';
 
 const PLUGIN_BASE = resolvePluginBase();
@@ -93,6 +94,27 @@ const ScenarioShowcaseApp = () => {
     const [caseData, setCaseData] = useState(null);
     const [loadError, setLoadError] = useState('');
 
+    // runtime version self-check: every open page compares its build id with
+    // the deployed version.json (30s poll) and prompts a refresh when a newer
+    // build is live — no more silently stale screens after a deploy.
+    const buildV = (typeof window !== 'undefined' && window.__SS_BUILD_V__) || '';
+    const [ssOutdated, setSsOutdated] = useState(false);
+    useEffect(() => {
+        if (!buildV) return undefined;
+        let dead = false;
+        const check = async () => {
+            try {
+                const res = await fetch(`${absoluteUrl(PLUGIN_BASE, 'version.json')}?t=${Date.now()}`, { cache: 'no-store' });
+                if (!res.ok) return;
+                const j = await res.json();
+                if (!dead && j && j.v && j.v !== buildV) setSsOutdated(true);
+            } catch (e) { /* ignore — offline or older deploy without version.json */ }
+        };
+        check();
+        const timer = setInterval(check, 30000);
+        return () => { dead = true; clearInterval(timer); };
+    }, [buildV]);
+
     // playback state
     const [isPlaying, setIsPlaying] = useState(false);
     const [tSec, setTSec] = useState(0);
@@ -105,16 +127,20 @@ const ScenarioShowcaseApp = () => {
     const [driverError, setDriverError] = useState('');
     const driverRef = useRef(null);
 
-    // DSH-style big tabs: 对话 (everything existing) | 轨迹 (composite trace
-    // view: agent execution timeline + A2A-T message flow + Agent logs).
-    //   ?tab=trace deep-links straight to the trajectory tab.
+    // DSH-style big tabs: 人机对话 (human↔CRM dialog: requirement + auth) |
+    // 任务处理 (agent-team task progress: PSOP flow + panels + per-agent
+    // streams — the former 对话 presentation) | 轨迹 (composite trace view).
+    // The dialog tab is the DEFAULT for CRM-gated cases; ?tab=trace deep-links
+    // to the trajectory. '' resolves to dialog/tasks once the case loads.
     const [mainTab, setMainTab] = useState(() => {
         try {
-            return new URLSearchParams(window.location.search).get('tab') === 'trace' ? 'trace' : 'chat';
+            return new URLSearchParams(window.location.search).get('tab') === 'trace' ? 'trace' : '';
         } catch (e) {
-            return 'chat';
+            return '';
         }
     });
+    const tabBeforeAuthRef = useRef('tasks');   // tab to restore after an auth decision
+    const authSwitchedRef = useRef(-1);         // message idx already auto-switched for
 
     // Agent-log panel: ONLY the real mockAgent service log (polled via
     // GET /mockagent/logs?session=<current run> while an agent run is live).
@@ -128,6 +154,13 @@ const ScenarioShowcaseApp = () => {
     const tr = useCallback((key, zhText, enText) => ((lang === 'zh') ? zhText : enText), [lang]);
     const pick = useCallback((value) => pickLang(lang, value), [lang]);
 
+    // ── Interaction-intent replay (history sidebar) ── state
+    // Each history entry is one interaction intent's full record; clicking it
+    // reloads the case (replayNonce bumps the load effect even for the same
+    // case) and, once the CRM greeting re-opens the customer gate, the intent
+    // requirement is auto-submitted — the whole interaction replays.
+    const replayIntentRef = useRef(null);
+    const [replayNonce, setReplayNonce] = useState(0);
     // startup injection from the launcher (e.g. the Virtual Showroom card):
     //   ?agents=id1,id2  — which agents are started (filters team / PSOP steps /
     //                      replay messages); omitted = all agents
@@ -204,6 +237,17 @@ const ScenarioShowcaseApp = () => {
         setDriverError('');
         setSvcLogs([]);
         setSvcSession(''); // new round: wait for the fresh session id before polling logs
+        setAuthDecisions({});
+        setAuthIdx(-1);
+        authPausedRef.current = false;
+        customerTextRef.current = '';
+        customerReqRef.current = '';
+        setCustomerText('');
+        setAwaitingCustomer(false);
+        authSwitchedRef.current = -1;
+        tabBeforeAuthRef.current = 'tasks';
+        orchStateRef.current = 'none';
+        setOrchState('none');
     }, []);
 
     /** Normalized driver-event application (shared by both drivers). Messages
@@ -213,13 +257,76 @@ const ScenarioShowcaseApp = () => {
     const applyEvent = useCallback((ev) => {
         if (!ev || !ev.type) return;
         if (ev.type === 'message') {
-            setMessages((prev) => [...prev, (typeof ev.at === 'number') ? ev : { ...ev, at: tSecRef.current }]);
+            let out = ev;
+            // Customer input injection: the typed requirement REPLACES the
+            // baked intent card text and rewrites REQ ids in the CRM agent's
+            // messages, so the whole story follows what the customer typed.
+            if (ev.from === 'crm' && customerTextRef.current) {
+                const rid = customerReqRef.current || 'REQ-CUSTOMER';
+                const subst = (v) => (typeof v === 'string' ? v.replace(/REQ-\d{4}-\d{3,6}/g, rid) : v);
+                if (ev.intent) {
+                    out = { ...ev, intent: { ...ev.intent, reqId: rid, text: { zh: customerTextRef.current, en: customerTextRef.current } } };
+                }
+                if (out.summary && Array.isArray(out.summary.rows)) {
+                    out = {
+                        ...out,
+                        summary: {
+                            ...out.summary,
+                            rows: out.summary.rows.map((r) => ({ ...r, value: { zh: subst(r.value?.zh), en: subst(r.value?.en) } })),
+                        },
+                    };
+                }
+                if (out.text && typeof out.text === 'object') {
+                    out = { ...out, text: { zh: subst(out.text.zh), en: subst(out.text.en) } };
+                }
+            }
+            setMessages((prev) => [...prev, (typeof out.at === 'number') ? out : { ...out, at: tSecRef.current }]);
+            // the CRM closing summary is FOR the customer — present it in the
+            // 人机对话 tab (switch once, when the summary event arrives)
+            if (out.summary) {
+                setMainTab((prev) => (prev === 'trace' ? prev : 'dialog'));
+            }
+            // the workflow ORCHESTRATION pauses execution: the CRM agent
+            // presents the plan in the dialog and the customer must confirm
+            // before the workflow actually starts (resume + jump to 群组).
+            if (out.orchestration && orchStateRef.current === 'none') {
+                setOrchGate('pending');
+                try { driverRef.current?.pause?.(); } catch (e) { /* ignore */ }
+                setMainTab((prev) => (prev === 'trace' ? prev : 'dialog'));
+            }
         } else if (ev.type === 'step') {
             const st = ev.status || 'done';
             setStepStatus((prev) => ({ ...prev, [ev.id]: st }));
             setStepTimes((prev) => ({ ...prev, [ev.id]: { ...(prev[ev.id] || {}), [st]: tSecRef.current } }));
         } else if (ev.type === 'panel') {
-            setPanelData((prev) => applyPanelEvents(prev, [ev]));
+            if (ev.panel === 'route-map' && ev.data && ev.data.metrics) {
+                // merge the event AND append a per-site metrics history — the
+                // map's before→after callouts need the values from before the
+                // dispatch even when the map panel is not mounted (tab switch).
+                setPanelData((prev) => {
+                    const cur = prev['route-map'] || {};
+                    const merged = applyPanelEvents(prev, [ev])['route-map'];
+                    const hist = { ...(cur.metricsHist || {}) };
+                    const beforeMap = { ...(cur.cfgBefore || {}) };
+                    Object.entries(ev.data.metrics).forEach(([id, m]) => {
+                        const arr = [...(hist[id] || [])];
+                        const lastPre = arr.length ? arr[arr.length - 1] : null;
+                        // freeze the pre-dispatch value the moment the config
+                        // for this site first arrives (survives tab unmounts)
+                        if (ev.data.configs && ev.data.configs[id] && !beforeMap[id]) {
+                            beforeMap[id] = lastPre;
+                        }
+                        const last = arr[arr.length - 1];
+                        if (!last || last.up !== m.up || last.stall !== m.stall || last.kqi !== m.kqi) {
+                            arr.push({ up: m.up, stall: m.stall, kqi: m.kqi });
+                        }
+                        hist[id] = arr;
+                    });
+                    return { ...prev, 'route-map': { ...merged, metricsHist: hist, cfgBefore: beforeMap } };
+                });
+            } else {
+                setPanelData((prev) => applyPanelEvents(prev, [ev]));
+            }
         }
     }, []);
 
@@ -269,12 +376,14 @@ const ScenarioShowcaseApp = () => {
                     }
                 }));
                 if (dead) return;
+                // history = human-machine interactions starting from an intent —
+                // static seed entries without an intent are not shown.
                 const merged = loads.filter(Boolean).flatMap((c) => (c.history || []).map((h) => ({
                     ...h,
                     mode: h.mode || (c.driver === 'mockAgent' ? 'agent' : 'demo'),
                     caseId: c.caseId,
                     caseTitle: c.caseTitle,
-                })));
+                }))).filter((h) => h && (h.req || h.intent));
                 merged.sort((a, b) => String(b.time || '').localeCompare(String(a.time || '')));
                 setHistoryAll(merged);
             } catch (e) {
@@ -305,9 +414,14 @@ const ScenarioShowcaseApp = () => {
                 if (dead) return;
                 // startup injection: apply the launcher's agent startup options —
                 // only started agents join the team, the PSOP keeps their steps,
-                // and replay messages of non-started agents are filtered out
+                // and replay messages of non-started agents are filtered out.
+                // The CRM service desk is NEVER filtered: it fronts the whole
+                // requirement→dialog→auth chain, and a stale launcher config
+                // (e.g. a pre-CRM agents list) must not silently downgrade a
+                // CRM case to the legacy byAgent entry.
                 if (startup.agents.length) {
                     const started = new Set(startup.agents);
+                    if ((data.agents || []).some((a) => a.id === 'crm')) started.add('crm');
                     data = {
                         ...data,
                         agents: (data.agents || []).filter((a) => started.has(a.id)),
@@ -321,12 +435,17 @@ const ScenarioShowcaseApp = () => {
                 resetPlayback(data);
                 setDriverMode(startup.driver || ''); // new case → its default driver (or ?driver=)
                 setIsPlaying(true);
+                // default tab: 人机对话 for CRM-gated cases, else straight to
+                // 任务处理 (the trace deep link ?tab=trace is kept)
+                setMainTab((prev) => (prev === 'trace'
+                    ? 'trace'
+                    : ((data.agents || []).some((a) => a.id === 'crm') ? 'dialog' : 'tasks')));
             } catch (e) {
                 if (!dead) setLoadError(String((e && e.message) || e));
             }
         })();
         return () => { dead = true; };
-    }, [caseId, resetPlayback, startup]);
+    }, [caseId, resetPlayback, startup, replayNonce]);
 
     // interaction driver — every case supports BOTH: 'script' (pure demo
     // replay from case.script[], launches no agent service) and 'mockAgent'
@@ -337,6 +456,64 @@ const ScenarioShowcaseApp = () => {
     // 模式（工作流编排 / LLM 生成 / 数据集匹配）实时生成。
     const effDriver = driverMode || 'mockAgent';
     const [modeStats, setModeStats] = useState(null);
+    const [authDecisions, setAuthDecisions] = useState({});   // message index -> 'approved' | 'rejected'
+    const [authIdx, setAuthIdx] = useState(-1);               // message currently awaiting authorization
+    const authPausedRef = useRef(false);
+
+    // ── Customer input gate (客户输入在输入框输入) ──
+    // When the case carries a CRM agent, the replay does NOT start on page
+    // load: the customer's requirement must be typed into the 人机对话 tab
+    // first. Starting the driver and pausing it right away would race the
+    // mockAgent pull loop (burning bank events), so the driver is simply not
+    // started until the request is submitted.
+    const [awaitingCustomer, setAwaitingCustomer] = useState(false);
+    const [customerText, setCustomerText] = useState(''); // submitted requirement (for the dialog bubble)
+    const customerTextRef = useRef('');                   // submitted requirement (for applyEvent)
+    const customerReqRef = useRef('');                    // generated REQ id for this run
+    const runIntentRef = useRef(null);                    // the intent this run started from (history)
+    const runLoggedRef = useRef(false);                   // one history entry per completed run
+    // Workflow-orchestration confirmation gate: when the CRM agent presents
+    // the orchestrated workflow (message with `orchestration`), execution is
+    // PAUSED until the customer confirms in the 人机对话 tab; confirming
+    // resumes the driver and jumps to the 智能体群组 tab.
+    const [orchState, setOrchState] = useState('none');   // 'none' | 'pending' | 'confirmed'
+    const orchStateRef = useRef('none');
+    const setOrchGate = useCallback((state) => {
+        orchStateRef.current = state;
+        setOrchState(state);
+    }, []);
+    const confirmOrchestration = useCallback(() => {
+        if (orchStateRef.current !== 'pending') return;
+        setOrchGate('confirmed');
+        try { driverRef.current?.resume?.(); } catch (e) { /* ignore */ }
+        setMainTab('tasks'); // confirmed → jump to the agent-group execution view
+    }, [setOrchGate]);
+
+    const submitCustomerInput = useCallback((text) => {
+        const t = String(text || '').trim();
+        if (!t || !driverRef.current) return;
+        // the map panel follows the intent's preset city (location chips)
+        const opt = INTENT_OPTIONS.find((o) => o.zh === t || o.en === t);
+        if (opt && opt.loc) {
+            setPanelData((prev) => ({
+                ...prev,
+                'route-map': { ...(prev['route-map'] || {}), location: opt.loc, loc: opt.loc, siteStatus: {}, marker: null },
+            }));
+        }
+        customerReqRef.current = `REQ-${new Date().getFullYear()}-${String(Math.floor(1000 + Math.random() * 9000))}`;
+        customerTextRef.current = t;
+        setCustomerText(t);
+        setAwaitingCustomer(false);
+        // history records start HERE (the intent) — one entry per real
+        // human-machine interaction, appended when the run completes.
+        runIntentRef.current = { loc: (opt && opt.loc) || null, text: t };
+        runLoggedRef.current = false;
+        // stay in the 人机对话 tab: intent parsing, team assembly and the
+        // workflow-orchestration confirmation all happen in the dialog;
+        // execution only shows the 智能体群组 tab AFTER the orchestration
+        // is confirmed (confirmOrchestration jumps there).
+        try { driverRef.current.start(); } catch (e) { /* driver handles errors via onError */ }
+    }, []);
     useEffect(() => {
         if (!caseData) return undefined;
         const driver = createDriver({
@@ -356,12 +533,17 @@ const ScenarioShowcaseApp = () => {
             onNotice: (stats) => setModeStats(stats || null),
         });
         driverRef.current = driver;
-        if (startup.autostart) driver.start();
+        // CRM-gated cases wait for the customer's typed request in the input
+        // box before the replay starts (see submitCustomerInput); everything
+        // else auto-starts as before.
+        const gateOnCustomer = startup.autostart && (caseData.agents || []).some((a) => a.id === 'crm');
+        if (startup.autostart && !gateOnCustomer) driver.start();
+        setAwaitingCustomer(gateOnCustomer);
         return () => {
             driverRef.current = null;
             driver.stop();
         };
-    }, [caseData, applyEvent, startup, effDriver]);
+    }, [caseData, applyEvent, startup, effDriver, replayNonce]);
 
     // Agent-log panel: poll the mockAgent service log for the CURRENT session
     // only (1s cadence while playing) + one final pull when it completes.
@@ -396,6 +578,29 @@ const ScenarioShowcaseApp = () => {
         } catch (e) { /* ignore */ }
     }, []);
 
+    // ── Interaction-intent replay (history sidebar) ──
+    // onOpenEntry bumps replayNonce (declared above, before the case-load and
+    // driver effects that depend on it) so the same case reloads and the CRM
+    // gate re-opens; a self-contained poll then auto-submits the intent
+    // requirement once the gate is up (independent of effect scheduling).
+    const awaitingRef = useRef(false);
+    awaitingRef.current = awaitingCustomer; // render-time mirror for the poll
+    const onOpenEntry = useCallback((h) => {
+        if (!h) return;
+        replayIntentRef.current = h.req || null;
+        setReplayNonce((n) => n + 1);
+        handleCaseChange(h.caseId);
+        const req = h.req;
+        if (!req) return;
+        const text = (typeof req === 'object' && req !== null) ? pick(req) : String(req);
+        const t0 = Date.now();
+        const poll = () => {
+            if (awaitingRef.current) { submitCustomerInput(text); return; }
+            if (Date.now() - t0 < 20000) setTimeout(poll, 400);
+        };
+        setTimeout(poll, 1500);
+    }, [handleCaseChange, pick, submitCustomerInput]);
+
     // the agent currently speaking = author of the newest message
     const speakingAgent = messages.length ? messages[messages.length - 1].from : null;
 
@@ -406,12 +611,49 @@ const ScenarioShowcaseApp = () => {
         return executing?.agent || speakingAgent;
     }, [caseData, stepStatus, speakingAgent]);
 
+    // ── Configuration-change authorization (需求②) ──
+    // A message with `auth.required` freezes the driver (pause keeps the
+    // mockAgent session / virtual clock alive) and CRM relays the request to
+    // the customer IN THE 人机对话 TAB as a chat card with Approve/Reject
+    // buttons. The tab auto-switches to the dialog while a decision is
+    // pending (once per pending message) and restores the previous tab after
+    // the decision. If several auth messages are pending, the dialog walks
+    // through them one by one.
+    useEffect(() => {
+        const idx = messages.findIndex((m, i) => m.auth && m.auth.required && authDecisions[i] === undefined);
+        if (idx >= 0) {
+            setAuthIdx(idx);
+            if (!authPausedRef.current) {
+                authPausedRef.current = true;
+                try { driverRef.current?.pause?.(); } catch (e) { /* ignore */ }
+            }
+            if (authSwitchedRef.current !== idx) {
+                authSwitchedRef.current = idx;
+                if (mainTab !== 'dialog') {
+                    tabBeforeAuthRef.current = mainTab === 'dialog' ? 'tasks' : mainTab;
+                    setMainTab('dialog');
+                }
+            }
+        } else {
+            setAuthIdx(-1);
+            if (authPausedRef.current) {
+                authPausedRef.current = false;
+                try { driverRef.current?.resume?.(); } catch (e) { /* ignore */ }
+            }
+        }
+    }, [messages, authDecisions, mainTab]);
+    const decideAuth = useCallback((idx, decision) => {
+        setAuthDecisions((prev) => ({ ...prev, [idx]: decision }));
+        setMainTab(tabBeforeAuthRef.current || 'tasks'); // back to the task progress view
+    }, []);
+
     // Case-level layout overrides (case JSON `layout`): `teamBar:false` hides
     // the 智能体团队 strip above the interaction area; `conversation:'byAgent'`
     // splits the 智能体交互 box into one row per agent (stacked vertically).
     // Unset = classic layout (team bar + single conversation stream), so other
     // cases are unaffected.
     const layout = caseData?.layout || {};
+    const crmPresent = (caseData?.agents || []).some((a) => a.id === 'crm');
 
     const doneCount = useMemo(
         () => Object.values(stepStatus).filter((s) => s === 'done').length,
@@ -422,6 +664,56 @@ const ScenarioShowcaseApp = () => {
     const clockLabel = `${String(Math.floor(tSec / 60)).padStart(2, '0')}:${String(Math.floor(tSec % 60)).padStart(2, '0')}`;
     const isMockAgent = effDriver === 'mockAgent';
     const completed = driverDone || (!isMockAgent && endAtSec > 0 && tSec > endAtSec + 1.2);
+    // history = real human-machine interactions, each starting from the sent
+    // intent; append one entry when the interaction completes (once per run).
+    useEffect(() => {
+        if (!completed || runLoggedRef.current || !runIntentRef.current) return;
+        runLoggedRef.current = true;
+        const { loc, text } = runIntentRef.current;
+        const CITY_TITLES = {
+            shanghai: { zh: '马拉松赛事体验保障', en: 'Marathon event assurance' },
+            london: { zh: '跨年演唱会保障', en: 'New Year concert assurance' },
+            singapore: { zh: '行业峰会保障', en: 'Industry summit assurance' },
+            bangkok: { zh: '曼谷马拉松保障', en: 'Bangkok marathon assurance' },
+        };
+        const ct = (loc && CITY_TITLES[loc]) || { zh: String(text).slice(0, 24), en: String(text).slice(0, 24) };
+        const now = new Date();
+        const pad = (n) => String(n).padStart(2, '0');
+        const mm = now.getMonth() + 1;
+        const mins = Math.floor(tSecRef.current / 60);
+        const secs = Math.floor(tSecRef.current % 60);
+        const entry = {
+            id: `run-${now.getTime()}`,
+            intent: loc || 'custom',
+            mode: effDriver === 'mockAgent' ? 'agent' : 'demo',
+            result: 'success',
+            time: `${pad(mm)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`,
+            duration: `${mins}m ${pad(secs)}s`,
+            title: { zh: `人机交互 · ${ct.zh}`, en: `Interaction · ${ct.en}` },
+            req: { zh: String(text), en: String(text) },
+            caseId,
+            caseTitle: (caseData && caseData.title) || { zh: caseId, en: caseId },
+        };
+        setHistoryAll((prev) => [entry, ...prev]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [completed]);
+    // race progress for the route map: continuous "event unfolding" — steps
+    // completed + the fraction of the current step elapsed (steps run only
+    // during execution, so the marker waits at the start during the dialog
+    // and freezes while an authorization pause holds the clock).
+    const lastStepTs = useMemo(() => {
+        let mx = 0;
+        Object.values(stepTimes || {}).forEach((e) => {
+            const t = Math.max(e?.done || 0, e?.running || 0);
+            if (t > mx) mx = t;
+        });
+        return mx;
+    }, [stepTimes]);
+    const inStepFraction = (doneCount > 0 && doneCount < totalSteps && isPlaying && lastStepTs > 0)
+        ? Math.min(1, Math.max(0, (tSec - lastStepTs) / 8000)) : 0;
+    const raceProgress = (isMockAgent && totalSteps)
+        ? Math.min(100, Math.round(((driverDone ? totalSteps : (doneCount + inStepFraction)) / totalSteps) * 100))
+        : null;
 
     if (loadError) {
         return (
@@ -431,6 +723,12 @@ const ScenarioShowcaseApp = () => {
                     <p className="text-xs text-zinc-500 mt-2 font-mono">{loadError}</p>
                     <p className="text-xs text-zinc-400 mt-1 font-mono">{PLUGIN_BASE}</p>
                 </div>
+                {ssOutdated && (
+                    <div className="fixed bottom-4 right-4 z-[3000] rounded-xl border border-amber-500/40 bg-zinc-900/95 text-zinc-100 shadow-2xl px-4 py-3 flex items-center gap-3">
+                        <span className="text-sm">🔄 {tr('ss.new_version', '系统已更新，请刷新页面', 'A new version was deployed — please refresh')}</span>
+                        <button onClick={() => window.location.reload()} className="px-3 py-1.5 rounded-lg bg-cyan-500 text-zinc-950 text-xs font-bold hover:bg-cyan-400">{tr('ss.refresh_now', '立即刷新', 'Refresh now')}</button>
+                    </div>
+                )}
             </div>
         );
     }
@@ -440,6 +738,18 @@ const ScenarioShowcaseApp = () => {
             className={`${isDark ? 'dark' : ''} ss-root relative h-full w-full flex flex-col overflow-hidden bg-zinc-100 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100`}
             style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif" }}
         >
+            {/* build stamp: lets anyone instantly tell WHICH build this tab runs */}
+            {buildV && (
+                <div className="fixed bottom-1.5 left-3 z-[2500] text-[10px] font-mono text-zinc-600 dark:text-zinc-500 pointer-events-none select-none">
+                    build {buildV}
+                </div>
+            )}
+            {ssOutdated && (
+                <div className="fixed bottom-4 right-4 z-[3000] rounded-xl border border-amber-500/40 bg-zinc-900/95 text-zinc-100 shadow-2xl px-4 py-3 flex items-center gap-3">
+                    <span className="text-sm">🔄 {tr('ss.new_version', '系统已更新，请刷新页面', 'A new version was deployed — please refresh')}</span>
+                    <button onClick={() => window.location.reload()} className="px-3 py-1.5 rounded-lg bg-cyan-500 text-zinc-950 text-xs font-bold hover:bg-cyan-400">{tr('ss.refresh_now', '立即刷新', 'Refresh now')}</button>
+                </div>
+            )}
             {/* ── Tech backdrop (dark only): faint blueprint grid + aurora glows ── */}
                                                             
             {/* ── Header — ONE line only: 场景演示 · <case title> + 答复模式
@@ -510,6 +820,7 @@ const ScenarioShowcaseApp = () => {
                         historyAll={historyAll}
                         activeCaseId={caseId}
                         onOpenCase={handleCaseChange}
+                        onOpenEntry={onOpenEntry}
                         collapsed={histCollapsed}
                         onToggle={() => setHistCollapsed((v) => !v)}
                     />
@@ -517,18 +828,33 @@ const ScenarioShowcaseApp = () => {
 
                 {/* Main column */}
                 <main className="flex-1 min-w-0 flex flex-col gap-3 p-3 min-h-0">
-                    {/* DSH-style big tabs: 对话 (all existing content) | 轨迹 (traces) */}
+                    {/* DSH-style big tabs: 人机对话 | 任务处理 | 轨迹 */}
                     <div className="shrink-0 flex items-center gap-2 flex-wrap">
                         <div className="inline-flex items-center gap-1 p-0.5 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-100/60 dark:bg-zinc-900/60">
+                            {crmPresent && (
+                                <button
+                                    onClick={() => setMainTab('dialog')}
+                                    className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-md text-[13px] font-semibold transition-colors ${
+                                        mainTab === 'dialog'
+                                            ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
+                                            : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
+                                >
+                                    <MessagesSquare size={14} />
+                                    {tr('ss.tab_dialog', '人机对话', 'Dialog')}
+                                    {authIdx >= 0 && (
+                                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" title={tr('ss.tab_auth_pending', '待授权确认', 'authorization pending')} />
+                                    )}
+                                </button>
+                            )}
                             <button
-                                onClick={() => setMainTab('chat')}
+                                onClick={() => setMainTab('tasks')}
                                 className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-md text-[13px] font-semibold transition-colors ${
-                                    mainTab === 'chat'
+                                    mainTab === 'tasks'
                                         ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
                                         : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'}`}
                             >
-                                <MessagesSquare size={14} />
-                                {tr('ss.tab_chat', '对话', 'Conversation')}
+                                <ListChecks size={14} />
+                                {tr('ss.tab_tasks', '智能体群组', 'Agent Group')}
                             </button>
                             <button
                                 onClick={() => setMainTab('trace')}
@@ -543,7 +869,24 @@ const ScenarioShowcaseApp = () => {
                         </div>
                     </div>
 
-                    {mainTab === 'chat' ? (
+                    {mainTab === 'dialog' && crmPresent ? (
+                        /* 人机对话 — the customer talks to the CRM agent here:
+                           requirement input + authorization confirmations. */
+                        <CustomerDialog
+                            tr={tr}
+                            pick={pick}
+                            messages={messages}
+                            awaitingCustomer={awaitingCustomer}
+                            customerText={customerText}
+                            onSubmitCustomer={submitCustomerInput}
+                            authDecisions={authDecisions}
+                            authIdx={authIdx}
+                            onDecideAuth={decideAuth}
+                            orchState={orchState}
+                            onConfirmOrchestration={confirmOrchestration}
+                            tSec={tSec}
+                        />
+                    ) : mainTab !== 'trace' ? (
                         <>
                             {/* Top: agent team (hidden when the case sets layout.teamBar=false) */}
                             {layout.teamBar !== false && (
@@ -574,6 +917,7 @@ const ScenarioShowcaseApp = () => {
                                         panels={caseData?.panels || []}
                                         data={panelData}
                                         isDark={isDark}
+                                        progress={raceProgress}
                                     />
                                 </section>
                                 <section className="flex-1 min-w-0 min-h-0">
@@ -585,6 +929,8 @@ const ScenarioShowcaseApp = () => {
                                         tSec={tSec}
                                         layout={layout}
                                         activeAgent={activeAgent}
+                                        authDecisions={authDecisions}
+                                        awaitingCustomer={awaitingCustomer}
                                     />
                                 </section>
                             </div>
@@ -627,6 +973,11 @@ const ScenarioShowcaseApp = () => {
                                     />
                                 </div>
                             </div>
+                        </div>
+                    )}
+                    {authIdx >= 0 && messages[authIdx] && authDecisions[authIdx] === undefined && (
+                        <div className="sr-only" aria-live="polite">
+                            {tr('ss.auth_dialog_hint', '配置变更待授权：请在人机对话页签确认', 'Authorization pending: confirm in the Dialog tab')}
                         </div>
                     )}
                 </main>

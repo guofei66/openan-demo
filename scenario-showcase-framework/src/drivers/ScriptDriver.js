@@ -46,5 +46,7 @@ export const createScriptDriver = (caseData, sink) => {
         if (timer != null) { clearInterval(timer); timer = null; }
     };
 
-    return { kind: 'script', start, stop, endAt };
+    // pause/resume keep the virtual clock (tSec / applied) intact so an
+    // authorization modal can freeze the replay mid-run and continue it.
+    return { kind: 'script', start, stop, pause: stop, resume: start, endAt };
 };

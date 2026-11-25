@@ -22,7 +22,7 @@ const FallbackPanel = ({ type }) => (
     </div>
 );
 
-const CustomPanelsArea = ({ tr, pick, panels, data, isDark }) => {
+const CustomPanelsArea = ({ tr, pick, panels, data, isDark, progress }) => {
     const [tab, setTab] = useState(0);
     useEffect(() => { setTab(0); }, [panels]);
 
@@ -32,7 +32,7 @@ const CustomPanelsArea = ({ tr, pick, panels, data, isDark }) => {
     const activeData = (data || {})[active.id] || {};
 
     return (
-        <div className="h-[40%] shrink-0 rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 dark:ring-1 dark:ring-white/[0.04] flex flex-col overflow-hidden">
+        <div className="h-1/2 min-h-[260px] rounded-2xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900/60 dark:ring-1 dark:ring-white/[0.04] flex flex-col overflow-hidden">
             <div className="shrink-0 px-2 pt-2 pb-0 flex items-center gap-1 border-b border-zinc-100 dark:border-zinc-800 overflow-x-auto ss-scroll">
                 <Layers size={14} className="text-zinc-400 ml-2 mr-1 shrink-0" />
                 {panels.map((p, i) => {
@@ -53,7 +53,7 @@ const CustomPanelsArea = ({ tr, pick, panels, data, isDark }) => {
                 })}
             </div>
             <div className="flex-1 min-h-0">
-                <ActiveComp config={active.config || {}} data={activeData} isDark={isDark} />
+                <ActiveComp config={active.config || {}} data={activeData} isDark={isDark} pick={pick} progress={progress} />
             </div>
         </div>
     );
