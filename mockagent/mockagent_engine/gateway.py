@@ -53,6 +53,7 @@ from fastapi import FastAPI
 from .agent_registry import AGENT_FILENAME, agents_dir, load_agent, load_agent_instance, load_defaults
 from .config import load_settings
 from .db import init_db, make_engine
+from .heartbeat import HeartbeatReporter, collect_cards
 from .standalone_agent import build_runner_app
 
 
@@ -132,6 +133,25 @@ def build_gateway_app(
         "publicUrlBase": public_url_base,
         "instances": [inst.get("id") for _, inst in instances],
     }
+
+    # 注册中心心跳上报：为挂载实例对应的注册卡片周期性上报存活。
+    # 卡片清单以 agents/*/agent_card.json 为准（与 register_mockagents.py 一致）。
+    if settings.heartbeat_enabled:
+        cards = collect_cards(settings.heartbeat_prefix)
+        if cards:
+            reporter = HeartbeatReporter(
+                cards, settings.registry_url, settings.heartbeat_owner,
+                interval=settings.heartbeat_interval,
+            )
+            gateway.state.heartbeat_reporter = reporter
+
+            @gateway.on_event("shutdown")
+            async def _stop_heartbeat() -> None:
+                reporter.stop()
+
+            reporter.start()
+        else:
+            print("[heartbeat] agents/ 下无匹配卡片，跳过心跳上报", flush=True)
     return gateway
 
 
